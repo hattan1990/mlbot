@@ -17,7 +17,7 @@ args.data_path = 'gmo_btcjpy_ohlcv_val.csv'
 
 #予測タスク、ターゲット(y)、時間フィーチャーエンコーディングを指定
 args.features = 'ALL'
-args.target = 'cl'
+args.target = ['hi', 'lo']
 args.freq = 't' # h:hourly
 args.scaler1 = 10000000 #BTC価格のスケーリング
 args.scaler2 = 500 #BTC Volumeのスケーリング
