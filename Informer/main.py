@@ -138,8 +138,13 @@ def main(args):
             exp = Exp(args) # set experiments
             exp.train(setting)
 
-            if args.do_predict:
-                exp.predict(setting, True)
+            pred, spread1, spread2 = exp.predict(setting, True)
+            pred.to_excel('output.xlsx')
+            spread1.to_excel('spread1.xlsx')
+            spread2.to_excel('spread2.xlsx')
+            mlflow.log_artifact('output.xlsx')
+            mlflow.log_artifact('spread1.xlsx')
+            mlflow.log_artifact('spread2.xlsx')
 
             torch.cuda.empty_cache()
 
