@@ -268,9 +268,12 @@ class Exp_Informer(Exp_Basic):
                 pred, _ = self._process_one_batch(
                     eval_data, seq_x, seq_y, seq_x_mark, seq_y_mark)
 
-                pred = pred.flatten().detach().cpu().numpy()
+                pred_hi = pred[:, 0].detach().cpu().numpy()
+                pred_lo = pred[:, 1].detach().cpu().numpy()
                 raw = pd.DataFrame(raw[-self.args.pred_len:], columns=cols)
-                raw['pred'] = pred * 10000000
+                raw['pred_hi'] = pred_hi * 10000000
+                raw['pred_lo'] = pred_lo * 10000000
+                raw['pred'] = (raw['pred_hi'] + raw['pred_lo'])/2
                 output = pd.concat([output, raw])
                 out1, out2 = _check_mergin(raw)
                 spread_out1.append(out1)

@@ -61,9 +61,9 @@ class EvalDataset():
         if self.target == None:
             target_val = data_values
         else:
-            target_col = df_data.columns.to_list().index(self.target)
-            target_val = data_values[:,target_col]
-            target_val = np.expand_dims(target_val, axis=1)
+            target_col1 = df_data.columns.to_list().index(self.target[0])
+            target_col2 = df_data.columns.to_list().index(self.target[1])
+            target_val = data[:, [target_col1, target_col2]]
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
         if self.option == 'pct':
             data_values = data_values[:, 5:]
@@ -159,9 +159,9 @@ class Dataset_BTC(Dataset):
             if self.target == None:
                 self.data_y = data[border1:border2]
             else:
-                target_col = df_data.columns.to_list().index(self.target)
-                target_val = data[border1:border2, target_col]
-                self.data_y = np.expand_dims(target_val, axis=1)
+                target_col1 = df_data.columns.to_list().index(self.target[0])
+                target_col2 = df_data.columns.to_list().index(self.target[1])
+                self.data_y = data[border1:border2, [target_col1, target_col2]]
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):

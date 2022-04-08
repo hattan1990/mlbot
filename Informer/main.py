@@ -23,7 +23,7 @@ args.data_path = 'gmo_btcjpy_ohlcv2021.csv'
 
 #予測タスク、ターゲット(y)、時間フィーチャーエンコーディングを指定
 args.features = 'ALL'
-args.target = 'cl'
+args.target = ['hi', 'lo']
 args.target_num = None
 args.freq = 't' # h:hourly
 args.scaler1 = 10000000 #BTC価格のスケーリング
@@ -40,8 +40,8 @@ args.pred_len = 12
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
 args.enc_in = 145 # encoder input size
-args.dec_in = 1 # decoder input size
-args.c_out = 1 # output size
+args.dec_in = 2 # decoder input size
+args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
 args.n_heads = 8 # num of heads
