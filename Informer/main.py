@@ -11,9 +11,9 @@ import mlflow
 #{'model': 'informer', 'data': 'GMO-BTCJPY', 'root_path': './dataset/', 'data_path': 'gmo_btcjpy_ohlcv2021.csv', 'features': 'ALL', 'target': 'cl', 'target_num': None, 'freq': 't', 'scaler1': 10000000, 'scaler2': 500, 'checkpoints': './informer_checkpoints', 'seq_len': 96, 'label_len': 48, 'pred_len': 12, 'enc_in': 5, 'dec_in': 1, 'c_out': 1, 'factor': 5, 'd_model': 512, 'n_heads': 8, 'e_layers': 2, 'd_layers': 1, 'd_ff': 2048, 'dropout': 0.0005, 'attn': 'prob', 'embed': 'timeF', 'activation': 'gelu', 'distil': True, 'output_attention': False, 'mix': True, 'padding': 0, 'batch_size': 256, 'learning_rate': 0.01, 'loss': 'mae', 'lradj': 'type1', 'use_amp': False, 'num_workers': 0, 'itr': 1, 'train_epochs': 100, 'patience': 15, 'des': 'exp', 'use_gpu': True, 'gpu': 0, 'use_multi_gpu': False, 'devices': '0,1,2,3', 'detail_freq': 't'}
 
 #モデルを指定します。
-title = 'Predict cl'
+title = 'Predict hi&lo'
 args = dotdict()
-args.runname = 'fix distil layer'
+args.runname = 'default'
 args.model = 'informer'
 
 #データセットとパスを指定
