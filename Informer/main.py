@@ -108,10 +108,7 @@ def main(args):
     print(args)
     client = mlflow.tracking.MlflowClient()
     experiment = client.get_experiment_by_name(title)
-    if experiment is not None:
-        exp_id = experiment.experiment_id
-    else:
-        exp_id = client.create_experiment(title)
+    exp_id = 1
 
     tag_list = ['model', 'data', 'root_path', 'data_path', 'features',
                 'target', 'target_num', 'freq']
