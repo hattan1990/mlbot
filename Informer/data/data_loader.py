@@ -45,10 +45,10 @@ class EvalDataset():
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
 
-        data = copy.deepcopy(df_raw)
         if self.option == 'pct':
-            data = add_features(data)[29:]
+            df_raw = add_features(df_raw)[29:]
 
+        data = copy.deepcopy(df_raw)
         cols_data = data.columns[1:]
         df_data = data[cols_data]
         data_values = df_data.values
