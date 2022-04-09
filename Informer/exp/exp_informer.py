@@ -270,7 +270,7 @@ class Exp_Informer(Exp_Basic):
 
                 pred_hi = pred[0, :, 0].detach().cpu().numpy()
                 pred_lo = pred[0, :, 1].detach().cpu().numpy()
-                raw = pd.DataFrame(raw[-self.args.pred_len:], columns=cols)
+                raw = pd.DataFrame(raw[-self.args.pred_len:, :6], columns=cols)
                 raw['pred_hi'] = pred_hi * 10000000
                 raw['pred_lo'] = pred_lo * 10000000
                 raw['pred'] = (raw['pred_hi'] + raw['pred_lo'])/2
