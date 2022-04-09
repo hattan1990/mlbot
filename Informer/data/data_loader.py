@@ -63,7 +63,7 @@ class EvalDataset():
         else:
             target_col1 = df_data.columns.to_list().index(self.target[0])
             target_col2 = df_data.columns.to_list().index(self.target[1])
-            target_val = data.values[:, [target_col1, target_col2]]
+            target_val = data_values[:, [target_col1, target_col2]]
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
         if self.option == 'pct':
             data_values = data_values[:, 5:]

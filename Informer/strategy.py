@@ -26,15 +26,15 @@ args.scaler2 = 500 #BTC Volumeのスケーリング
 args.checkpoints = './informer_checkpoints'
 
 #EncoderとDecoderの入力するデータの長さを指定
-args.seq_len = 48
-args.label_len = 24
-args.pred_len = 6
+args.seq_len = 96
+args.label_len = 48
+args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
 args.enc_in = 145 # encoder input size
-args.dec_in = 1 # decoder input size
-args.c_out = 1 # output size
+args.dec_in = 2 # decoder input size
+args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
 args.n_heads = 8 # num of heads
@@ -47,7 +47,7 @@ args.dropout = 0.05 # dropout
 args.attn = 'prob' # attention used in encoder, options:[prob, full]
 args.embed = 'timeF' # time features encoding, options:[timeF, fixed, learned]
 args.activation = 'gelu' # activation
-args.distil = True # whether to use distilling in encoder
+args.distil = False # whether to use distilling in encoder
 args.output_attention = False # whether to output attention in ecoder
 args.mix = True
 args.padding = 0
