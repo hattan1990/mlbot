@@ -249,7 +249,7 @@ class Exp_Informer(Exp_Basic):
         seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)
         
         if load:
-            best_model_path = './informer_checkpoints/checkpoint_cpu.pth'
+            best_model_path = 'checkpoint_cpu.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval()
