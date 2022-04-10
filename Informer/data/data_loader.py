@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 
 def add_features(data):
     columns = data.columns[1:]
-    for i in range(1, 30):
+    for i in range(1, 60):
         for col in columns:
             data[col + '_' + str(i)] = data[col].pct_change(periods=i)
     return data
@@ -46,7 +46,7 @@ class EvalDataset():
                                           self.data_path))
 
         if self.option == 'pct':
-            df_raw = add_features(df_raw)[29:]
+            df_raw = add_features(df_raw)[59:]
 
         data = copy.deepcopy(df_raw)
         cols_data = data.columns[1:]
@@ -128,7 +128,7 @@ class Dataset_BTC(Dataset):
                                           self.data_path))
 
         if self.option == 'pct':
-            df_raw = add_features(df_raw)[29:]
+            df_raw = add_features(df_raw)[59:]
 
         border1s = [0, 12 * 30 * 1100 + 4 * 30 * 1100 - self.seq_len]
         border2s = [12 * 30 * 1100 + 4 * 30 * 1100, 12 * 30 * 1000 + 8 * 30 * 1000]

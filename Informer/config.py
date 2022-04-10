@@ -3,7 +3,7 @@ import torch
 
 
 args = dotdict()
-args.runname = 'default'
+args.runname = 'feature295'
 args.model = 'informer'
 
 #データセットとパスを指定
@@ -29,7 +29,7 @@ args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
-args.enc_in = 145 # encoder input size
+args.enc_in = 295 # encoder input size
 args.dec_in = 2 # decoder input size
 args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor
