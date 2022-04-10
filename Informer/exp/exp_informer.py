@@ -75,7 +75,7 @@ class Exp_Informer(Exp_Basic):
             inverse=args.inverse,
             timeenc=timeenc,
             freq=freq,
-            cols=args.cols
+            feature_add=args.add_feature_num
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -242,7 +242,8 @@ class Exp_Informer(Exp_Basic):
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
-            inverse=args.inverse
+            inverse=args.inverse,
+            feature_add = args.add_feature_num
         )
         data_values, target_val, data_stamp, df_raw = eval_data.read_data()
         seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)

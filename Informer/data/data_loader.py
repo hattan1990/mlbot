@@ -14,9 +14,9 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def add_features(data):
+def add_features(data, num):
     columns = data.columns[1:]
-    for i in range(1, 30):
+    for i in range(1, num):
         for col in columns:
             data[col + '_' + str(i)] = data[col].pct_change(periods=i)
     return data
@@ -24,7 +24,7 @@ def add_features(data):
 class EvalDataset():
     def __init__(self, root_path, size=[48, 24, 12],
                  features='ALL', data_path='gmo_btcjpy_ohlcv.pkl',
-                 target='cl', inverse=False, timeenc=1, freq='t'):
+                 target='cl', inverse=False, timeenc=1, freq='t', feature_add=0):
 
         self.seq_len = size[0]
         self.label_len = size[1]
@@ -40,13 +40,14 @@ class EvalDataset():
         self.data_path = data_path
 
         self.option = 'pct'
+        self.feature_add = feature_add
 
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+                                          self.data_path))[-5000:]
 
         if self.option == 'pct':
-            df_raw = add_features(df_raw)[29:]
+            df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
 
         data = copy.deepcopy(df_raw)
         cols_data = data.columns[1:]
@@ -96,7 +97,7 @@ class EvalDataset():
 class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='ALL', data_path='gmo_btcjpy_ohlcv.pkl',
-                 target='cl', scale=True, inverse=False, timeenc=0, freq='t', cols=None):
+                 target='cl', scale=True, inverse=False, timeenc=0, freq='t', feature_add=0):
         # size [seq_len, label_len, pred_len]
         # info
         self.seq_len = size[0]
@@ -120,6 +121,7 @@ class Dataset_BTC(Dataset):
         self.data_path = data_path
 
         self.option = 'pct'
+        self.feature_add = feature_add
         self.__read_data__()
 
     def __read_data__(self):
@@ -128,7 +130,7 @@ class Dataset_BTC(Dataset):
                                           self.data_path))
 
         if self.option == 'pct':
-            df_raw = add_features(df_raw)[29:]
+            df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
 
         border1s = [0, 12 * 30 * 1100 + 4 * 30 * 1100 - self.seq_len]
         border2s = [12 * 30 * 1100 + 4 * 30 * 1100, 12 * 30 * 1000 + 8 * 30 * 1000]
