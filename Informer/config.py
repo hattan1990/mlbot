@@ -6,6 +6,7 @@ args = dotdict()
 args.runname = 'feature295'
 args.model = 'informer'
 add_feature_num = 60
+args.loss_mode = 'default'
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
@@ -46,13 +47,13 @@ args.dropout = 0.0005 # dropout 0.005 ->0.0005
 args.attn = 'prob' # attention used in encoder, options:[prob, full]
 args.embed = 'timeF' # time features encoding, options:[timeF, fixed, learned]
 args.activation = 'gelu' # activation
-args.distil = False # whether to use distilling in encoder
+args.distil = True # whether to use distilling in encoder
 args.output_attention = False # whether to output attention in ecoder
 args.mix = True
 args.padding = 0
 
 #バッチサイズ、学習率、ロースファンクションなどを指定
-args.batch_size = 256
+args.batch_size = 2
 args.learning_rate = 0.001 #0.0001 -> 0.001
 args.loss = 'mae'
 args.lradj = 'type1'

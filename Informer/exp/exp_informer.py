@@ -3,7 +3,7 @@ from exp.exp_basic import Exp_Basic
 from models.model import Informer, InformerStack
 
 from utils.tools import EarlyStopping, adjust_learning_rate
-from utils.metrics import metric
+from utils.metrics import CustomLoss
 
 import numpy as np
 import pandas as pd
@@ -92,8 +92,7 @@ class Exp_Informer(Exp_Basic):
         return model_optim
     
     def _select_criterion(self):
-        #MSELoss -> L1Loss
-        criterion =  nn.L1Loss()
+        criterion = CustomLoss(self.args.loss_mode)
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
@@ -207,7 +206,7 @@ class Exp_Informer(Exp_Basic):
 
             adjust_learning_rate(model_optim, epoch+1, self.args)
             
-        best_model_path = path+'/'+'checkpoint.pth'
+        best_model_path = 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
         
         return self.model
