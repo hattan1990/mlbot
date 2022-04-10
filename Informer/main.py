@@ -1,5 +1,6 @@
 from exp.exp_informer import Exp_Informer
 from config import args
+import numpy as np
 import torch
 import mlflow
 
@@ -56,5 +57,51 @@ def main(args):
 
             torch.cuda.empty_cache()
 
+def update_args(input_args, update_name, list):
+    args_list = []
+    for values in list:
+        args = input_args.copy()
+        if update_name == 'seq_len':
+            args['seq_len'] = values[0]
+            args['label_len'] = values[1]
+            args['pred_len'] = values[2]
+        elif update_name == 'loss_mode':
+            args['loss_mode'] = values
+        elif update_name == 'learning_rate':
+            args['learning_rate'] = values
+        elif update_name == 'dropout':
+            args['dropout'] = values
+        else:
+            pass
+
+        args_list.append(args)
+
+    return args_list
+
+def update_args_list(args_list, update_name, list):
+    add_args = []
+    for args in args_list:
+        add_args += update_args(args, update_name, list)
+
+    return args_list + add_args
+
 if __name__ == '__main__':
     main(args)
+
+    seq_len_list = [[48, 30, 6],
+                    [48, 36, 6],
+                    [48, 42, 6]]
+    loss_mode_list = ["penalties", "min_max"]
+    learning_rate_list = [0.01, 0.05, 0.005]
+    drop_out_list = [0.00001, 0.0001, 0.005, 0.001]
+
+    args_list = update_args(args, "seq_len", seq_len_list)
+    args_list = update_args_list(args_list, "loss_mode", loss_mode_list)
+    args_list = update_args_list(args_list, "learning_rate", learning_rate_list)
+    args_list = update_args_list(args_list, "dropout", drop_out_list)
+
+    for i in range(100):
+        choice = np.random.choice(len(args_list))
+        args_update = args_list[choice]
+        print(i , choice, args)
+        main(args_update)
