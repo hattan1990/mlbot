@@ -231,8 +231,12 @@ class Exp_Informer(Exp_Basic):
                     check_min = 1
                 else:
                     check_min = 0
+                if (check_max + check_min) == 2:
+                    valid = 1
+                else:
+                    valid = 0
                 spread = (max_pred - fix) - (min_pred + fix)
-                output += [spread, check_max, check_min]
+                output += [spread, check_max, check_min, valid]
 
             return output , [raw['date'].max(), max_target, min_target, max_pred, min_pred]
         args = self.args

@@ -18,6 +18,11 @@ def main(args):
 
     exp = Exp(args) # set experiments
     pred, spread1, spread2 = exp.predict(setting)
+    sample_count = spread1.shape[0]
+    acc1 = spread1.values[:, 4].sum() / sample_count
+    acc2 = spread1.values[:, 8].sum() / sample_count
+    acc3 = spread1.values[:, 12].sum() / sample_count
+    print("sample_count{0} ACC1:{1:.2f} ACC2:{2:.2f} ACC3:{3:.2f}".format(sample_count, acc1, acc2, acc3))
     pred.to_excel('output.xlsx')
     spread1.to_excel('spread1.xlsx')
     spread2.to_excel('spread2.xlsx')
