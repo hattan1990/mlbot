@@ -23,7 +23,7 @@ def add_features(data, num):
 
 class EvalDataset():
     def __init__(self, root_path, size=[48, 24, 12],
-                 features='ALL', data_path='gmo_btcjpy_ohlcv.pkl',
+                 features='ALL', data_path='gmo_btcjpy_ohlcv_val.csv',
                  target='cl', inverse=False, timeenc=1, freq='t', feature_add=0):
 
         self.seq_len = size[0]

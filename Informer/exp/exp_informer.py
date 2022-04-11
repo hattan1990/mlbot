@@ -97,22 +97,31 @@ class Exp_Informer(Exp_Basic):
 
     def vali(self, vali_data, vali_loader, criterion):
         def _check_strategy(pred, true):
-            pred = pred.detach().cpu() * 10000000
-            true = true.detach().cpu() * 10000000
+            pred_hi = pred[:,:,0].detach().cpu() * 10000000
+            pred_lo = pred[:,:,1].detach().cpu() * 10000000
+            pred = (pred_hi+pred_lo)/2
+            true_hi = true[:,:,0].detach().cpu() * 10000000
+            true_lo = true[:,:,1].detach().cpu() * 10000000
             pred_min = pred.min(axis=1)[0]
-            true_min = true.min(axis=1)[0]
+            true_min = true_lo.min(axis=1)[0]
             pred_max = pred.max(axis=1)[0]
-            true_max = true.max(axis=1)[0]
+            true_max = true_hi.max(axis=1)[0]
             spread_loss = abs((pred_max - pred_min) - (true_max - true_min))
             diff_pred_max = abs(pred_max - true_max)
             diff_pred_min = abs(pred_min - true_min)
 
-            return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean()
+            acc = (pred_min > true_min)&(pred_max < true_max)
+
+            return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc.sum()/pred.shape[0]
 
 
         self.model.eval()
         total_loss = []
         total_loss_local = []
+        total_spread_loss = []
+        total_diff_pred_max = []
+        total_diff_pred_min = []
+        total_acc = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
@@ -122,11 +131,22 @@ class Exp_Informer(Exp_Basic):
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(loss_local)
+                spread_loss, diff_pred_max, diff_pred_min, acc = _check_strategy(pred, true)
+                total_spread_loss.append(spread_loss)
+                total_diff_pred_max.append(diff_pred_max)
+                total_diff_pred_min.append(diff_pred_min)
+                total_acc.append(acc)
+
         total_loss = np.average(total_loss)
         total_loss_local = np.average(total_loss_local) * 10000000
-        spread_loss, diff_pred_max, diff_pred_min = _check_strategy(pred, true)
+        total_spread_loss = np.average(total_spread_loss)
+        total_diff_pred_max = np.average(total_diff_pred_max)
+        total_diff_pred_min = np.average(total_diff_pred_min)
+        total_acc = np.average(total_acc)
+
+
         self.model.train()
-        return total_loss, total_loss_local, spread_loss, diff_pred_max, diff_pred_min
+        return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -168,14 +188,6 @@ class Exp_Informer(Exp_Basic):
                         loss = criterion(pred, true)
                     train_loss.append(loss.item())
 
-                    if (i+1) % 100==0:
-                        print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
-                        speed = (time.time()-time_now)/iter_count
-                        left_time = speed*((self.args.train_epochs - epoch)*train_steps - i)
-                        print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
-                        iter_count = 0
-                        time_now = time.time()
-
                     if self.args.use_amp:
                         scaler.scale(loss).backward()
                         scaler.step(model_optim)
@@ -186,18 +198,19 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min, acc = self.vali(vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss", vali_loss, step=epoch + 1)
+            mlflow.log_metric("ACC", acc, step=epoch + 1)
             mlflow.log_metric("Spread Diff", int(spread_loss), step=epoch + 1)
             mlflow.log_metric("Diff_pred_max", int(diff_pred_max), step=epoch + 1)
             mlflow.log_metric("Diff_pred_min", int(diff_pred_min), step=epoch + 1)
             mlflow.log_metric("Vali_loss local", int(vali_loss_local), step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC: {4:.7f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, acc))
             early_stopping(vali_loss, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
@@ -241,7 +254,6 @@ class Exp_Informer(Exp_Basic):
         args = self.args
         eval_data = EvalDataset(
             root_path=args.root_path,
-            data_path=args.data_path,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
