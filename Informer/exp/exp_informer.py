@@ -114,7 +114,7 @@ class Exp_Informer(Exp_Basic):
         total_loss = []
         total_loss_local = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
-            if (batch_y.shape[1] == (self.args.seq_len - self.args.label_len + self.args.pred_len)) & \
+            if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
                 pred, true = self._process_one_batch(
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
