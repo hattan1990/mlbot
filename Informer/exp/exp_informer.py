@@ -268,7 +268,7 @@ class Exp_Informer(Exp_Basic):
             seq_x_mark = torch.tensor(np.expand_dims(seq_x_mark, axis=0))
             seq_y_mark = torch.tensor(np.expand_dims(seq_y_mark, axis=0))
 
-            if seq_y.shape[1] == (self.args.seq_len - self.args.label_len + self.args.pred_len):
+            if seq_y.shape[1] == (self.args.label_len + self.args.pred_len):
                 pred, _ = self._process_one_batch(
                     eval_data, seq_x, seq_y, seq_x_mark, seq_y_mark)
 
