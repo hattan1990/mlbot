@@ -1,4 +1,5 @@
 from exp.exp_informer import Exp_Informer
+from utils.tools import dotdict
 from config import args
 import numpy as np
 import torch
@@ -103,4 +104,5 @@ if __name__ == '__main__':
     for i in range(100):
         choice = np.random.choice(len(args_list))
         args_update = args_list[choice]
+        args_update = dotdict(args_update)
         main(args_update)
