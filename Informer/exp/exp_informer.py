@@ -154,7 +154,7 @@ class Exp_Informer(Exp_Basic):
             self.model.train()
             epoch_time = time.time()
             for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(train_loader):
-                if (batch_y.shape[1] == (self.args.seq_len - self.args.label_len + self.args.pred_len)) & \
+                if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                         (batch_x.shape[1] == self.args.seq_len):
                     iter_count += 1
 
