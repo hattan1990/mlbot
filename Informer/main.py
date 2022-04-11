@@ -103,5 +103,4 @@ if __name__ == '__main__':
     for i in range(100):
         choice = np.random.choice(len(args_list))
         args_update = args_list[choice]
-        print(i , choice, args)
         main(args_update)
