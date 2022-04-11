@@ -87,8 +87,6 @@ def update_args_list(args_list, update_name, list):
     return args_list + add_args
 
 if __name__ == '__main__':
-    #main(args)
-
     seq_len_list = [[48, 30, 6],
                     [48, 36, 6],
                     [48, 42, 6]]
@@ -101,7 +99,7 @@ if __name__ == '__main__':
     args_list = update_args_list(args_list, "learning_rate", learning_rate_list)
     args_list = update_args_list(args_list, "dropout", drop_out_list)
 
-    for i in range(100):
+    for i in range(10):
         choice = np.random.choice(len(args_list))
         args_update = args_list[choice]
         args_update = dotdict(args_update)
