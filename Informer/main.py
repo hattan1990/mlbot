@@ -87,7 +87,7 @@ def update_args_list(args_list, update_name, list):
     return args_list + add_args
 
 if __name__ == '__main__':
-    main(args)
+    #main(args)
 
     seq_len_list = [[48, 30, 6],
                     [48, 36, 6],
