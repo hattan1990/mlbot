@@ -87,10 +87,10 @@ def update_args_list(args_list, update_name, list):
     return args_list + add_args
 
 if __name__ == '__main__':
-    main(args)
-    seq_len_list = [[48, 24, 6],
-                    [48, 30, 6],
-                    [48, 36, 6]]
+    #main(args)
+    seq_len_list = [[96, 48, 6],
+                    [96, 60, 12],
+                    [96, 72, 12]]
     loss_mode_list = ["penalties", "default"]
     learning_rate_list = [0.003, 0.005]
     drop_out_list = [0.0003, 0.0001]
