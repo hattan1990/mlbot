@@ -88,17 +88,13 @@ def update_args_list(args_list, update_name, list):
 
 if __name__ == '__main__':
     #main(args)
-    seq_len_list = [[96, 48, 6],
-                    [96, 60, 12],
-                    [96, 72, 12]]
+    seq_len_list = [[96, 48, 12],
+                    [96, 48, 15],
+                    [96, 48, 20]]
     loss_mode_list = ["penalties", "default"]
-    learning_rate_list = [0.003, 0.005]
-    drop_out_list = [0.0003, 0.0001]
 
     args_list = update_args(args, "seq_len", seq_len_list)
     args_list = update_args_list(args_list, "loss_mode", loss_mode_list)
-    args_list = update_args_list(args_list, "learning_rate", learning_rate_list)
-    args_list = update_args_list(args_list, "dropout", drop_out_list)
 
     for i in range(10):
         choice = np.random.choice(len(args_list))
