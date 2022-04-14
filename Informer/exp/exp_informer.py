@@ -211,7 +211,7 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, acc))
-            early_stopping(vali_loss, self.model, path)
+            early_stopping(-acc, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")

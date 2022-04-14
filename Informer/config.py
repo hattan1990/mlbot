@@ -28,7 +28,7 @@ args.checkpoints = './informer_checkpoints'
 #EncoderとDecoderの入力するデータの長さを指定
 args.seq_len = 96
 args.label_len = 48
-args.pred_len = 10
+args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
@@ -62,7 +62,7 @@ args.use_amp = False # whether to use automatic mixed precision training
 #並列計算するかどうか、トレーニングepoch数を指定
 args.num_workers = 0
 args.itr = 1
-args.train_epochs = 12
+args.train_epochs = 120
 args.patience = 15 # 10 -> 15
 args.des = 'exp'
 
