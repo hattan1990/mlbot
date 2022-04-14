@@ -18,11 +18,11 @@ class CustomLoss(nn.Module):
             diff2 = pred2 - true2
 
             check_diff1 = diff1 < 0
-            diff1[check_diff1] *= 2.0
-            diff1[~check_diff1] *= 0.5
+            diff1[check_diff1] *= 1.2
+            diff1[~check_diff1] *= 0.8
             check_diff2 = diff2 < 0
-            diff2[check_diff2] *= 2.0
-            diff2[~check_diff2] *= 0.5
+            diff2[check_diff2] *= 1.2
+            diff2[~check_diff2] *= 0.8
             loss = torch.mean(torch.abs(diff1)) + torch.mean(torch.abs(diff2))
 
         elif self.mode == 'min_max':

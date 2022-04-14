@@ -28,7 +28,7 @@ args.checkpoints = './informer_checkpoints'
 #EncoderとDecoderの入力するデータの長さを指定
 args.seq_len = 96
 args.label_len = 48
-args.pred_len = 12
+args.pred_len = 10
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
