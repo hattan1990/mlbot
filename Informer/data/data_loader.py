@@ -44,7 +44,7 @@ class EvalDataset():
 
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))[-5000:]
+                                          self.data_path))
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]

@@ -6,7 +6,7 @@ args = dotdict()
 args.runname = 'feature295'
 args.model = 'informer'
 add_feature_num = 60
-args.loss_mode = 'default'
+args.loss_mode = 'penalties'
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'

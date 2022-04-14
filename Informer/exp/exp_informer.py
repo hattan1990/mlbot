@@ -254,6 +254,7 @@ class Exp_Informer(Exp_Basic):
         args = self.args
         eval_data = EvalDataset(
             root_path=args.root_path,
+            data_path = args.data_path,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
