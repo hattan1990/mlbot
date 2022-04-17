@@ -1,6 +1,10 @@
 from utils.tools import dotdict
 import torch
 
+'''
+{'runname': 'feature295', 'model': 'informer', 'loss_mode': 'default', 'data': 'GMO-BTCJPY', 'root_path': './dataset/', 'data_path': 'gmo_btcjpy_ohlcv2021.csv', 'add_feature_num': 60, 'features': 'ALL', 'target': ['hi', 'lo'], 'target_num': None, 'freq': 't', 'scaler1': 10000000, 'scaler2': 500, 'checkpoints': './informer_checkpoints', 'seq_len': 96, 'label_len': 30, 'pred_len': 15, 'enc_in': 295, 'dec_in': 2, 'c_out': 2, 'factor': 5, 'd_model': 512, 'n_heads': 8, 'e_layers': 2, 'd_layers': 1, 'd_ff': 2048, 'dropout': 0.0005, 'attn': 'prob', 'embed': 'timeF', 'activation': 'gelu', 'distil': True, 'output_attention': False, 'mix': True, 'padding': 0, 'batch_size': 256, 'learning_rate': 0.001, 'loss': 'mae', 'lradj': 'type1', 'use_amp': False, 'num_workers': 0, 'itr': 1, 'train_epochs': 20, 'patience': 15, 'des': 'exp', 'use_gpu': True, 'gpu': 0, 'use_multi_gpu': False, 'devices': '0,1,2,3', 'detail_freq': 't'}
+ACC : 0.522387
+'''
 
 args = dotdict()
 args.runname = 'feature295'
