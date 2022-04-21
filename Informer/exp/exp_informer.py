@@ -209,8 +209,8 @@ class Exp_Informer(Exp_Basic):
             mlflow.log_metric("Diff_pred_min", int(diff_pred_min), step=epoch + 1)
             mlflow.log_metric("Vali_loss local", int(vali_loss_local), step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC: {4:.7f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, acc))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC: {4:.7f} spread: {5} max: {6} min: {7}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, acc, int(spread_loss), int(diff_pred_max), int(diff_pred_min)))
             early_stopping(-acc, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
