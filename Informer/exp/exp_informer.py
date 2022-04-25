@@ -110,7 +110,7 @@ class Exp_Informer(Exp_Basic):
             diff_pred_max = abs(pred_max - true_max)
             diff_pred_min = abs(pred_min - true_min)
 
-            acc = (pred_min > true_min)&(pred_max < true_max)
+            acc = (pred_min > true_min)&(pred_max < true_max)&((pred_max-pred_min)>0)
 
             return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc.sum()/pred.shape[0]
 

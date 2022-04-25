@@ -81,7 +81,7 @@ def validation(args_list):
 
 if __name__ == '__main__':
     main(args)
-    seq_len_list = [[120, 60, 15],[120, 40, 15]]
+    seq_len_list = [[100, 50, 15],[100, 40, 15]]
     loss_mode_list = ["penalties", "default"]
     args_list = update_args(args, "seq_len", seq_len_list)
     args_list = update_args_list(args_list, "loss_mode", loss_mode_list)
