@@ -97,11 +97,11 @@ class Exp_Informer(Exp_Basic):
 
     def vali(self, vali_data, vali_loader, criterion):
         def _check_strategy(pred, true):
-            pred_hi = pred[:,:,0].detach().cpu()
-            pred_lo = pred[:,:,1].detach().cpu()
+            pred_hi = pred[:,:,0].detach().cpu() * 10000000
+            pred_lo = pred[:,:,1].detach().cpu() * 10000000
             pred = (pred_hi+pred_lo)/2
-            true_hi = true[:,:,0].detach().cpu()
-            true_lo = true[:,:,1].detach().cpu()
+            true_hi = true[:,:,0].detach().cpu() * 10000000
+            true_lo = true[:,:,1].detach().cpu() * 10000000
             pred_min = pred.min(axis=1)[0]
             true_min = true_lo.min(axis=1)[0]
             pred_max = pred.max(axis=1)[0]
@@ -138,7 +138,7 @@ class Exp_Informer(Exp_Basic):
                 total_acc.append(acc)
 
         total_loss = np.average(total_loss)
-        total_loss_local = np.average(total_loss_local)
+        total_loss_local = np.average(total_loss_local) * 10000000
         total_spread_loss = np.average(total_spread_loss)
         total_diff_pred_max = np.average(total_diff_pred_max)
         total_diff_pred_min = np.average(total_diff_pred_min)
@@ -288,8 +288,8 @@ class Exp_Informer(Exp_Basic):
                 pred_hi = pred[0, :, 0].detach().cpu().numpy()
                 pred_lo = pred[0, :, 1].detach().cpu().numpy()
                 raw = pd.DataFrame(raw[-self.args.pred_len:, :6], columns=cols)
-                raw['pred_hi'] = pred_hi
-                raw['pred_lo'] = pred_lo
+                raw['pred_hi'] = pred_hi * 10000000
+                raw['pred_lo'] = pred_lo * 10000000
                 raw['pred'] = (raw['pred_hi'] + raw['pred_lo'])/2
                 output = pd.concat([output, raw])
                 out1, out2 = _check_mergin(raw)

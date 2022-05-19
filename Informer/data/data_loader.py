@@ -67,6 +67,7 @@ class EvalDataset():
         cols_data = data.columns[1:]
         df_data = data[cols_data]
         data_values = self.scaler.transform(df_data.values)
+        data_values = data_values[:, 5:]
 
 
         df_stamp = df_raw[['date']]
@@ -77,7 +78,7 @@ class EvalDataset():
             #target_col1 = df_data.columns.to_list().index(self.target[0])
             #target_col2 = df_data.columns.to_list().index(self.target[1])
             #target_val = data_values[:, [target_col1, target_col2]]
-            target_val = df_data[[self.target[0], self.target[1]]].values
+            target_val = df_data[[self.target[0], self.target[1]]].values / 10000000
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
 
@@ -180,7 +181,7 @@ class Dataset_BTC(Dataset):
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
-        self.data_x = data[border1:border2, :]
+        self.data_x = data[border1:border2, 5:]
         if self.inverse:
             self.data_y = df_data.values[border1:border2]
         else:
@@ -189,7 +190,7 @@ class Dataset_BTC(Dataset):
             else:
                 #target_col1 = df_data.columns.to_list().index(self.target[0])
                 #target_col2 = df_data.columns.to_list().index(self.target[1])
-                self.data_y = df_data[[self.target[0], self.target[1]]].values
+                self.data_y = df_data[[self.target[0], self.target[1]]].values / 10000000
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
