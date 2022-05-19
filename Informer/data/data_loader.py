@@ -180,7 +180,7 @@ class Dataset_BTC(Dataset):
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
-        self.data_x = data[border1:border2, 5:]
+        self.data_x = data[border1:border2, :]
         if self.inverse:
             self.data_y = df_data.values[border1:border2]
         else:
