@@ -7,7 +7,7 @@ ACC : 0.522387
 '''
 
 args = dotdict()
-args.runname = 'feature295'
+args.runname = 'Add Features'
 args.model = 'informer'
 add_feature_num = 60
 args.loss_mode = 'penalties'
@@ -36,12 +36,12 @@ args.pred_len = 15
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
-args.enc_in = (add_feature_num * 5) - 5 # encoder input size
+args.enc_in = (add_feature_num * 5) - 5 + 250
 args.dec_in = 2 # decoder input size
 args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
-args.n_heads = 12 # num of heads
+args.n_heads = 16 # num of heads
 args.e_layers = 2 # num of encoder layers
 args.d_layers = 1 # num of decoder layers
 args.d_ff = 2048 # dimension of fcn in model

@@ -1,13 +1,13 @@
 import os
+import pickle
 import numpy as np
 import pandas as pd
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-# from sklearn.preprocessing import StandardScaler
 import copy
 
-from utils.tools import StandardScaler
+from sklearn.preprocessing import StandardScaler
 from utils.timefeatures import time_features
 
 import warnings
@@ -15,10 +15,10 @@ warnings.filterwarnings('ignore')
 
 
 def add_features(data, num):
-    columns = data.columns[1:]
+    columns = ['op', 'hi', 'lo', 'cl', 'volume']
     for i in range(1, num):
         for col in columns:
-            data[col + '_' + str(i)] = data[col].pct_change(periods=i)
+            data[col + '_' + str(i)] = data[col].diff(periods=i)
     return data
 
 class EvalDataset():
@@ -41,10 +41,24 @@ class EvalDataset():
 
         self.option = 'pct'
         self.feature_add = feature_add
+        self.scaler = pickle.load(open('scaler.pkl', 'rb'))
 
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
+
+        d1 = pd.read_csv(os.path.join(self.root_path,
+                                      'nasdaq_mega_ohlcv_daily.csv'))
+        d2 = pd.read_csv(os.path.join(self.root_path,
+                                      'us_markets_ohlcv_daily.csv'))
+        ext_data = pd.merge(d1, d2, on='index', how='left')
+        ext_data = ext_data.fillna(method='ffill')
+
+        df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
+        df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
+        df_raw = df_raw.fillna(method='ffill')
+        df_raw = df_raw.fillna(method='bfill')
+        df_raw = df_raw.drop(columns='index')
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
@@ -52,9 +66,7 @@ class EvalDataset():
         data = copy.deepcopy(df_raw)
         cols_data = data.columns[1:]
         df_data = data[cols_data]
-        data_values = df_data.values
-        data_values[:, :4] = data_values[:, :4] / 10000000
-        data_values[:, 4] = data_values[:, 4] / 500
+        data_values = self.scaler.transform(df_data.values)
 
 
         df_stamp = df_raw[['date']]
@@ -62,12 +74,11 @@ class EvalDataset():
         if self.target == None:
             target_val = data_values
         else:
-            target_col1 = df_data.columns.to_list().index(self.target[0])
-            target_col2 = df_data.columns.to_list().index(self.target[1])
-            target_val = data_values[:, [target_col1, target_col2]]
+            #target_col1 = df_data.columns.to_list().index(self.target[0])
+            #target_col2 = df_data.columns.to_list().index(self.target[1])
+            #target_val = data_values[:, [target_col1, target_col2]]
+            target_val = df_data[[self.target[0], self.target[1]]].values
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-        if self.option == 'pct':
-            data_values = data_values[:, 5:]
 
 
         return data_values, target_val, data_stamp, df_raw
@@ -128,6 +139,18 @@ class Dataset_BTC(Dataset):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
+        d1 = pd.read_csv(os.path.join(self.root_path,
+                                          'nasdaq_mega_ohlcv_daily.csv'))
+        d2 = pd.read_csv(os.path.join(self.root_path,
+                                          'us_markets_ohlcv_daily.csv'))
+        ext_data = pd.merge(d1, d2, on='index', how='left')
+        ext_data = ext_data.fillna(method='ffill')
+
+        df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
+        df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
+        df_raw = df_raw.fillna(method='ffill')
+        df_raw = df_raw.fillna(method='bfill')
+        df_raw = df_raw.drop(columns='index')
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
@@ -144,9 +167,12 @@ class Dataset_BTC(Dataset):
             df_data = df_raw[[self.target]]
 
         if self.scale:
-            data = df_data.values
-            data[:,:4] = data[:,:4] / 10000000
-            data[:, 4] = data[:, 4] / 500
+            self.scaler.fit(df_data.values)
+            data = self.scaler.transform(df_data.values)
+            pickle.dump(self.scaler, open("scaler.pkl", "wb"))
+            #data = df_data.values
+            #data[:,:4] = data[:,:4] / 10000000
+            #data[:, 4] = data[:, 4] / 500
         else:
             data = df_data.values
 
@@ -161,9 +187,9 @@ class Dataset_BTC(Dataset):
             if self.target == None:
                 self.data_y = data[border1:border2]
             else:
-                target_col1 = df_data.columns.to_list().index(self.target[0])
-                target_col2 = df_data.columns.to_list().index(self.target[1])
-                self.data_y = data[border1:border2, [target_col1, target_col2]]
+                #target_col1 = df_data.columns.to_list().index(self.target[0])
+                #target_col2 = df_data.columns.to_list().index(self.target[1])
+                self.data_y = df_data[[self.target[0], self.target[1]]].values
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
