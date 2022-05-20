@@ -18,7 +18,7 @@ def add_features(data, num):
     columns = ['op', 'hi', 'lo', 'cl', 'volume']
     for i in range(1, num):
         for col in columns:
-            data[col + '_' + str(i)] = data[col].diff(periods=i)
+            data[col + '_' + str(i)] = data[col].pct_change(periods=i)
     return data
 
 class EvalDataset():
