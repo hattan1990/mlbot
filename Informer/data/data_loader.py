@@ -63,6 +63,7 @@ class EvalDataset():
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
 
+        df_raw = df_raw.reset_index(drop=True)
         data = copy.deepcopy(df_raw)
         cols_data = data.columns[1:]
         df_data = data[cols_data]
@@ -156,6 +157,8 @@ class Dataset_BTC(Dataset):
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
 
+        df_raw = df_raw.reset_index(drop=True)
+
         border1s = [0, 12 * 30 * 1100 + 4 * 30 * 1100 - self.seq_len]
         border2s = [12 * 30 * 1100 + 4 * 30 * 1100, 12 * 30 * 1000 + 8 * 30 * 1000]
         border1 = border1s[self.set_type]
@@ -190,7 +193,7 @@ class Dataset_BTC(Dataset):
             else:
                 #target_col1 = df_data.columns.to_list().index(self.target[0])
                 #target_col2 = df_data.columns.to_list().index(self.target[1])
-                self.data_y = df_data[[self.target[0], self.target[1]]].values / 10000000
+                self.data_y = df_data.loc[border1:border2, [self.target[0], self.target[1]]].values / 10000000
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
