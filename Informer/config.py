@@ -41,7 +41,7 @@ args.dec_in = 2 # decoder input size
 args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
-args.n_heads = 16 # num of heads
+args.n_heads = 8 # num of heads
 args.e_layers = 2 # num of encoder layers
 args.d_layers = 1 # num of decoder layers
 args.d_ff = 2048 # dimension of fcn in model
@@ -66,7 +66,7 @@ args.use_amp = False # whether to use automatic mixed precision training
 #並列計算するかどうか、トレーニングepoch数を指定
 args.num_workers = 0
 args.itr = 1
-args.train_epochs = 20
+args.train_epochs = 10
 args.patience = 15 # 10 -> 15
 args.des = 'exp'
 
