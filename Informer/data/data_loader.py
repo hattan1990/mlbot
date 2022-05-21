@@ -193,7 +193,7 @@ class Dataset_BTC(Dataset):
             else:
                 #target_col1 = df_data.columns.to_list().index(self.target[0])
                 #target_col2 = df_data.columns.to_list().index(self.target[1])
-                self.data_y = df_data.loc[border1:border2, [self.target[0], self.target[1]]].values / 10000000
+                self.data_y = df_data[[self.target[0], self.target[1]]].values[border1:border2] / 10000000
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
