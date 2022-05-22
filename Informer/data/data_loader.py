@@ -21,6 +21,14 @@ def add_features(data, num):
             data[col + '_' + str(i)] = data[col].pct_change(periods=i)
     return data
 
+def add_ext_features(data, num=2):
+    columns = data.columns[1:]
+    for i in range(1, num):
+        for col in columns:
+            data[col + '_' + str(i)] = data[col].pct_change(periods=i)
+    data = data.drop(columns=columns)
+    return data
+
 class EvalDataset():
     def __init__(self, root_path, size=[48, 24, 12],
                  features='ALL', data_path='gmo_btcjpy_ohlcv_val.csv',
@@ -53,6 +61,7 @@ class EvalDataset():
                                       'us_markets_ohlcv_daily.csv'))
         ext_data = pd.merge(d1, d2, on='index', how='left')
         ext_data = ext_data.fillna(method='ffill')
+        ext_data = add_ext_features(ext_data, num=2)
 
         df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
         df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
@@ -147,6 +156,7 @@ class Dataset_BTC(Dataset):
                                           'us_markets_ohlcv_daily.csv'))
         ext_data = pd.merge(d1, d2, on='index', how='left')
         ext_data = ext_data.fillna(method='ffill')
+        ext_data = add_ext_features(ext_data, num=2)
 
         df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
         df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
