@@ -57,9 +57,10 @@ class EvalDataset():
 
         d1 = pd.read_csv(os.path.join(self.root_path,
                                       'nasdaq_mega_ohlcv_daily.csv'))
-        d2 = pd.read_csv(os.path.join(self.root_path,
-                                      'us_markets_ohlcv_daily.csv'))
-        ext_data = pd.merge(d1, d2, on='index', how='left')
+        #d2 = pd.read_csv(os.path.join(self.root_path,
+        #                              'us_markets_ohlcv_daily.csv'))
+        #ext_data = pd.merge(d1, d2, on='index', how='left')
+        ext_data = d1
         ext_data = ext_data.fillna(method='ffill')
         ext_data = add_ext_features(ext_data, num=2)
 
@@ -152,10 +153,12 @@ class Dataset_BTC(Dataset):
                                           self.data_path))
         d1 = pd.read_csv(os.path.join(self.root_path,
                                           'nasdaq_mega_ohlcv_daily.csv'))
-        d2 = pd.read_csv(os.path.join(self.root_path,
-                                          'us_markets_ohlcv_daily.csv'))
-        ext_data = pd.merge(d1, d2, on='index', how='left')
+        #d2 = pd.read_csv(os.path.join(self.root_path,
+        #                                  'us_markets_ohlcv_daily.csv'))
+        #ext_data = pd.merge(d1, d2, on='index', how='left')
+        ext_data = d1
         ext_data = ext_data.fillna(method='ffill')
+        ext_data = ext_data.fillna(method='bfill')
         ext_data = add_ext_features(ext_data, num=2)
 
         df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
