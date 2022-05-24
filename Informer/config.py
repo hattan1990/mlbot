@@ -36,7 +36,7 @@ args.pred_len = 15
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
-args.enc_in = (add_feature_num * 5) -5 + 180
+args.enc_in = (add_feature_num * 5) -5
 args.dec_in = 2 # decoder input size
 args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor

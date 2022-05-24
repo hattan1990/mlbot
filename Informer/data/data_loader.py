@@ -55,17 +55,17 @@ class EvalDataset():
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
 
-        d1 = pd.read_csv(os.path.join(self.root_path,
-                                      'nasdaq_mega_ohlcv_daily.csv'))
+        #d1 = pd.read_csv(os.path.join(self.root_path,
+        #                              'nasdaq_mega_ohlcv_daily.csv'))
         #d2 = pd.read_csv(os.path.join(self.root_path,
         #                              'us_markets_ohlcv_daily.csv'))
         #ext_data = pd.merge(d1, d2, on='index', how='left')
-        ext_data = d1
-        ext_data = ext_data.fillna(method='ffill')
-        ext_data = add_ext_features(ext_data, num=2)
+        #ext_data = d1
+        #ext_data = ext_data.fillna(method='ffill')
+        #ext_data = add_ext_features(ext_data, num=2)
 
-        df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
-        df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
+        #df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
+        #df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
         df_raw = df_raw.fillna(method='ffill')
         df_raw = df_raw.fillna(method='bfill')
         df_raw = df_raw.drop(columns='index')
@@ -151,18 +151,18 @@ class Dataset_BTC(Dataset):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
-        d1 = pd.read_csv(os.path.join(self.root_path,
-                                          'nasdaq_mega_ohlcv_daily.csv'))
+        #d1 = pd.read_csv(os.path.join(self.root_path,
+        #                                  'nasdaq_mega_ohlcv_daily.csv'))
         #d2 = pd.read_csv(os.path.join(self.root_path,
         #                                  'us_markets_ohlcv_daily.csv'))
         #ext_data = pd.merge(d1, d2, on='index', how='left')
-        ext_data = d1
-        ext_data = ext_data.fillna(method='ffill')
-        ext_data = ext_data.fillna(method='bfill')
-        ext_data = add_ext_features(ext_data, num=2)
+        #ext_data = d1
+        #ext_data = ext_data.fillna(method='ffill')
+        #ext_data = ext_data.fillna(method='bfill')
+        #ext_data = add_ext_features(ext_data, num=2)
 
-        df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
-        df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
+        #df_raw['index'] = df_raw['date'].apply(lambda x: x[:10])
+        #df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
         df_raw = df_raw.fillna(method='ffill')
         df_raw = df_raw.fillna(method='bfill')
         df_raw = df_raw.drop(columns='index')
