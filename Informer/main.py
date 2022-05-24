@@ -73,16 +73,37 @@ def update_args_list(args_list, update_name, list):
     return args_list + add_args
 
 def validation(args_list):
-    for i in range(10):
+    for i in range(3):
         choice = np.random.choice(len(args_list))
         args_update = args_list[choice]
         args_update = dotdict(args_update)
         main(args_update)
 
 if __name__ == '__main__':
-    main(args)
-    seq_len_list = [[60, 30, 15], [80, 40, 20], [72, 36, 12], [72, 24, 12]]
-    loss_mode_list = ["penalties", "default"]
-    args_list = update_args(args, "seq_len", seq_len_list)
-    args_list = update_args_list(args_list, "loss_mode", loss_mode_list)
-    validation(args_list)
+    data_list = ['gmo_btcjpy_ohlcv3.csv', 'gmo_btcjpy_ohlcv5.csv',
+                 'gmo_btcjpy_ohlcv10.csv', 'gmo_btcjpy_ohlcv15.csv', 'gmo_btcjpy_ohlcv20.csv',
+                 'gmo_btcjpy_ohlcv30.csv', 'gmo_btcjpy_ohlcv60.csv', 'gmo_btcjpy_ohlcv.csv'
+                 ]
+    for data_name in data_list:
+        args.data_path = data_name
+        if data_name == 'gmo_btcjpy_ohlcv.csv':
+            seq_len_list = [[60, 30, 15], [72, 36, 12], [72, 24, 12]]
+        elif data_name == 'gmo_btcjpy_ohlcv3.csv':
+            seq_len_list = [[60, 30, 5], [72, 36, 10], [72, 24, 10]]
+        elif data_name == 'gmo_btcjpy_ohlcv5.csv':
+            seq_len_list = [[60, 30, 6], [72, 36, 12], [72, 24, 12]]
+        elif data_name == 'gmo_btcjpy_ohlcv10.csv':
+            seq_len_list = [[60, 30, 6], [72, 36, 12], [72, 24, 12]]
+        elif data_name == 'gmo_btcjpy_ohlcv15.csv':
+            seq_len_list = [[60, 30, 4], [72, 36, 8], [72, 24, 12]]
+        elif data_name == 'gmo_btcjpy_ohlcv20.csv':
+            seq_len_list = [[60, 30, 6], [72, 36, 9], [72, 24, 9]]
+        elif data_name == 'gmo_btcjpy_ohlcv30.csv':
+            seq_len_list = [[60, 30, 4], [72, 36, 8], [72, 24, 8]]
+        elif data_name == 'gmo_btcjpy_ohlcv60.csv':
+            seq_len_list = [[60, 30, 8], [72, 36, 8], [72, 24, 8]]
+
+        loss_mode_list = ["penalties", "default"]
+        args_list = update_args(args, "seq_len", seq_len_list)
+        args_list = update_args_list(args_list, "loss_mode", loss_mode_list)
+        validation(args_list)
