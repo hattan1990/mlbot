@@ -54,7 +54,8 @@ class EvalDataset():
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
-
+        if "Unnamed: 0" in df_raw.columns:
+            df_raw = df_raw.drop(columns="Unnamed: 0")
         #d1 = pd.read_csv(os.path.join(self.root_path,
         #                              'nasdaq_mega_ohlcv_daily.csv'))
         #d2 = pd.read_csv(os.path.join(self.root_path,
@@ -151,6 +152,8 @@ class Dataset_BTC(Dataset):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
+        if "Unnamed: 0" in df_raw.columns:
+            df_raw = df_raw.drop(columns="Unnamed: 0")
         #d1 = pd.read_csv(os.path.join(self.root_path,
         #                                  'nasdaq_mega_ohlcv_daily.csv'))
         #d2 = pd.read_csv(os.path.join(self.root_path,
@@ -171,9 +174,36 @@ class Dataset_BTC(Dataset):
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
 
         df_raw = df_raw.reset_index(drop=True)
+        range1 = 0
+        range2 = 528000
+        range3 = 1128000
 
-        border1s = [0, 12 * 30 * 1100 + 4 * 30 * 1100 - self.seq_len]
-        border2s = [12 * 30 * 1100 + 4 * 30 * 1100, 12 * 30 * 1000 + 8 * 30 * 1000]
+        if self.data_path == 'gmo_btcjpy_ohlcv3.csv':
+            range2 = int(range2 / 3)
+            range3 = int(range3 / 3)
+        elif self.data_path == 'gmo_btcjpy_ohlcv5.csv':
+            range2 = int(range2 / 5)
+            range3 = int(range3 / 5)
+        elif self.data_path == 'gmo_btcjpy_ohlcv10.csv':
+            range2 = int(range2 / 10)
+            range3 = int(range3 / 10)
+        elif self.data_path == 'gmo_btcjpy_ohlcv15.csv':
+            range2 = int(range2 / 15)
+            range3 = int(range3 / 15)
+        elif self.data_path == 'gmo_btcjpy_ohlcv20.csv':
+            range2 = int(range2 / 20)
+            range3 = int(range3 / 20)
+        elif self.data_path == 'gmo_btcjpy_ohlcv30.csv':
+            range2 = int(range2 / 30)
+            range3 = int(range3 / 30)
+        elif self.data_path == 'gmo_btcjpy_ohlcv60.csv':
+            range2 = int(range2 / 60)
+            range3 = int(range3 / 60)
+        else:
+            pass
+
+        border1s = [range1, range2 - self.seq_len]
+        border2s = [range2, range3]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
