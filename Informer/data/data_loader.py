@@ -68,7 +68,7 @@ class EvalDataset():
         #df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
         df_raw = df_raw.fillna(method='ffill')
         df_raw = df_raw.fillna(method='bfill')
-        df_raw = df_raw.drop(columns='index')
+        #df_raw = df_raw.drop(columns='index')
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
@@ -165,7 +165,7 @@ class Dataset_BTC(Dataset):
         #df_raw = pd.merge(df_raw, ext_data, on='index', how='left')
         df_raw = df_raw.fillna(method='ffill')
         df_raw = df_raw.fillna(method='bfill')
-        df_raw = df_raw.drop(columns='index')
+        #df_raw = df_raw.drop(columns='index')
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
