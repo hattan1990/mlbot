@@ -125,7 +125,9 @@ class Exp_Informer(Exp_Basic):
         total_spread_loss = []
         total_diff_pred_max = []
         total_diff_pred_min = []
-        total_acc = []
+        total_acc1 = []
+        total_acc2 = []
+        total_acc3 = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
@@ -135,22 +137,25 @@ class Exp_Informer(Exp_Basic):
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(loss_local)
-                spread_loss, diff_pred_max, diff_pred_min, acc = _check_strategy(pred, true)
+                spread_loss, diff_pred_max, diff_pred_min, acc1, acc2, acc3 = _check_strategy(pred, true)
                 total_spread_loss.append(spread_loss)
                 total_diff_pred_max.append(diff_pred_max)
                 total_diff_pred_min.append(diff_pred_min)
-                total_acc.append(acc)
+                total_acc1.append(acc1)
+                total_acc2.append(acc2)
+                total_acc3.append(acc3)
 
         total_loss = np.average(total_loss)
         total_loss_local = np.average(total_loss_local) * 10000000
         total_spread_loss = np.average(total_spread_loss)
         total_diff_pred_max = np.average(total_diff_pred_max)
         total_diff_pred_min = np.average(total_diff_pred_min)
-        total_acc = np.average(total_acc)
-
+        total_acc1 = np.average(total_acc1)
+        total_acc2 = np.average(total_acc2)
+        total_acc3 = np.average(total_acc3)
 
         self.model.train()
-        return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc
+        return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc1, total_acc2, total_acc3
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
