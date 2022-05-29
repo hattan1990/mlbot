@@ -110,9 +110,13 @@ class Exp_Informer(Exp_Basic):
             diff_pred_max = abs(pred_max - true_max)
             diff_pred_min = abs(pred_min - true_min)
 
-            acc = (pred_min > true_min)&(pred_max < true_max)&((pred_max-pred_min)>0)
+            spread_4 = (pred_max - pred_min) / 4
+            spread_3 = (pred_max - pred_min) / 3
+            acc1 = (pred_min > true_min)&(pred_max < true_max)&((pred_max-pred_min)>0)
+            acc2 = ((pred_min+spread_4) > true_min) & ((pred_max-spread_4) < true_max) & ((pred_max - pred_min) > 0)
+            acc3 = ((pred_min + spread_3) > true_min) & ((pred_max - spread_3) < true_max) & ((pred_max - pred_min) > 0)
 
-            return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc.sum()/pred.shape[0]
+            return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0]
 
 
         self.model.eval()
@@ -198,20 +202,25 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min, acc = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min, acc1, acc2, acc3 = self.vali(vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss", vali_loss, step=epoch + 1)
-            mlflow.log_metric("ACC", acc, step=epoch + 1)
+            mlflow.log_metric("ACC1", acc1, step=epoch + 1)
+            mlflow.log_metric("ACC2", acc2, step=epoch + 1)
+            mlflow.log_metric("ACC3", acc3, step=epoch + 1)
             mlflow.log_metric("Spread Diff", int(spread_loss), step=epoch + 1)
             mlflow.log_metric("Diff_pred_max", int(diff_pred_max), step=epoch + 1)
             mlflow.log_metric("Diff_pred_min", int(diff_pred_min), step=epoch + 1)
             mlflow.log_metric("Vali_loss local", int(vali_loss_local), step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC: {4:.7f} spread: {5} max: {6} min: {7}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, acc, int(spread_loss), int(diff_pred_max), int(diff_pred_min)))
-            early_stopping(-acc, self.model, path)
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f} spread: {7} max: {8} min: {9}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min)))
+
+            if acc1 > 0.6:
+                torch.save(self.model.to('cpu').state_dict(), 'best_model_checkpoint_cpu.pth')
+            early_stopping(-acc1, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
