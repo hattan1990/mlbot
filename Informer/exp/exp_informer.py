@@ -224,7 +224,7 @@ class Exp_Informer(Exp_Basic):
                 epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min)))
 
             if acc1 > 0.6:
-                torch.save(self.model.to('cpu').state_dict(), 'best_model_checkpoint_cpu.pth')
+                torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
             early_stopping(-acc1, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
