@@ -15,7 +15,7 @@ args.loss_mode = 'default'
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
 args.root_path = './dataset/'
-args.data_path = 'gmo_btcjpy_ohlcv.csv'
+args.data_path = 'GMO_BTC_JPY_ohclv.csv'
 
 #予測タスク、ターゲット(y)、時間フィーチャーエンコーディングを指定
 args.add_feature_num = add_feature_num
