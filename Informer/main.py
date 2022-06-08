@@ -1,5 +1,7 @@
 from exp.exp_informer import Exp_Informer
+from utils.tools import dotdict
 from config import args
+import numpy as np
 import torch
 import mlflow
 
@@ -40,15 +42,50 @@ def main(args):
             exp = Exp(args) # set experiments
             exp.train(setting)
 
-            pred, spread1, spread2 = exp.predict(setting, True)
-            pred.to_excel('output.xlsx')
-            spread1.to_excel('spread1.xlsx')
-            spread2.to_excel('spread2.xlsx')
-            mlflow.log_artifact('output.xlsx')
-            mlflow.log_artifact('spread1.xlsx')
-            mlflow.log_artifact('spread2.xlsx')
-
             torch.cuda.empty_cache()
 
+def update_args(input_args, update_name, list):
+    args_list = []
+    for values in list:
+        args = input_args.copy()
+        if update_name == 'seq_len':
+            args['seq_len'] = values[0]
+            args['label_len'] = values[1]
+            args['pred_len'] = values[2]
+        elif update_name == 'loss_mode':
+            args['loss_mode'] = values
+        elif update_name == 'learning_rate':
+            args['learning_rate'] = values
+        elif update_name == 'dropout':
+            args['dropout'] = values
+        elif update_name == 'n_heads':
+            args['n_heads'] = values
+        else:
+            pass
+
+        args_list.append(args)
+
+    return args_list
+
+def update_args_list(args_list, update_name, list):
+    add_args = []
+    for args in args_list:
+        add_args += update_args(args, update_name, list)
+
+    return args_list + add_args
+
+def validation(args_list):
+    for i in range(10):
+        choice = np.random.choice(len(args_list))
+        args_update = args_list[choice]
+        args_update = dotdict(args_update)
+        main(args_update)
+
 if __name__ == '__main__':
-    main(args)
+    seq_len_list = [[72, 36, 15], [72, 36, 12]]
+    loss_mode_list = ["penalties", "default"]
+    n_heads_list = [8, 12, 16]
+    args_list = update_args(args, "seq_len", seq_len_list)
+    args_list = update_args_list(args_list, "loss_mode", loss_mode_list)
+    args_list = update_args_list(args_list, "n_heads", n_heads_list)
+    validation(args_list)
