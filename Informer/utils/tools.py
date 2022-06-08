@@ -45,9 +45,9 @@ class EarlyStopping:
     def save_checkpoint(self, val_loss, model, path):
         if self.verbose:
             print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
-        torch.save(model.state_dict(), path+'/'+'checkpoint.pth')
-        torch.save(model.to('cpu').state_dict(), path + '/' + 'checkpoint_cpu.pth')
-        mlflow.log_artifact(path + '/' + 'checkpoint_cpu.pth')
+        torch.save(model.state_dict(), 'checkpoint.pth')
+        torch.save(model.to('cpu').state_dict(), 'checkpoint_cpu.pth')
+        mlflow.log_artifact('checkpoint_cpu.pth')
         self.val_loss_min = val_loss
 
 class dotdict(dict):

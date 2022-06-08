@@ -3,7 +3,7 @@ from exp.exp_basic import Exp_Basic
 from models.model import Informer, InformerStack
 
 from utils.tools import EarlyStopping, adjust_learning_rate
-from utils.metrics import metric
+from utils.metrics import CustomLoss
 
 import numpy as np
 import pandas as pd
@@ -92,30 +92,44 @@ class Exp_Informer(Exp_Basic):
         return model_optim
     
     def _select_criterion(self):
-        #MSELoss -> L1Loss
-        criterion =  nn.L1Loss()
+        criterion = CustomLoss(self.args.loss_mode)
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
         def _check_strategy(pred, true):
-            pred = pred.detach().cpu() * 10000000
-            true = true.detach().cpu() * 10000000
+            pred_hi = pred[:,:,0].detach().cpu() * 10000000
+            pred_lo = pred[:,:,1].detach().cpu() * 10000000
+            pred = (pred_hi+pred_lo)/2
+            true_hi = true[:,:,0].detach().cpu() * 10000000
+            true_lo = true[:,:,1].detach().cpu() * 10000000
             pred_min = pred.min(axis=1)[0]
-            true_min = true.min(axis=1)[0]
+            true_min = true_lo.min(axis=1)[0]
             pred_max = pred.max(axis=1)[0]
-            true_max = true.max(axis=1)[0]
+            true_max = true_hi.max(axis=1)[0]
             spread_loss = abs((pred_max - pred_min) - (true_max - true_min))
             diff_pred_max = abs(pred_max - true_max)
             diff_pred_min = abs(pred_min - true_min)
 
-            return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean()
+            spread_4 = (pred_max - pred_min) / 4
+            spread_3 = (pred_max - pred_min) / 3
+            acc1 = (pred_min > true_min)&(pred_max < true_max)&((pred_max-pred_min)>0)
+            acc2 = ((pred_min+spread_4) > true_min) & ((pred_max-spread_4) < true_max) & ((pred_max - pred_min) > 0)
+            acc3 = ((pred_min + spread_3) > true_min) & ((pred_max - spread_3) < true_max) & ((pred_max - pred_min) > 0)
+
+            return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0]
 
 
         self.model.eval()
         total_loss = []
         total_loss_local = []
+        total_spread_loss = []
+        total_diff_pred_max = []
+        total_diff_pred_min = []
+        total_acc1 = []
+        total_acc2 = []
+        total_acc3 = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
-            if (batch_y.shape[1] == (self.args.seq_len - self.args.label_len + self.args.pred_len)) & \
+            if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
                 pred, true = self._process_one_batch(
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
@@ -123,11 +137,25 @@ class Exp_Informer(Exp_Basic):
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(loss_local)
+                spread_loss, diff_pred_max, diff_pred_min, acc1, acc2, acc3 = _check_strategy(pred, true)
+                total_spread_loss.append(spread_loss)
+                total_diff_pred_max.append(diff_pred_max)
+                total_diff_pred_min.append(diff_pred_min)
+                total_acc1.append(acc1)
+                total_acc2.append(acc2)
+                total_acc3.append(acc3)
+
         total_loss = np.average(total_loss)
         total_loss_local = np.average(total_loss_local) * 10000000
-        spread_loss, diff_pred_max, diff_pred_min = _check_strategy(pred, true)
+        total_spread_loss = np.average(total_spread_loss)
+        total_diff_pred_max = np.average(total_diff_pred_max)
+        total_diff_pred_min = np.average(total_diff_pred_min)
+        total_acc1 = np.average(total_acc1)
+        total_acc2 = np.average(total_acc2)
+        total_acc3 = np.average(total_acc3)
+
         self.model.train()
-        return total_loss, total_loss_local, spread_loss, diff_pred_max, diff_pred_min
+        return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc1, total_acc2, total_acc3
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -155,7 +183,7 @@ class Exp_Informer(Exp_Basic):
             self.model.train()
             epoch_time = time.time()
             for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(train_loader):
-                if (batch_y.shape[1] == (self.args.seq_len - self.args.label_len + self.args.pred_len)) & \
+                if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                         (batch_x.shape[1] == self.args.seq_len):
                     iter_count += 1
 
@@ -169,14 +197,6 @@ class Exp_Informer(Exp_Basic):
                         loss = criterion(pred, true)
                     train_loss.append(loss.item())
 
-                    if (i+1) % 100==0:
-                        print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
-                        speed = (time.time()-time_now)/iter_count
-                        left_time = speed*((self.args.train_epochs - epoch)*train_steps - i)
-                        print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
-                        iter_count = 0
-                        time_now = time.time()
-
                     if self.args.use_amp:
                         scaler.scale(loss).backward()
                         scaler.step(model_optim)
@@ -187,19 +207,25 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min, acc1, acc2, acc3 = self.vali(vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss", vali_loss, step=epoch + 1)
+            mlflow.log_metric("ACC1", acc1, step=epoch + 1)
+            mlflow.log_metric("ACC2", acc2, step=epoch + 1)
+            mlflow.log_metric("ACC3", acc3, step=epoch + 1)
             mlflow.log_metric("Spread Diff", int(spread_loss), step=epoch + 1)
             mlflow.log_metric("Diff_pred_max", int(diff_pred_max), step=epoch + 1)
             mlflow.log_metric("Diff_pred_min", int(diff_pred_min), step=epoch + 1)
             mlflow.log_metric("Vali_loss local", int(vali_loss_local), step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss))
-            early_stopping(vali_loss, self.model, path)
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f} spread: {7} max: {8} min: {9}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min)))
+
+            if acc1 > 0.6:
+                torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
+            early_stopping(-acc1, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
@@ -207,7 +233,7 @@ class Exp_Informer(Exp_Basic):
 
             adjust_learning_rate(model_optim, epoch+1, self.args)
             
-        best_model_path = path+'/'+'checkpoint.pth'
+        best_model_path = 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
         
         return self.model
@@ -231,14 +257,18 @@ class Exp_Informer(Exp_Basic):
                     check_min = 1
                 else:
                     check_min = 0
+                if (check_max + check_min) == 2:
+                    valid = 1
+                else:
+                    valid = 0
                 spread = (max_pred - fix) - (min_pred + fix)
-                output += [spread, check_max, check_min]
+                output += [spread, check_max, check_min, valid]
 
             return output , [raw['date'].max(), max_target, min_target, max_pred, min_pred]
         args = self.args
         eval_data = EvalDataset(
             root_path=args.root_path,
-            data_path=args.data_path,
+            data_path = args.data_path,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
@@ -249,7 +279,7 @@ class Exp_Informer(Exp_Basic):
         seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)
         
         if load:
-            best_model_path = './informer_checkpoints/checkpoint_cpu.pth'
+            best_model_path = 'checkpoint_cpu.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval()
@@ -265,7 +295,7 @@ class Exp_Informer(Exp_Basic):
             seq_x_mark = torch.tensor(np.expand_dims(seq_x_mark, axis=0))
             seq_y_mark = torch.tensor(np.expand_dims(seq_y_mark, axis=0))
 
-            if seq_y.shape[1] == (self.args.seq_len - self.args.label_len + self.args.pred_len):
+            if seq_y.shape[1] == (self.args.label_len + self.args.pred_len):
                 pred, _ = self._process_one_batch(
                     eval_data, seq_x, seq_y, seq_x_mark, seq_y_mark)
 
