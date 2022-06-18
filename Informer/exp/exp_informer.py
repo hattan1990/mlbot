@@ -239,7 +239,7 @@ class Exp_Informer(Exp_Basic):
         return self.model
 
 
-    def predict(self, setting, load=True):
+    def predict(self, load=True):
         def _check_mergin(raw):
             output = [raw['date'].max()]
             max_target = raw['hi'].max()
@@ -279,7 +279,11 @@ class Exp_Informer(Exp_Basic):
         seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)
         
         if load:
-            best_model_path = 'checkpoint_cpu.pth'
+            seq_len = str(args.seq_len)
+            label_len = str(args.label_len)
+            pred_len = str(args.pred_len)
+            n_heads = str(args.n_heads)
+            best_model_path = seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval()

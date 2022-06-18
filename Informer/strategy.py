@@ -11,13 +11,8 @@ def main(args):
     print(args)
 
     Exp = Exp_Informer
-    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(args.model, args.data, args.features,
-                    args.seq_len, args.label_len, args.pred_len,
-                    args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor,
-                    args.embed, args.distil, args.mix, args.des, 0)
-
     exp = Exp(args) # set experiments
-    pred, spread1, spread2 = exp.predict(setting)
+    pred, spread1, spread2 = exp.predict()
     sample_count = spread1.shape[0]
     acc1 = spread1.values[:, 4].sum() / sample_count
     acc2 = spread1.values[:, 8].sum() / sample_count
@@ -135,6 +130,6 @@ def plot_spread():
     return
 
 if __name__ == '__main__':
-    #main(args)
+    main(args)
     plot_output()
     plot_spread()

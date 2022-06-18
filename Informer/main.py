@@ -82,9 +82,9 @@ def validation(args_list):
         main(args_update)
 
 if __name__ == '__main__':
-    seq_len_list = [[72, 36, 15], [72, 36, 12]]
-    loss_mode_list = ["penalties", "default"]
-    n_heads_list = [8, 12, 16]
+    seq_len_list = [[72, 36, 12],[72, 24, 12], [96, 36, 12]]
+    loss_mode_list = ["default"]
+    n_heads_list = [4, 8, 12, 16]
     args_list = update_args(args, "seq_len", seq_len_list)
     args_list = update_args_list(args_list, "loss_mode", loss_mode_list)
     args_list = update_args_list(args_list, "n_heads", n_heads_list)
