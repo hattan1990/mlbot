@@ -107,7 +107,7 @@ class Exp_Informer(Exp_Basic):
 
     def vali(self, vali_data, vali_loader, criterion):
         def _check_strategy(pred, true):
-            terms = true[:,:,0] != 0
+            terms = true[:,0,0] != 0
             if terms.sum() > 0:
                 pred_hi = pred[terms,:,0].detach().cpu() * 10000000
                 pred_lo = pred[terms,:,1].detach().cpu() * 10000000
