@@ -150,8 +150,9 @@ class Exp_Informer(Exp_Basic):
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
 
                 if self.args['extra'] == True:
-                    pred *= masks
-                    true *= masks
+                    for i, mask in enumerate(masks):
+                        pred[i] = pred[i] * mask
+                        true[i] = true[i] * mask
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
@@ -212,8 +213,9 @@ class Exp_Informer(Exp_Basic):
                         train_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
 
                     if self.args['extra'] == True:
-                        pred *= masks
-                        true *= masks
+                        for i, mask in enumerate(masks):
+                            pred[i] = pred[i] * mask
+                            true[i] = true[i] * mask
 
                     if self.args['target'] is None:
                         num = self.args['target_num']
