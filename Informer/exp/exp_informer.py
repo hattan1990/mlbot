@@ -12,6 +12,7 @@ import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader
 import mlflow
+from tqdm import tqdm
 
 import os
 import time
@@ -246,7 +247,9 @@ class Exp_Informer(Exp_Basic):
             min_target = raw['lo'].min()
             min_pred = raw['pred'].min()
             max_pred = raw['pred'].max()
-            fix_values = [0, 1000, 2000]
+            spread_4 = (max_pred - min_pred) / 4
+            spread_3 = (max_pred - min_pred) / 3
+            fix_values = [0, spread_4, spread_3]
 
             for fix in fix_values:
                 if max_target > max_pred - fix:
@@ -264,11 +267,13 @@ class Exp_Informer(Exp_Basic):
                 spread = (max_pred - fix) - (min_pred + fix)
                 output += [spread, check_max, check_min, valid]
 
-            return output , [raw['date'].max(), max_target, min_target, max_pred, min_pred]
+            out_sp = max_pred - min_pred
+            max_check = max_pred < max_target
+            min_check = min_pred>min_target
+            return output , [raw['date'].max(), max_target, min_target, max_pred, min_pred, out_sp, max_check, min_check]
         args = self.args
         eval_data = EvalDataset(
             root_path=args.root_path,
-            data_path = args.data_path,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
@@ -276,14 +281,15 @@ class Exp_Informer(Exp_Basic):
             feature_add = args.add_feature_num
         )
         data_values, target_val, data_stamp, df_raw = eval_data.read_data()
-        seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)
+        #seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)
+        road_data = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)
         
         if load:
             seq_len = str(args.seq_len)
             label_len = str(args.label_len)
             pred_len = str(args.pred_len)
             n_heads = str(args.n_heads)
-            best_model_path = seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
+            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval()
@@ -292,8 +298,9 @@ class Exp_Informer(Exp_Basic):
         output = pd.DataFrame(columns = cols)
         spread_out1 = []
         spread_out2 = []
-        for seq_x, seq_y, seq_x_mark, seq_y_mark, raw in\
-                zip(seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw):
+        for seq_x, seq_y, seq_x_mark, seq_y_mark, raw in tqdm(road_data):
+                #zip(seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw):
+
             seq_x = torch.tensor(np.expand_dims(seq_x, axis=0))
             seq_y = torch.tensor(np.expand_dims(seq_y, axis=0))
             seq_x_mark = torch.tensor(np.expand_dims(seq_x_mark, axis=0))
@@ -314,7 +321,7 @@ class Exp_Informer(Exp_Basic):
                 spread_out1.append(out1)
                 spread_out2.append(out2)
 
-        return output.reset_index(), pd.DataFrame(spread_out1), pd.DataFrame(spread_out2, columns=['date', 't_max', 't_min', 'p_max', 'p_min'])
+        return output.reset_index(), pd.DataFrame(spread_out1), pd.DataFrame(spread_out2, columns=['date', 't_max', 't_min', 'p_max', 'p_min', 'spread', 'max_tf', 'min_tf'])
 
     def _process_one_batch(self, dataset_object, batch_x, batch_y, batch_x_mark, batch_y_mark):
         batch_x = batch_x.float().to(self.device)

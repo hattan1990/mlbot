@@ -83,25 +83,18 @@ class EvalDataset():
 
     def extract_data(self, data_values, target_val, data_stamp, df_raw):
         data_len = len(data_values) - self.seq_len
-        seq_x = []
-        seq_y = []
-        seq_x_mark = []
-        seq_y_mark = []
-        seq_raw = []
-
         for index in range(0, data_len, self.pred_len):
             s_begin = index
             s_end = s_begin + self.seq_len
             r_begin = s_end - self.label_len
             r_end = r_begin + self.label_len + self.pred_len
 
-            seq_x.append(data_values[s_begin:s_end])
-            seq_y.append(target_val[r_begin:r_end])
-            seq_x_mark.append(data_stamp[s_begin:s_end])
-            seq_y_mark.append(data_stamp[r_begin:r_end])
-            seq_raw.append(df_raw.values[r_begin:r_end])
-
-        return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_raw
+            seq_x = data_values[s_begin:s_end]
+            seq_y = target_val[r_begin:r_end]
+            seq_x_mark = data_stamp[s_begin:s_end]
+            seq_y_mark = data_stamp[r_begin:r_end]
+            seq_raw = df_raw.values[r_begin:r_end]
+            yield seq_x, seq_y, seq_x_mark, seq_y_mark, seq_raw
 
 class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None,
