@@ -315,8 +315,9 @@ class Exp_Informer(Exp_Basic):
             label_len = str(args.label_len)
             pred_len = str(args.pred_len)
             n_heads = str(args.n_heads)
-            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
+            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '_extra.pth'
             self.model.load_state_dict(torch.load(best_model_path))
+            print("load trained model {}".format(best_model_path))
 
         self.model.eval()
 
@@ -355,7 +356,7 @@ class Exp_Informer(Exp_Basic):
             hi_max = hi_lo[:, 0].max()
             lo_min = hi_lo[:, 1].min()
             spread = (hi_max - lo_min) * 10000000
-            if spread >= mergin:
+            if spread < mergin:
                 masks.append(1)
             else:
                 masks.append(0)
