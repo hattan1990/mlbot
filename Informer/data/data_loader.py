@@ -22,7 +22,7 @@ def add_features(data, num):
     return data
 
 def add_features_v2(data, num):
-    columns = ['op', 'hi', 'lo', 'cl', 'volume', 'spread', 'transition', 'volatility']
+    columns = ['op', 'hi', 'lo', 'cl', 'volume', 'spread']
     for i in range(1, num):
         for col in columns:
             data[col + '_' + str(i)] = data[col].pct_change(periods=i)
@@ -70,10 +70,11 @@ class EvalDataset():
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
         elif self.option == 'feature_engineering':
-            df_raw['spread'] = df_raw['hi'] - df_raw['lo']
+            df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
+            df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
+
             df_raw['transition'] = df_raw['cl'] - df_raw['op']
             df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
-            df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
 
         df_raw = df_raw.reset_index(drop=True)
         data = copy.deepcopy(df_raw)
@@ -153,10 +154,11 @@ class Dataset_BTC(Dataset):
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
         elif self.option == 'feature_engineering':
-            df_raw['spread'] = df_raw['hi'] - df_raw['lo']
+            df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
+            df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
+
             df_raw['transition'] = df_raw['cl'] - df_raw['op']
             df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
-            df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
 
         df_raw = df_raw.reset_index(drop=True)
         range1 = 0
