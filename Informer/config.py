@@ -7,8 +7,9 @@ args.runname = 'Add Features'
 args.model = 'informer'
 add_feature_num = 60
 args.loss_mode = 'default'
-args.extra = True
-args.load_models = True
+args.extra = False
+args.load_models = False
+args.feature_engineering = True
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
@@ -34,7 +35,10 @@ args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
-args.enc_in = (add_feature_num * 5) -5
+if args.feature_engineering == True:
+    args.enc_in = (add_feature_num * 8) - 5
+else:
+    args.enc_in = (add_feature_num * 5) - 5
 args.dec_in = 2 # decoder input size
 args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor

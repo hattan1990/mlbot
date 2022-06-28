@@ -21,6 +21,13 @@ def add_features(data, num):
             data[col + '_' + str(i)] = data[col].pct_change(periods=i)
     return data
 
+def add_features_v2(data, num):
+    columns = ['op', 'hi', 'lo', 'cl', 'volume', 'spread', 'transition', 'volatility']
+    for i in range(1, num):
+        for col in columns:
+            data[col + '_' + str(i)] = data[col].pct_change(periods=i)
+    return data
+
 def add_ext_features(data, num=2):
     columns = data.columns[1:]
     for i in range(1, num):
@@ -32,7 +39,8 @@ def add_ext_features(data, num=2):
 class EvalDataset():
     def __init__(self, root_path, size=[48, 24, 12],
                  features='ALL', data_path='GMO_BTC_JPY_ohclv_eval.csv',
-                 target='cl', inverse=False, timeenc=1, freq='t', feature_add=0):
+                 target='cl', inverse=False, timeenc=1, freq='t', feature_add=0,
+                 option='feature_engineering'):
 
         self.seq_len = size[0]
         self.label_len = size[1]
@@ -47,7 +55,7 @@ class EvalDataset():
         self.root_path = root_path
         self.data_path = data_path
 
-        self.option = 'pct'
+        self.option = option
         self.feature_add = feature_add
         self.scaler = pickle.load(open('scaler.pkl', 'rb'))
 
@@ -61,6 +69,11 @@ class EvalDataset():
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
+        elif self.option == 'feature_engineering':
+            df_raw['spread'] = df_raw['hi'] - df_raw['lo']
+            df_raw['transition'] = df_raw['cl'] - df_raw['op']
+            df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
+            df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
 
         df_raw = df_raw.reset_index(drop=True)
         data = copy.deepcopy(df_raw)
@@ -99,7 +112,8 @@ class EvalDataset():
 class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='ALL', data_path='GMO_BTC_JPY_ohclv.csv',
-                 target='cl', scale=True, inverse=False, timeenc=0, freq='t', feature_add=0):
+                 target='cl', scale=True, inverse=False, timeenc=0, freq='t',
+                 feature_add=0, option='feature_engineering'):
         # size [seq_len, label_len, pred_len]
         # info
         self.seq_len = size[0]
@@ -122,7 +136,7 @@ class Dataset_BTC(Dataset):
         self.root_path = root_path
         self.data_path = data_path
 
-        self.option = 'pct'
+        self.option = option
         self.feature_add = feature_add
         self.__read_data__()
 
@@ -138,6 +152,11 @@ class Dataset_BTC(Dataset):
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
+        elif self.option == 'feature_engineering':
+            df_raw['spread'] = df_raw['hi'] - df_raw['lo']
+            df_raw['transition'] = df_raw['cl'] - df_raw['op']
+            df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
+            df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
 
         df_raw = df_raw.reset_index(drop=True)
         range1 = 0
