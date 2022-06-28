@@ -19,7 +19,7 @@ def main(args):
     acc2 = spread1.values[:, 8].sum() / sample_count
     acc3 = spread1.values[:, 12].sum() / sample_count
     print("sample_count{0} ACC1:{1:.2f} ACC2:{2:.2f} ACC3:{3:.2f}".format(sample_count, acc1, acc2, acc3))
-    pred.to_excel('output.xlsx')
+    pred.to_excel('output_v2.xlsx')
     spread1.to_excel('spread1.xlsx')
     spread2.to_excel('spread2.xlsx')
 
@@ -130,8 +130,8 @@ def plot_spread():
 
     return
 
-def back_test_megin_swing():
-    trade_data = pd.read_excel('output.xlsx')
+def back_test_megin_swing(version='v1'):
+    trade_data = pd.read_excel('output_' + version + '.xlsx')
 
     output = []
     stocks = []
@@ -241,8 +241,8 @@ def calc_stock_count(buy_stocks, sell_stocks):
 
     return stock_count
 
-def back_test_mm():
-    trade_data = pd.read_excel('output.xlsx')
+def back_test_mm(version='v1'):
+    trade_data = pd.read_excel('output_' + version + '.xlsx')
 
     output = []
     buy_stocks = []
@@ -316,8 +316,8 @@ def back_test_mm():
 
     return pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell']), stock_df
 
-def back_test_spot_swing(threshold=10000):
-    trade_data = pd.read_excel('output.xlsx')
+def back_test_spot_swing(threshold=10000, version='v1'):
+    trade_data = pd.read_excel('output_' + version + '.xlsx')
 
     output = []
     total = 0
@@ -379,10 +379,11 @@ def back_test_spot_swing(threshold=10000):
 
 if __name__ == '__main__':
     #main(args)
+    #output = back_test_megin_swing(version='v2')
     #plot_output()
     #plot_spread()
-    #output, stocks = back_test_mm()
+    #output, stocks = back_test_mm(version='v3')
     #print(stocks)
     #output.to_excel('back_test_megin_swing.xlsx')
 
-    output = back_test_spot_swing(10000)
+    output = back_test_spot_swing(version='v1')

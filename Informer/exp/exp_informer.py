@@ -57,6 +57,15 @@ class Exp_Informer(Exp_Basic):
         
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
+
+        if self.args['load_models'] == True:
+            seq_len = str(self.args.seq_len)
+            label_len = str(self.args.label_len)
+            pred_len = str(self.args.pred_len)
+            n_heads = str(self.args.n_heads)
+            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
+            model.load_state_dict(torch.load(best_model_path))
+            print("load model weights : {}".format(best_model_path))
         return model
 
     def _get_data(self, flag):
@@ -98,26 +107,31 @@ class Exp_Informer(Exp_Basic):
 
     def vali(self, vali_data, vali_loader, criterion):
         def _check_strategy(pred, true):
-            pred_hi = pred[:,:,0].detach().cpu() * 10000000
-            pred_lo = pred[:,:,1].detach().cpu() * 10000000
-            pred = (pred_hi+pred_lo)/2
-            true_hi = true[:,:,0].detach().cpu() * 10000000
-            true_lo = true[:,:,1].detach().cpu() * 10000000
-            pred_min = pred.min(axis=1)[0]
-            true_min = true_lo.min(axis=1)[0]
-            pred_max = pred.max(axis=1)[0]
-            true_max = true_hi.max(axis=1)[0]
-            spread_loss = abs((pred_max - pred_min) - (true_max - true_min))
-            diff_pred_max = abs(pred_max - true_max)
-            diff_pred_min = abs(pred_min - true_min)
+            terms = true[:,0,0] != 0
+            if terms.sum() > 0:
+                pred_hi = pred[terms,:,0].detach().cpu() * 10000000
+                pred_lo = pred[terms,:,1].detach().cpu() * 10000000
+                pred = (pred_hi+pred_lo)/2
+                true_hi = true[terms,:,0].detach().cpu() * 10000000
+                true_lo = true[terms,:,1].detach().cpu() * 10000000
+                pred_min = pred.min(axis=1)[0]
+                true_min = true_lo.min(axis=1)[0]
+                pred_max = pred.max(axis=1)[0]
+                true_max = true_hi.max(axis=1)[0]
+                spread_loss = abs((pred_max - pred_min) - (true_max - true_min))
+                diff_pred_max = abs(pred_max - true_max)
+                diff_pred_min = abs(pred_min - true_min)
 
-            spread_4 = (pred_max - pred_min) / 4
-            spread_3 = (pred_max - pred_min) / 3
-            acc1 = (pred_min > true_min)&(pred_max < true_max)&((pred_max-pred_min)>0)
-            acc2 = ((pred_min+spread_4) > true_min) & ((pred_max-spread_4) < true_max) & ((pred_max - pred_min) > 0)
-            acc3 = ((pred_min + spread_3) > true_min) & ((pred_max - spread_3) < true_max) & ((pred_max - pred_min) > 0)
+                spread_4 = (pred_max - pred_min) / 4
+                spread_3 = (pred_max - pred_min) / 3
+                acc1 = (pred_min > true_min)&(pred_max < true_max)&((pred_max-pred_min)>0)
+                acc2 = ((pred_min+spread_4) > true_min) & ((pred_max-spread_4) < true_max) & ((pred_max - pred_min) > 0)
+                acc3 = ((pred_min + spread_3) > true_min) & ((pred_max - spread_3) < true_max) & ((pred_max - pred_min) > 0)
 
-            return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0]
+                return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0]
+
+            else:
+                return 0, 0, 0, 0, 0, 0
 
 
         self.model.eval()
@@ -132,8 +146,14 @@ class Exp_Informer(Exp_Basic):
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
-                pred, true = self._process_one_batch(
+                pred, true, masks = self._process_one_batch(
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+
+                if self.args['extra'] == True:
+                    for i, mask in enumerate(masks):
+                        pred[i] = pred[i] * mask
+                        true[i] = true[i] * mask
+
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
@@ -189,8 +209,14 @@ class Exp_Informer(Exp_Basic):
                     iter_count += 1
 
                     model_optim.zero_grad()
-                    pred, true = self._process_one_batch(
+                    pred, true, masks = self._process_one_batch(
                         train_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+
+                    if self.args['extra'] == True:
+                        for i, mask in enumerate(masks):
+                            pred[i] = pred[i] * mask
+                            true[i] = true[i] * mask
+
                     if self.args['target'] is None:
                         num = self.args['target_num']
                         loss = criterion(pred, true[:,:,num].unsqueeze(2))
@@ -289,8 +315,9 @@ class Exp_Informer(Exp_Basic):
             label_len = str(args.label_len)
             pred_len = str(args.pred_len)
             n_heads = str(args.n_heads)
-            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
+            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '_extra.pth'
             self.model.load_state_dict(torch.load(best_model_path))
+            print("load trained model {}".format(best_model_path))
 
         self.model.eval()
 
@@ -307,7 +334,7 @@ class Exp_Informer(Exp_Basic):
             seq_y_mark = torch.tensor(np.expand_dims(seq_y_mark, axis=0))
 
             if seq_y.shape[1] == (self.args.label_len + self.args.pred_len):
-                pred, _ = self._process_one_batch(
+                pred, _, _ = self._process_one_batch(
                     eval_data, seq_x, seq_y, seq_x_mark, seq_y_mark)
 
                 pred_hi = pred[0, :, 0].detach().cpu().numpy()
@@ -322,6 +349,19 @@ class Exp_Informer(Exp_Basic):
                 spread_out2.append(out2)
 
         return output.reset_index(), pd.DataFrame(spread_out1), pd.DataFrame(spread_out2, columns=['date', 't_max', 't_min', 'p_max', 'p_min', 'spread', 'max_tf', 'min_tf'])
+
+    def _create_masks(self, batch_y, mergin=30000):
+        masks = []
+        for hi_lo in batch_y:
+            hi_max = hi_lo[:, 0].max()
+            lo_min = hi_lo[:, 1].min()
+            spread = (hi_max - lo_min) * 10000000
+            if spread < mergin:
+                masks.append(1)
+            else:
+                masks.append(0)
+
+        return torch.tensor(masks)
 
     def _process_one_batch(self, dataset_object, batch_x, batch_y, batch_x_mark, batch_y_mark):
         batch_x = batch_x.float().to(self.device)
@@ -355,7 +395,9 @@ class Exp_Informer(Exp_Basic):
             f_dim = -1 if self.args.features=='MS' else 0
             batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
 
-            return outputs, batch_y
+            masks = self._create_masks(batch_y)
+
+            return outputs, batch_y, masks
 
         except:
             print("-------------------prediction error-------------------")
