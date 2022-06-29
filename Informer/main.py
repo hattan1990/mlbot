@@ -83,14 +83,12 @@ def validation(args_list):
 
 if __name__ == '__main__':
     seq_len_list = [[72, 36, 15], [72, 36, 12], [96, 36, 15], [96, 36, 12], [96, 48, 15], [96, 48, 12]]
-    n_heads_list = [8, 12, 16]
-    learning_rate_list = [0.001, 0.005]
+    n_heads_list = [8, 16]
+    learning_rate_list = [0.001]
     loss_mode_list = ["default"]
-    dropout_list = [0.0001, 0.0005]
 
     args_list = update_args(args, "learning_rate", learning_rate_list)
     args_list = update_args_list(args_list, "loss_mode", loss_mode_list)
-    args_list = update_args_list(args_list, "dropout", dropout_list)
     args_list = update_args_list(args_list, "seq_len", seq_len_list)
     args_list = update_args_list(args_list, "n_heads", n_heads_list)
     validation(args_list)
