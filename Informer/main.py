@@ -82,7 +82,7 @@ def validation(args_list):
         main(args_update)
 
 if __name__ == '__main__':
-    seq_len_list = [[72, 36, 15], [72, 36, 12], [96, 36, 15], [96, 36, 12], [96, 48, 15], [96, 48, 12]]
+    seq_len_list = [[72, 36, 12], [96, 36, 12], [96, 48, 12]]
     n_heads_list = [8, 16]
     learning_rate_list = [0.001]
     loss_mode_list = ["default"]
