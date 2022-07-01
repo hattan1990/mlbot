@@ -304,7 +304,8 @@ class Exp_Informer(Exp_Basic):
             features=args.features,
             target=args.target,
             inverse=args.inverse,
-            feature_add = args.add_feature_num
+            feature_add = args.add_feature_num,
+            option='pct'
         )
         data_values, target_val, data_stamp, df_raw = eval_data.read_data()
         #seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)
@@ -315,7 +316,7 @@ class Exp_Informer(Exp_Basic):
             label_len = str(args.label_len)
             pred_len = str(args.pred_len)
             n_heads = str(args.n_heads)
-            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '_extra.pth'
+            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
             self.model.load_state_dict(torch.load(best_model_path))
             print("load trained model {}".format(best_model_path))
 

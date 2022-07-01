@@ -40,7 +40,7 @@ class EvalDataset():
     def __init__(self, root_path, size=[48, 24, 12],
                  features='ALL', data_path='GMO_BTC_JPY_ohclv_eval.csv',
                  target='cl', inverse=False, timeenc=1, freq='t', feature_add=0,
-                 option='feature_engineering'):
+                 option='pct'):
 
         self.seq_len = size[0]
         self.label_len = size[1]
@@ -114,7 +114,7 @@ class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='ALL', data_path='GMO_BTC_JPY_ohclv.csv',
                  target='cl', scale=True, inverse=False, timeenc=0, freq='t',
-                 feature_add=0, option='feature_engineering'):
+                 feature_add=0, option='pct'):
         # size [seq_len, label_len, pred_len]
         # info
         self.seq_len = size[0]

@@ -9,7 +9,7 @@ add_feature_num = 60
 args.loss_mode = 'default'
 args.extra = False
 args.load_models = False
-args.feature_engineering = True
+args.feature_engineering = False
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
