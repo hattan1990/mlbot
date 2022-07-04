@@ -57,7 +57,7 @@ class EvalDataset():
 
         self.option = option
         self.feature_add = feature_add
-        self.scaler = pickle.load(open('scaler.pkl', 'rb'))
+        self.scaler = pickle.load(open('./weights/scaler.pkl', 'rb'))
 
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
@@ -73,8 +73,8 @@ class EvalDataset():
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
             df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
 
-            df_raw['transition'] = df_raw['cl'] - df_raw['op']
-            df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
+            #df_raw['transition'] = df_raw['cl'] - df_raw['op']
+            #df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
 
         df_raw = df_raw.reset_index(drop=True)
         data = copy.deepcopy(df_raw)
@@ -157,8 +157,8 @@ class Dataset_BTC(Dataset):
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
             df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
 
-            df_raw['transition'] = df_raw['cl'] - df_raw['op']
-            df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
+            #df_raw['transition'] = df_raw['cl'] - df_raw['op']
+            #df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
 
         df_raw = df_raw.reset_index(drop=True)
         range1 = 0
