@@ -114,7 +114,7 @@ class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='ALL', data_path='GMO_BTC_JPY_ohclv.csv',
                  target='cl', scale=True, inverse=False, timeenc=0, freq='t',
-                 feature_add=0, option='pct'):
+                 feature_add=0, option='feature_engineering'):
         # size [seq_len, label_len, pred_len]
         # info
         self.seq_len = size[0]
