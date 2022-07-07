@@ -5,6 +5,7 @@ from models.model import Informer, InformerStack
 from utils.tools import EarlyStopping, adjust_learning_rate
 from utils.metrics import CustomLoss
 
+import copy
 import numpy as np
 import pandas as pd
 import torch
@@ -107,40 +108,37 @@ class Exp_Informer(Exp_Basic):
 
     def vali(self, vali_data, vali_loader, criterion):
         def _check_strategy(pred, true):
-            terms = true[:,0,0] != 0
-            if terms.sum() > 0:
-                pred_hi = pred[terms,:,0].detach().cpu() * 10000000
-                pred_lo = pred[terms,:,1].detach().cpu() * 10000000
-                pred = (pred_hi+pred_lo)/2
-                true_hi = true[terms,:,0].detach().cpu() * 10000000
-                true_lo = true[terms,:,1].detach().cpu() * 10000000
-                pred_min = pred.min(axis=1)[0]
-                true_min = true_lo.min(axis=1)[0]
-                pred_max = pred.max(axis=1)[0]
-                true_max = true_hi.max(axis=1)[0]
-                spread_loss = abs((pred_max - pred_min) - (true_max - true_min))
-                diff_pred_max = abs(pred_max - true_max)
-                diff_pred_min = abs(pred_min - true_min)
+            pred_hi = pred[:,:,0].detach().cpu() * 10000000
+            pred_lo = pred[:,:,1].detach().cpu() * 10000000
+            pred = (pred_hi+pred_lo)/2
+            true_hi = true[:,:,0].detach().cpu() * 10000000
+            true_lo = true[:,:,1].detach().cpu() * 10000000
+            pred_min = pred.min(axis=1)[0]
+            true_min = true_lo.min(axis=1)[0]
+            pred_max = pred.max(axis=1)[0]
+            true_max = true_hi.max(axis=1)[0]
+            spread_loss = abs((pred_max - pred_min) - (true_max - true_min))
+            diff_pred_max = abs(pred_max - true_max)
+            diff_pred_min = abs(pred_min - true_min)
 
-                spread_4 = (pred_max - pred_min) / 4
-                spread_3 = (pred_max - pred_min) / 3
-                acc1 = (pred_min > true_min)&(pred_max < true_max)&((pred_max-pred_min)>0)
-                acc2 = ((pred_min+spread_4) > true_min) & ((pred_max-spread_4) < true_max) & ((pred_max - pred_min) > 0)
-                acc3 = ((pred_min + spread_3) > true_min) & ((pred_max - spread_3) < true_max) & ((pred_max - pred_min) > 0)
+            spread_4 = (pred_max - pred_min) / 4
+            spread_3 = (pred_max - pred_min) / 3
+            acc1 = (pred_min > true_min)&(pred_max < true_max)&((pred_max-pred_min)>0)
+            acc2 = ((pred_min+spread_4) > true_min) & ((pred_max-spread_4) < true_max) & ((pred_max - pred_min) > 0)
+            acc3 = ((pred_min + spread_3) > true_min) & ((pred_max - spread_3) < true_max) & ((pred_max - pred_min) > 0)
 
-                return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0]
-
-            else:
-                return 0, 0, 0, 0, 0, 0
+            return spread_loss.mean(), diff_pred_max.mean(), diff_pred_min.mean(), acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0]
 
 
         self.model.eval()
         total_loss = []
+        total_loss_ex = []
         total_loss_local = []
         total_spread_loss = []
         total_diff_pred_max = []
         total_diff_pred_min = []
         total_acc1 = []
+        total_acc1_ex = []
         total_acc2 = []
         total_acc3 = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
@@ -150,9 +148,12 @@ class Exp_Informer(Exp_Basic):
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
 
                 if self.args['extra'] == True:
-                    for i, mask in enumerate(masks):
-                        pred[i] = pred[i] * mask
-                        true[i] = true[i] * mask
+                    pred_ex = pred[masks]
+                    true_ex = true[masks]
+                    loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
+                    total_loss_ex.append(loss_ex)
+                    _, _, _, acc1_ex, _, _ = _check_strategy(pred, true)
+                    total_acc1_ex.append(acc1_ex)
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
@@ -167,16 +168,18 @@ class Exp_Informer(Exp_Basic):
                 total_acc3.append(acc3)
 
         total_loss = np.average(total_loss)
+        total_loss_ex = np.average(total_loss_ex)
         total_loss_local = np.average(total_loss_local) * 10000000
         total_spread_loss = np.average(total_spread_loss)
         total_diff_pred_max = np.average(total_diff_pred_max)
         total_diff_pred_min = np.average(total_diff_pred_min)
         total_acc1 = np.average(total_acc1)
+        total_acc1_ex = np.average(total_acc1_ex)
         total_acc2 = np.average(total_acc2)
         total_acc3 = np.average(total_acc3)
 
         self.model.train()
-        return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc1, total_acc2, total_acc3
+        return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc1, total_acc2, total_acc3, total_loss_ex, total_acc1_ex
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -212,16 +215,16 @@ class Exp_Informer(Exp_Basic):
                     pred, true, masks = self._process_one_batch(
                         train_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
 
-                    if self.args['extra'] == True:
-                        for i, mask in enumerate(masks):
-                            pred[i] = pred[i] * mask
-                            true[i] = true[i] * mask
-
                     if self.args['target'] is None:
                         num = self.args['target_num']
                         loss = criterion(pred, true[:,:,num].unsqueeze(2))
                     else:
                         loss = criterion(pred, true)
+                        if self.args['extra'] == True:
+                            pred_ex = pred[masks]
+                            true_ex = true[masks]
+                            loss_ex = criterion(pred_ex, true_ex)
+                            train_loss.append(loss_ex.item())
                     train_loss.append(loss.item())
 
                     if self.args.use_amp:
@@ -230,16 +233,20 @@ class Exp_Informer(Exp_Basic):
                         scaler.update()
                     else:
                         loss.backward()
+                        if self.args['extra'] == True:
+                            loss_ex.backward()
                         model_optim.step()
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min, acc1, acc2, acc3 = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min, acc1, acc2, acc3, vali_loss_ex, acc1_ex = self.vali(vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss", vali_loss, step=epoch + 1)
+            mlflow.log_metric("Vali Loss ex", vali_loss_ex, step=epoch + 1)
             mlflow.log_metric("ACC1", acc1, step=epoch + 1)
+            mlflow.log_metric("ACC1 ex", acc1_ex, step=epoch + 1)
             mlflow.log_metric("ACC2", acc2, step=epoch + 1)
             mlflow.log_metric("ACC3", acc3, step=epoch + 1)
             mlflow.log_metric("Spread Diff", int(spread_loss), step=epoch + 1)
@@ -247,8 +254,8 @@ class Exp_Informer(Exp_Basic):
             mlflow.log_metric("Diff_pred_min", int(diff_pred_min), step=epoch + 1)
             mlflow.log_metric("Vali_loss local", int(vali_loss_local), step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f} spread: {7} max: {8} min: {9}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min)))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f} spread: {7} max: {8} min: {9} Vali Loss ex: {10:.7f} ACC1 ex: {11:.7f} ".format(
+                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min), vali_loss_ex, acc1_ex))
 
             if acc1 > 0.6:
                 torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
@@ -351,16 +358,16 @@ class Exp_Informer(Exp_Basic):
 
         return output.reset_index(), pd.DataFrame(spread_out1), pd.DataFrame(spread_out2, columns=['date', 't_max', 't_min', 'p_max', 'p_min', 'spread', 'max_tf', 'min_tf'])
 
-    def _create_masks(self, batch_y, mergin=30000):
+    def _create_masks(self, batch_y, mergin=10000):
         masks = []
         for hi_lo in batch_y:
             hi_max = hi_lo[:, 0].max()
             lo_min = hi_lo[:, 1].min()
             spread = (hi_max - lo_min) * 10000000
-            if spread < mergin:
-                masks.append(1)
+            if spread >= mergin:
+                masks.append(True)
             else:
-                masks.append(0)
+                masks.append(False)
 
         return torch.tensor(masks)
 
@@ -396,7 +403,7 @@ class Exp_Informer(Exp_Basic):
             f_dim = -1 if self.args.features=='MS' else 0
             batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
 
-            masks = self._create_masks(batch_y)
+            masks = self._create_masks(outputs)
 
             return outputs, batch_y, masks
 

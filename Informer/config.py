@@ -7,7 +7,7 @@ args.runname = 'Add Features'
 args.model = 'informer'
 add_feature_num = 60
 args.loss_mode = 'default'
-args.extra = False
+args.extra = True
 args.load_models = False
 args.feature_engineering = True
 
