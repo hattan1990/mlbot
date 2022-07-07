@@ -224,17 +224,22 @@ class Exp_Informer(Exp_Basic):
                             pred_ex = pred[masks]
                             true_ex = true[masks]
                             loss_ex = criterion(pred_ex, true_ex)
-                            train_loss.append(loss_ex.item())
-                    train_loss.append(loss.item())
+                            loss_all = loss.item() + loss_ex.item()
+                            train_loss.append(loss_all)
+                        else:
+                            train_loss.append(loss.item())
 
                     if self.args.use_amp:
                         scaler.scale(loss).backward()
                         scaler.step(model_optim)
                         scaler.update()
                     else:
-                        loss.backward()
                         if self.args['extra'] == True:
-                            loss_ex.backward()
+                            loss += loss_ex
+                            loss.backward()
+                        else:
+                            loss.backward()
+
                         model_optim.step()
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
