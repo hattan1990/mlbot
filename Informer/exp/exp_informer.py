@@ -152,7 +152,7 @@ class Exp_Informer(Exp_Basic):
                     true_ex = true[masks]
                     loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                     total_loss_ex.append(loss_ex)
-                    _, _, _, acc1_ex, _, _ = _check_strategy(pred, true)
+                    _, _, _, acc1_ex, _, _ = _check_strategy(pred_ex, true_ex)
                     total_acc1_ex.append(acc1_ex)
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
