@@ -235,7 +235,7 @@ class Exp_Informer(Exp_Basic):
                         scaler.update()
                     else:
                         if self.args['extra'] == True:
-                            loss += loss_ex
+                            #loss += loss_ex
                             loss.backward()
                         else:
                             loss.backward()
