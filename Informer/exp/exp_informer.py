@@ -223,10 +223,9 @@ class Exp_Informer(Exp_Basic):
                         if self.args['extra'] == True:
                             pred_ex = pred[masks]
                             true_ex = true[masks]
-                            #loss_ex = criterion(pred_ex, true_ex)
-                            #loss_all = loss.item() + loss_ex.item()
-                            #train_loss.append(loss_all)
-                            train_loss.append(loss.item())
+                            loss_ex = criterion(pred_ex, true_ex)
+                            loss_all = loss.item() + loss_ex.item()
+                            train_loss.append(loss_all)
                         else:
                             train_loss.append(loss.item())
 
@@ -236,7 +235,7 @@ class Exp_Informer(Exp_Basic):
                         scaler.update()
                     else:
                         if self.args['extra'] == True:
-                            #loss += loss_ex
+                            loss += loss_ex
                             loss.backward()
                         else:
                             loss.backward()
