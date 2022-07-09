@@ -57,7 +57,7 @@ class EvalDataset():
 
         self.option = option
         self.feature_add = feature_add
-        self.scaler = pickle.load(open('./weights/scaler.pkl', 'rb'))
+        self.scaler = pickle.load(open('./weights/scaler_ex.pkl', 'rb'))
 
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
@@ -114,7 +114,7 @@ class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='ALL', data_path='GMO_BTC_JPY_ohclv.csv',
                  target='cl', scale=True, inverse=False, timeenc=0, freq='t',
-                 feature_add=0, option='feature_engineering'):
+                 feature_add=0, option='pct'):
         # size [seq_len, label_len, pred_len]
         # info
         self.seq_len = size[0]

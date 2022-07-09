@@ -328,7 +328,7 @@ class Exp_Informer(Exp_Basic):
             label_len = str(args.label_len)
             pred_len = str(args.pred_len)
             n_heads = str(args.n_heads)
-            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
+            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '_ex.pth'
             self.model.load_state_dict(torch.load(best_model_path))
             print("load trained model {}".format(best_model_path))
 
