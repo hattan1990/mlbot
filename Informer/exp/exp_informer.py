@@ -150,10 +150,11 @@ class Exp_Informer(Exp_Basic):
                 if self.args['extra'] == True:
                     pred_ex = pred[masks]
                     true_ex = true[masks]
-                    loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
-                    total_loss_ex.append(loss_ex)
-                    _, _, _, acc1_ex, _, _ = _check_strategy(pred_ex, true_ex)
-                    total_acc1_ex.append(acc1_ex)
+                    if true_ex.shape[0] > 0:
+                        loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
+                        total_loss_ex.append(loss_ex)
+                        _, _, _, acc1_ex, _, _ = _check_strategy(pred_ex, true_ex)
+                        total_acc1_ex.append(acc1_ex)
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
@@ -223,9 +224,14 @@ class Exp_Informer(Exp_Basic):
                         if self.args['extra'] == True:
                             pred_ex = pred[masks]
                             true_ex = true[masks]
-                            loss_ex = criterion(pred_ex, true_ex)
-                            loss_all = loss.item() + loss_ex.item()
-                            train_loss.append(loss_all)
+                            if true_ex.shape[0] > 0:
+                                loss_ex = criterion(pred_ex, true_ex)
+                                loss_all = loss.item() + loss_ex.item()
+                                train_loss.append(loss_all)
+                            else:
+                                loss_ex = None
+                                train_loss.append(loss.item())
+
                         else:
                             train_loss.append(loss.item())
 
@@ -234,7 +240,7 @@ class Exp_Informer(Exp_Basic):
                         scaler.step(model_optim)
                         scaler.update()
                     else:
-                        if self.args['extra'] == True:
+                        if (self.args['extra'] == True)&(loss_ex is not None):
                             loss += loss_ex
                             loss.backward()
                         else:
@@ -366,8 +372,9 @@ class Exp_Informer(Exp_Basic):
     def _create_masks(self, batch_y, mergin=10000):
         masks = []
         for hi_lo in batch_y:
-            hi_max = hi_lo[:, 0].max()
-            lo_min = hi_lo[:, 1].min()
+            pred = (hi_lo[0] + hi_lo[1]) / 2
+            hi_max = pred.max()
+            lo_min = pred.min()
             spread = (hi_max - lo_min) * 10000000
             if spread >= mergin:
                 masks.append(True)
