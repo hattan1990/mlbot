@@ -331,8 +331,10 @@ def back_test_spot_swing(threshold=15000, version='v1'):
 
         tmp_data = trade_data.loc[start:end]
         base_price = tmp_data['op'].values[0]
-        pred_spread_min = int(tmp_data['pred'].min())
-        pred_spread_max = int(tmp_data['pred'].max())
+        pred_spread_min = int(tmp_data['pred_lo'].values[0])
+        pred_spread_max = int(tmp_data['pred_hi'].values[0])
+        #pred_spread_min = int(tmp_data['pred'].min())
+        #pred_spread_max = int(tmp_data['pred'].max())
         spread_to_max = (pred_spread_max - base_price)
         spread_to_min = (base_price - pred_spread_min)
 
@@ -383,7 +385,7 @@ if __name__ == '__main__':
     #plot_output()
     #plot_spread()
     output, stocks = back_test_mm(version='v1')
-    print(stocks)
+    #print(stocks)
     #output.to_excel('back_test_megin_swing.xlsx')
 
     #output = back_test_spot_swing(version='v1')

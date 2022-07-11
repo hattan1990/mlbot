@@ -131,6 +131,7 @@ class Exp_Informer(Exp_Basic):
 
 
         self.model.eval()
+        self.model_relearning.eval()
         total_loss = []
         total_loss_ex = []
         total_loss_local = []
@@ -179,7 +180,7 @@ class Exp_Informer(Exp_Basic):
         total_acc2 = np.average(total_acc2)
         total_acc3 = np.average(total_acc3)
 
-        self.model.train()
+        self.model_relearning.train()
         return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc1, total_acc2, total_acc3, total_loss_ex, total_acc1_ex
 
     def train(self, setting):
@@ -205,7 +206,8 @@ class Exp_Informer(Exp_Basic):
             iter_count = 0
             train_loss = []
             
-            self.model.train()
+            self.model.eval()
+            self.model_relearning.train()
             epoch_time = time.time()
             for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(train_loader):
                 if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
@@ -220,33 +222,26 @@ class Exp_Informer(Exp_Basic):
                         num = self.args['target_num']
                         loss = criterion(pred, true[:,:,num].unsqueeze(2))
                     else:
-                        loss = criterion(pred, true)
                         if self.args['extra'] == True:
                             pred_ex = pred[masks]
                             true_ex = true[masks]
                             if true_ex.shape[0] > 0:
                                 loss_ex = criterion(pred_ex, true_ex)
-                                loss_all = loss.item() + loss_ex.item()
-                                train_loss.append(loss_all)
+                                train_loss.append(loss_ex.item())
                             else:
                                 loss_ex = None
-                                train_loss.append(loss.item())
-
+                                train_loss.append(0)
                         else:
-                            train_loss.append(loss.item())
+                            pass
 
                     if self.args.use_amp:
-                        scaler.scale(loss).backward()
+                        scaler.scale(loss_ex).backward()
                         scaler.step(model_optim)
                         scaler.update()
                     else:
                         if (self.args['extra'] == True)&(loss_ex is not None):
-                            loss += loss_ex
-                            loss.backward()
-                        else:
-                            loss.backward()
-
-                        model_optim.step()
+                            loss_ex.backward()
+                            model_optim.step()
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
@@ -269,9 +264,9 @@ class Exp_Informer(Exp_Basic):
                 epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min), vali_loss_ex, acc1_ex))
 
             if acc1 > 0.6:
-                torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
-            early_stopping(-acc1, self.model, path)
-            self.model.to(self.device)
+                torch.save(self.model_relearning.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
+            early_stopping(-acc1_ex, self.model_relearning, path)
+            self.model_relearning.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
@@ -279,9 +274,9 @@ class Exp_Informer(Exp_Basic):
             adjust_learning_rate(model_optim, epoch+1, self.args)
             
         best_model_path = 'checkpoint.pth'
-        self.model.load_state_dict(torch.load(best_model_path))
+        self.model_relearning.load_state_dict(torch.load(best_model_path))
         
-        return self.model
+        return self.model_relearning
 
 
     def predict(self, load=True):
@@ -416,8 +411,9 @@ class Exp_Informer(Exp_Basic):
             batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
 
             masks = self._create_masks(outputs)
+            outputs_re = self.model_relearning(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
-            return outputs, batch_y, masks
+            return outputs_re, batch_y, masks
 
         except:
             print("-------------------prediction error-------------------")
