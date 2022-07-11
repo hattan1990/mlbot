@@ -316,7 +316,7 @@ def back_test_mm(version='v1'):
 
     return pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell']), stock_df
 
-def back_test_spot_swing(threshold=10000, version='v1'):
+def back_test_spot_swing(threshold=15000, version='v1'):
     trade_data = pd.read_excel('output_' + version + '.xlsx')
 
     output = []
@@ -378,7 +378,7 @@ def back_test_spot_swing(threshold=10000, version='v1'):
     return pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
 
 if __name__ == '__main__':
-    main(args)
+    #main(args)
     #output = back_test_megin_swing(version='v1')
     #plot_output()
     #plot_spread()

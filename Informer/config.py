@@ -29,7 +29,7 @@ args.scaler2 = 500 #BTC Volumeのスケーリング
 args.checkpoints = './informer_checkpoints'
 
 #EncoderとDecoderの入力するデータの長さを指定
-args.seq_len = 72
+args.seq_len = 96
 args.label_len = 36
 args.pred_len = 12
 
@@ -43,7 +43,7 @@ args.dec_in = 2 # decoder input size
 args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
-args.n_heads = 8 # num of heads
+args.n_heads = 16 # num of heads
 args.e_layers = 2 # num of encoder layers
 args.d_layers = 1 # num of decoder layers
 args.d_ff = 2048 # dimension of fcn in model

@@ -372,7 +372,7 @@ class Exp_Informer(Exp_Basic):
     def _create_masks(self, batch_y, mergin=10000):
         masks = []
         for hi_lo in batch_y:
-            pred = (hi_lo[0] + hi_lo[1]) / 2
+            pred = (hi_lo[: ,0] + hi_lo[:, 1]) / 2
             hi_max = pred.max()
             lo_min = pred.min()
             spread = (hi_max - lo_min) * 10000000
