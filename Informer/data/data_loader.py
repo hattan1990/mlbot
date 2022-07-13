@@ -57,7 +57,10 @@ class EvalDataset():
 
         self.option = option
         self.feature_add = feature_add
-        self.scaler = pickle.load(open('./weights/scaler_ex.pkl', 'rb'))
+        if self.option == 'pct':
+            self.scaler = pickle.load(open('./weights/scaler_ex.pkl', 'rb'))
+        else:
+            self.scaler = pickle.load(open('./weights/scaler_add.pkl', 'rb'))
 
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
@@ -185,7 +188,10 @@ class Dataset_BTC(Dataset):
         if self.scale:
             self.scaler.fit(df_data.values)
             data = self.scaler.transform(df_data.values)
-            pickle.dump(self.scaler, open("scaler.pkl", "wb"))
+            if self.option == 'pct':
+                pickle.dump(self.scaler, open("scaler.pkl", "wb"))
+            else:
+                pickle.dump(self.scaler, open("scaler_add.pkl", "wb"))
 
         else:
             data = df_data.values

@@ -86,7 +86,8 @@ class Exp_Informer(Exp_Basic):
             inverse=args.inverse,
             timeenc=timeenc,
             freq=freq,
-            feature_add=args.add_feature_num
+            feature_add=args.add_feature_num,
+            option=args.data_option
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
