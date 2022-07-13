@@ -141,6 +141,7 @@ class Exp_Informer(Exp_Basic):
         total_acc1_ex = []
         total_acc2 = []
         total_acc3 = []
+        ex_count = 0
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
@@ -155,6 +156,7 @@ class Exp_Informer(Exp_Basic):
                         total_loss_ex.append(loss_ex)
                         _, _, _, acc1_ex, _, _ = _check_strategy(pred_ex, true_ex)
                         total_acc1_ex.append(acc1_ex)
+                        ex_count += true_ex.shape[0]
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
@@ -180,7 +182,7 @@ class Exp_Informer(Exp_Basic):
         total_acc3 = np.average(total_acc3)
 
         self.model.train()
-        return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc1, total_acc2, total_acc3, total_loss_ex, total_acc1_ex
+        return total_loss, total_loss_local, total_spread_loss, total_diff_pred_max, total_diff_pred_min, total_acc1, total_acc2, total_acc3, total_loss_ex, total_acc1_ex, ex_count
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -250,7 +252,7 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min, acc1, acc2, acc3, vali_loss_ex, acc1_ex = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_local, spread_loss, diff_pred_max, diff_pred_min, acc1, acc2, acc3, vali_loss_ex, acc1_ex, ex_count = self.vali(vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
@@ -260,13 +262,14 @@ class Exp_Informer(Exp_Basic):
             mlflow.log_metric("ACC1 ex", acc1_ex, step=epoch + 1)
             mlflow.log_metric("ACC2", acc2, step=epoch + 1)
             mlflow.log_metric("ACC3", acc3, step=epoch + 1)
+            mlflow.log_metric("EX count", ex_count, step=epoch + 1)
             mlflow.log_metric("Spread Diff", int(spread_loss), step=epoch + 1)
             mlflow.log_metric("Diff_pred_max", int(diff_pred_max), step=epoch + 1)
             mlflow.log_metric("Diff_pred_min", int(diff_pred_min), step=epoch + 1)
             mlflow.log_metric("Vali_loss local", int(vali_loss_local), step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f} spread: {7} max: {8} min: {9} Vali Loss ex: {10:.7f} ACC1 ex: {11:.7f} ".format(
-                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min), vali_loss_ex, acc1_ex))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f} spread: {7} max: {8} min: {9} Vali Loss ex: {10:.7f} ACC1 ex: {11:.7f} ex count: {12:.1f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min), vali_loss_ex, acc1_ex, ex_count))
 
             if acc1 > 0.6:
                 torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
