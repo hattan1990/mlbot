@@ -282,7 +282,7 @@ class Exp_Informer(Exp_Basic):
             mlflow.log_metric("Diff_pred_min", int(diff_pred_min), step=epoch + 1)
             mlflow.log_metric("Vali_loss local", int(vali_loss_local), step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f} spread: {7} max: {8} min: {9} Vali Loss ex: {10:.7f} ACC1 ex: {11:.7f} ACC2 ex: {11:.7f} ACC3 ex: {11:.7f} ex count: {14:.1f}".format(
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f} spread: {7} max: {8} min: {9} Vali Loss ex: {10:.7f} ACC1 ex: {11:.7f} ACC2 ex: {12:.7f} ACC3 ex: {13:.7f} ex count: {14:.1f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, int(spread_loss), int(diff_pred_max), int(diff_pred_min), vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count))
 
             if acc1 > 0.6:
