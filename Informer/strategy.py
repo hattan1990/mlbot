@@ -316,7 +316,7 @@ def back_test_mm(version='v1'):
 
     return pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell']), stock_df
 
-def back_test_spot_swing(threshold=15000, version='v1'):
+def back_test_spot_swing(threshold=15000, version='v1', pred_opsion=''):
     trade_data = pd.read_excel('output_' + version + '.xlsx')
 
     output = []
@@ -331,8 +331,20 @@ def back_test_spot_swing(threshold=15000, version='v1'):
 
         tmp_data = trade_data.loc[start:end]
         base_price = tmp_data['op'].values[0]
-        pred_spread_min = int(tmp_data['pred'].min())
-        pred_spread_max = int(tmp_data['pred'].max())
+        if pred_opsion == 'mean':
+            pred_spread_min = int(tmp_data['pred_lo'].mean())
+            pred_spread_max = int(tmp_data['pred_hi'].mean())
+        elif pred_opsion == 'mean2':
+            spread = tmp_data['pred_hi'].max() - tmp_data['pred_lo'].min()
+            pred_spread_min = int(tmp_data['pred_lo'].min() + spread/4)
+            pred_spread_max = int(tmp_data['pred_hi'].max() - spread/4)
+
+        elif pred_opsion == 'zero':
+            pred_spread_min = int(tmp_data['pred_lo'].values[0])
+            pred_spread_max = int(tmp_data['pred_hi'].values[0])
+        else:
+            pred_spread_min = int(tmp_data['pred'].min())
+            pred_spread_max = int(tmp_data['pred'].max())
         spread_to_max = (pred_spread_max - base_price)
         spread_to_min = (base_price - pred_spread_min)
 
@@ -382,9 +394,9 @@ if __name__ == '__main__':
     #output = back_test_megin_swing(version='v1')
     #plot_output()
     #plot_spread()
-    output, stocks = back_test_mm(version='v1')
-    print(stocks)
+    #output, stocks = back_test_mm(version='v1')
+    #print(stocks)
     #output.to_excel('back_test_megin_swing.xlsx')
 
-    #output = back_test_spot_swing(version='v1')
+    output = back_test_spot_swing(threshold=10000, version='v1_0711', pred_opsion='zero')
     #output.to_excel('ck_old.xlsx')
