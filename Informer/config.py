@@ -9,12 +9,13 @@ add_feature_num = 60
 args.loss_mode = 'default'
 args.extra = True
 args.load_models = False
-args.data_option = "pct"
+args.data_option = "feature_engineering"
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
 args.root_path = './dataset/'
 args.data_path = 'GMO_BTC_JPY_ohclv.csv'
+args.eval_data = 'GMO_BTC_JPY_ohclv_eval.csv'
 
 #予測タスク、ターゲット(y)、時間フィーチャーエンコーディングを指定
 args.add_feature_num = add_feature_num

@@ -337,10 +337,11 @@ class Exp_Informer(Exp_Basic):
             root_path=args.root_path,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
+            data_path=args.eval_data,
             target=args.target,
             inverse=args.inverse,
             feature_add = args.add_feature_num,
-            option='pct'
+            option=args.data_option
         )
         data_values, target_val, data_stamp, df_raw = eval_data.read_data()
         #seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)

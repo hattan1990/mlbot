@@ -334,7 +334,7 @@ def back_test_spot_swing(threshold=15000, version='v1', pred_opsion=''):
         if pred_opsion == 'mean':
             pred_spread_min = int(tmp_data['pred_lo'].mean())
             pred_spread_max = int(tmp_data['pred_hi'].mean())
-        elif pred_opsion == 'mean2':
+        elif pred_opsion == 'min_max':
             spread = tmp_data['pred_hi'].max() - tmp_data['pred_lo'].min()
             pred_spread_min = int(tmp_data['pred_lo'].min() + spread/4)
             pred_spread_max = int(tmp_data['pred_hi'].max() - spread/4)
@@ -390,7 +390,7 @@ def back_test_spot_swing(threshold=15000, version='v1', pred_opsion=''):
     return pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
 
 if __name__ == '__main__':
-    #main(args)
+    main(args)
     #output = back_test_megin_swing(version='v1')
     #plot_output()
     #plot_spread()
@@ -398,5 +398,5 @@ if __name__ == '__main__':
     #print(stocks)
     #output.to_excel('back_test_megin_swing.xlsx')
 
-    output = back_test_spot_swing(threshold=10000, version='v1_0711', pred_opsion='zero')
+    output = back_test_spot_swing(threshold=15000, version='v1', pred_opsion='mean')
     #output.to_excel('ck_old.xlsx')
