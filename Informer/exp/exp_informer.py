@@ -213,8 +213,8 @@ class Exp_Informer(Exp_Basic):
         total_acc2_ex = []
         total_acc3 = []
         total_acc3_ex = []
-        total_profit_min_max = np.array([0, 0, 0])
-        total_profit_mean = np.array([0, 0, 0])
+        total_profit_min_max = np.array([0.0, 0.0, 0.0])
+        total_profit_mean = np.array([0.0, 0.0, 0.0])
         ex_count = 0
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(vali_loader):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
