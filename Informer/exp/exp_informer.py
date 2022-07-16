@@ -159,13 +159,13 @@ class Exp_Informer(Exp_Basic):
                 close_price = tmp_data['cl'].values[-1]
 
                 if (sell == True) & (buy == True):
-                    profit = sell_price - buy_price
+                    profit = int(sell_price - buy_price)
                     total_win += profit
                 elif (sell == True) & (buy == False):
-                    profit = sell_price - close_price
+                    profit = int(sell_price - close_price)
                     total_loss += profit
                 elif (sell == False) & (buy == True):
-                    profit = close_price - buy_price
+                    profit = int(close_price - buy_price)
                     total_loss += profit
                 else:
                     profit = 0
@@ -178,11 +178,11 @@ class Exp_Informer(Exp_Basic):
             profit_min_max = _back_test_spot_swing(pred_data, true, val, threshold=15000, pred_opsion='min_max')
             profit_mean = _back_test_spot_swing(pred_data, true, val, threshold=15000, pred_opsion='mean')
 
-            pred_hi = pred_data[:,:,0].detach() * 10000000
-            pred_lo = pred_data[:,:,1].detach() * 10000000
+            pred_hi = pred_data[:,:,0].detach().cpu() * 10000000
+            pred_lo = pred_data[:,:,1].detach().cpu() * 10000000
             pred = (pred_hi+pred_lo)/2
-            true_hi = true[:,:,0].detach() * 10000000
-            true_lo = true[:,:,1].detach() * 10000000
+            true_hi = true[:,:,0].detach().cpu() * 10000000
+            true_lo = true[:,:,1].detach().cpu() * 10000000
 
             pred_min = pred.min(axis=1)[0]
             pred_min2 = pred_lo.min(axis=1)[0]
