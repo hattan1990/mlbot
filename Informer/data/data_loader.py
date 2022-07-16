@@ -209,6 +209,7 @@ class Dataset_BTC(Dataset):
             else:
                 self.data_y = df_data[[self.target[0], self.target[1]]].values[border1:border2] / 10000000
         self.data_stamp = data_stamp
+        self.data_val = df_data[['op', 'cl']].values[border1:border2] / 10000000
 
     def __getitem__(self, index):
         s_begin = index
@@ -225,7 +226,9 @@ class Dataset_BTC(Dataset):
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
+        seq_val = self.data_val[r_begin:r_end]
+
+        return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
 
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
