@@ -291,7 +291,7 @@ class Exp_Informer(Exp_Basic):
 
                     model_optim.zero_grad()
                     pred, true, masks, _ = self._process_one_batch(
-                        train_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+                        train_data, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val)
 
                     if self.args['target'] is None:
                         num = self.args['target_num']
@@ -428,7 +428,7 @@ class Exp_Informer(Exp_Basic):
 
             if seq_y.shape[1] == (self.args.label_len + self.args.pred_len):
                 pred, _, _ = self._process_one_batch(
-                    eval_data, seq_x, seq_y, seq_x_mark, seq_y_mark)
+                    eval_data, seq_x, seq_y, seq_x_mark, seq_y_mark, seq_y)
 
                 pred_hi = pred[0, :, 0].detach().cpu().numpy()
                 pred_lo = pred[0, :, 1].detach().cpu().numpy()
