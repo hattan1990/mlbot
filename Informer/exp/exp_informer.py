@@ -108,7 +108,7 @@ class Exp_Informer(Exp_Basic):
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
-        def _back_test_spot_swing(true_data, pred_data, val_data, threshold=15000, pred_opsion=''):
+        def _back_test_spot_swing(pred_data, true_data, val_data, threshold=15000, pred_opsion=''):
             total = 0
             total_win = 0
             total_loss = 0
@@ -172,7 +172,7 @@ class Exp_Informer(Exp_Basic):
                     pass
                 total += profit
 
-            return total, total_win, total_loss
+            return int(total), int(total_win), int(total_loss)
 
         def _check_strategy(pred_data, true, val):
             profit_min_max = _back_test_spot_swing(pred_data, true, val, threshold=15000, pred_opsion='min_max')
@@ -324,6 +324,8 @@ class Exp_Informer(Exp_Basic):
                             loss.backward()
 
                         model_optim.step()
+
+                    break
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
