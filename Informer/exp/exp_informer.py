@@ -114,9 +114,9 @@ class Exp_Informer(Exp_Basic):
             total_loss = 0
             trade_cnt = 0
             for true, pred, val in zip(true_data, pred_data, val_data):
-                true = true.detach().numpy()
-                pred = pred.detach().numpy()
-                val = val.detach().numpy()
+                true = true.detach().cpu().numpy()
+                pred = pred.detach().cpu().numpy()
+                val = val.detach().cpu().numpy()
                 tmp_values = np.concatenate([true, pred, val], axis=1) * 10000000
                 columns = ['hi', 'lo', 'pred_hi', 'pred_lo', 'op', 'cl']
 
@@ -341,11 +341,11 @@ class Exp_Informer(Exp_Basic):
             mlflow.log_metric("EX count", ex_count, step=epoch + 1)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f}  Vali Loss ex: {7:.7f} ACC1 ex: {8:.7f} ACC2 ex: {9:.7f} ACC3 ex: {10:.7f} ex count: {11:.1f} Profit min max: {12} Profit mean: {13}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3,vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
+                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
 
             if acc1 > 0.6:
                 torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
-            early_stopping(-acc1, self.model, path)
+            early_stopping(vali_loss, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
