@@ -254,23 +254,24 @@ class Exp_Informer(Exp_Basic):
                     if true_ex.shape[0] > 0:
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
-                        acc1_ex, acc2_ex, acc3_ex, tmp_out = _check_strategy(pred_ex, true_ex, val_ex)
+                        acc1_ex, acc2_ex, acc3_ex, _ = _check_strategy(pred_ex, true_ex, val_ex)
                         total_acc1_ex.append(acc1_ex)
                         total_acc2_ex.append(acc2_ex)
                         total_acc3_ex.append(acc3_ex)
                         ex_count += true_ex.shape[0]
                         #total_profit_min_max += np.array(profit_min_max)
                         #total_profit_mean += np.array(profit_mean)
-                        strategy_data = pd.concat([strategy_data, tmp_out])
+
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(loss_local)
-                acc1, acc2, acc3, _ = _check_strategy(pred, true, val)
+                acc1, acc2, acc3, tmp_out = _check_strategy(pred, true, val)
                 total_acc1.append(acc1)
                 total_acc2.append(acc2)
                 total_acc3.append(acc3)
+                strategy_data = pd.concat([strategy_data, tmp_out])
 
         total_loss = np.average(total_loss)
         total_loss_ex = np.average(total_loss_ex)
@@ -282,6 +283,7 @@ class Exp_Informer(Exp_Basic):
         total_acc3 = np.average(total_acc3)
         total_acc3_ex = np.average(total_acc3_ex)
         trade_data = strategy_data.groupby('date').mean().reset_index()
+        trade_data.to_csv('trade_data.csv')
         backtest_min_max, total_profit_min_max = _back_test_spot_swing(trade_data, threshold=15000,
                                                                        pred_opsion='min_max')
         backtest_mean, total_profit_mean = _back_test_spot_swing(trade_data, threshold=15000,
