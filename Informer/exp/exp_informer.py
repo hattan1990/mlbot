@@ -281,6 +281,7 @@ class Exp_Informer(Exp_Basic):
         total_acc2_ex = np.average(total_acc2_ex)
         total_acc3 = np.average(total_acc3)
         total_acc3_ex = np.average(total_acc3_ex)
+        strategy_data.to_csv('strategy_data')
         trade_data = strategy_data.groupby('date').mean().reset_index(drop=True)
         backtest_min_max, total_profit_min_max = _back_test_spot_swing(trade_data, threshold=15000,
                                                                        pred_opsion='min_max')
