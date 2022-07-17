@@ -288,6 +288,9 @@ class Exp_Informer(Exp_Basic):
                                                                        pred_opsion='mean')
 
         self.model.train()
+        ex_count = backtest_mean.shape[0]
+        backtest_min_max.to_csv('backtest_min_max.csv')
+        backtest_mean.to_csv('backtest_mean.csv')
         return total_loss, total_loss_local, total_acc1, total_acc2, total_acc3, total_loss_ex, total_acc1_ex, total_acc2_ex, total_acc3_ex, ex_count, total_profit_min_max, total_profit_mean
 
     def train(self, setting):
