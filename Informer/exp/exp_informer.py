@@ -248,10 +248,10 @@ class Exp_Informer(Exp_Basic):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
                 eval_masks = index % 12 == 0
-                batch_x = batch_x[eval_masks]
-                batch_y = batch_y[eval_masks]
-                batch_x_mark = batch_x_mark[eval_masks]
-                batch_y_mark = batch_y_mark[eval_masks]
+                #batch_x = batch_x[eval_masks]
+                #batch_y = batch_y[eval_masks]
+                #batch_x_mark = batch_x_mark[eval_masks]
+                #batch_y_mark = batch_y_mark[eval_masks]
                 batch_val = batch_val[eval_masks]
 
                 pred, true, masks, val = self._process_one_batch(
