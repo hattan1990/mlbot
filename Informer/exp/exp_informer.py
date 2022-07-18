@@ -203,9 +203,9 @@ class Exp_Informer(Exp_Basic):
 
             return output, (total, profit_win, profit_loss)
 
-        def _check_strategy(pred_data, true, val):
+        def _check_strategy(pred_data, true, val, eval_masks):
             if val is not None:
-                tmp_out = _create_tmp_data(pred_data, true, val)
+                tmp_out = _create_tmp_data(pred_data[eval_masks], true[eval_masks], val[eval_masks])
             else:
                 tmp_out = []
             #profit_min_max = _back_test_spot_swing(pred_data, true, val, threshold=15000, pred_opsion='min_max')
@@ -251,12 +251,6 @@ class Exp_Informer(Exp_Basic):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
                 eval_masks = index % 12 == 0
-                #batch_x = batch_x[eval_masks]
-                #batch_y = batch_y[eval_masks]
-                #batch_x_mark = batch_x_mark[eval_masks]
-                #batch_y_mark = batch_y_mark[eval_masks]
-                batch_val = batch_val[eval_masks]
-
                 pred, true, masks, val = self._process_one_batch(
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val)
 
@@ -267,7 +261,7 @@ class Exp_Informer(Exp_Basic):
                     if true_ex.shape[0] > 0:
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
-                        acc1_ex, acc2_ex, acc3_ex, _ = _check_strategy(pred_ex, true_ex, None)
+                        acc1_ex, acc2_ex, acc3_ex, _ = _check_strategy(pred_ex, true_ex, None, None)
                         total_acc1_ex.append(acc1_ex)
                         total_acc2_ex.append(acc2_ex)
                         total_acc3_ex.append(acc3_ex)
@@ -276,7 +270,7 @@ class Exp_Informer(Exp_Basic):
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(np.average(loss_local))
-                acc1, acc2, acc3, tmp_out = _check_strategy(pred, true, val)
+                acc1, acc2, acc3, tmp_out = _check_strategy(pred, true, val, eval_masks)
                 total_acc1.append(acc1)
                 total_acc2.append(acc2)
                 total_acc3.append(acc3)
