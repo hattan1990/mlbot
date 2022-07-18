@@ -214,7 +214,7 @@ class Exp_Informer(Exp_Basic):
             true_min = true_lo.min(axis=1)[0]
 
             pred_max = pred.max(axis=1)[0]
-            pred_max2 = pred_hi.min(axis=1)[0]
+            pred_max2 = pred_hi.max(axis=1)[0]
             pred_max3 = pred_hi.mean(axis=1)
             true_max = true_hi.max(axis=1)[0]
 
@@ -237,9 +237,6 @@ class Exp_Informer(Exp_Basic):
         total_acc2_ex = []
         total_acc3 = []
         total_acc3_ex = []
-        total_profit_min_max = np.array([0.0, 0.0, 0.0])
-        total_profit_mean = np.array([0.0, 0.0, 0.0])
-        ex_count = 0
         strategy_data = pd.DataFrame()
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(vali_loader):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
@@ -258,10 +255,6 @@ class Exp_Informer(Exp_Basic):
                         total_acc1_ex.append(acc1_ex)
                         total_acc2_ex.append(acc2_ex)
                         total_acc3_ex.append(acc3_ex)
-                        ex_count += true_ex.shape[0]
-                        #total_profit_min_max += np.array(profit_min_max)
-                        #total_profit_mean += np.array(profit_mean)
-
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
@@ -399,18 +392,24 @@ class Exp_Informer(Exp_Basic):
             output = [raw['date'].max()]
             max_target = raw['hi'].max()
             min_target = raw['lo'].min()
+
             min_pred = raw['pred'].min()
             max_pred = raw['pred'].max()
-            spread_4 = (max_pred - min_pred) / 4
-            spread_3 = (max_pred - min_pred) / 3
-            fix_values = [0, spread_4, spread_3]
 
-            for fix in fix_values:
-                if max_target > max_pred - fix:
+            fix_sp = (raw['pred_hi'].max() - raw['pred_lo'].min()) / 4
+            min_pred2 = raw['pred_lo'].min() + fix_sp
+            max_pred2 = raw['pred_hi'].max() - fix_sp
+            min_pred3 = raw['pred_lo'].mean()
+            max_pred3 = raw['pred_hi'].mean()
+
+            preds_list = [[max_pred, min_pred], [max_pred2, min_pred2], [max_pred3, min_pred3]]
+
+            for max_p, min_p in preds_list:
+                if max_target > max_p:
                     check_max = 1
                 else:
                     check_max = 0
-                if min_target < min_pred + fix:
+                if min_target < min_p:
                     check_min = 1
                 else:
                     check_min = 0
@@ -418,13 +417,14 @@ class Exp_Informer(Exp_Basic):
                     valid = 1
                 else:
                     valid = 0
-                spread = (max_pred - fix) - (min_pred + fix)
+                spread = (max_p) - (min_p)
                 output += [spread, check_max, check_min, valid]
 
-            out_sp = max_pred - min_pred
-            max_check = max_pred < max_target
-            min_check = min_pred>min_target
-            return output , [raw['date'].max(), max_target, min_target, max_pred, min_pred, out_sp, max_check, min_check]
+            out_sp = max_pred2 - min_pred2
+            max_check = max_pred2 < max_target
+            min_check = min_pred2 > min_target
+            return output , [raw['date'].max(), max_target, min_target, max_pred2, min_pred2, out_sp, max_check, min_check]
+
         args = self.args
         eval_data = EvalDataset(
             root_path=args.root_path,
@@ -455,15 +455,13 @@ class Exp_Informer(Exp_Basic):
         spread_out1 = []
         spread_out2 = []
         for seq_x, seq_y, seq_x_mark, seq_y_mark, raw in tqdm(road_data):
-                #zip(seq_x_list, seq_y_list, seq_x_mark_list, seq_y_mark_list, seq_raw):
-
             seq_x = torch.tensor(np.expand_dims(seq_x, axis=0))
             seq_y = torch.tensor(np.expand_dims(seq_y, axis=0))
             seq_x_mark = torch.tensor(np.expand_dims(seq_x_mark, axis=0))
             seq_y_mark = torch.tensor(np.expand_dims(seq_y_mark, axis=0))
 
             if seq_y.shape[1] == (self.args.label_len + self.args.pred_len):
-                pred, _, _ = self._process_one_batch(
+                pred, _, _, _ = self._process_one_batch(
                     eval_data, seq_x, seq_y, seq_x_mark, seq_y_mark, seq_y)
 
                 pred_hi = pred[0, :, 0].detach().cpu().numpy()

@@ -58,7 +58,7 @@ class EvalDataset():
         self.option = option
         self.feature_add = feature_add
         if self.option == 'pct':
-            self.scaler = pickle.load(open('./weights/scaler_ex.pkl', 'rb'))
+            self.scaler = pickle.load(open('./weights/scaler.pkl', 'rb'))
         else:
             self.scaler = pickle.load(open('./weights/scaler_add.pkl', 'rb'))
 

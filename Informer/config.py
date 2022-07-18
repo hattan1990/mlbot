@@ -51,7 +51,7 @@ args.d_ff = 2048 # dimension of fcn in model
 args.dropout = 0.0005 # dropout 0.005 ->0.0005
 
 #デフォルトのパラメーター設定
-args.attn = 'prob' # attention used in encoder, options:[prob, full]
+args.attn = 'full' # attention used in encoder, options:[prob, full]
 args.embed = 'timeF' # time features encoding, options:[timeF, fixed, learned]
 args.activation = 'gelu' # activation
 args.distil = True # whether to use distilling in encoder
