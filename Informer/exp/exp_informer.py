@@ -204,7 +204,10 @@ class Exp_Informer(Exp_Basic):
             return output, (total, profit_win, profit_loss)
 
         def _check_strategy(pred_data, true, val):
-            tmp_out = _create_tmp_data(pred_data, true, val)
+            if val is not None:
+                tmp_out = _create_tmp_data(pred_data, true, val)
+            else:
+                tmp_out = []
             #profit_min_max = _back_test_spot_swing(pred_data, true, val, threshold=15000, pred_opsion='min_max')
             #profit_mean = _back_test_spot_swing(pred_data, true, val, threshold=15000, pred_opsion='mean')
 
@@ -260,11 +263,11 @@ class Exp_Informer(Exp_Basic):
                 if self.args['extra'] == True:
                     pred_ex = pred[masks]
                     true_ex = true[masks]
-                    val_ex = val[masks]
+                    #val_ex = val[masks]
                     if true_ex.shape[0] > 0:
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
-                        acc1_ex, acc2_ex, acc3_ex, _ = _check_strategy(pred_ex, true_ex, val_ex)
+                        acc1_ex, acc2_ex, acc3_ex, _ = _check_strategy(pred_ex, true_ex, None)
                         total_acc1_ex.append(acc1_ex)
                         total_acc2_ex.append(acc2_ex)
                         total_acc3_ex.append(acc3_ex)
