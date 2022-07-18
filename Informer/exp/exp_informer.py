@@ -75,6 +75,11 @@ class Exp_Informer(Exp_Basic):
         Data = Dataset_BTC
         timeenc = 0 if args.embed!='timeF' else 1
 
+        if flag == 'val':
+            eval_mode = True
+        else:
+            eval_mode = False
+
         shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
         data_set = Data(
             root_path=args.root_path,
@@ -87,7 +92,8 @@ class Exp_Informer(Exp_Basic):
             timeenc=timeenc,
             freq=freq,
             feature_add=args.add_feature_num,
-            option=args.data_option
+            option=args.data_option,
+            eval_mode=eval_mode
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -238,11 +244,18 @@ class Exp_Informer(Exp_Basic):
         total_acc3 = []
         total_acc3_ex = []
         strategy_data = pd.DataFrame()
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(vali_loader):
+        for i, (index,batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(vali_loader):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
+                eval_masks = index % 12 == 0
+                batch_x = batch_x[eval_masks]
+                batch_y = batch_y[eval_masks]
+                batch_x_mark = batch_x_mark[eval_masks]
+                batch_y_mark = batch_y_mark[eval_masks]
+                batch_val = batch_val[eval_masks]
+
                 pred, true, masks, val = self._process_one_batch(
-                    vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark,batch_val)
+                    vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val)
 
                 if self.args['extra'] == True:
                     pred_ex = pred[masks]
@@ -259,7 +272,7 @@ class Exp_Informer(Exp_Basic):
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
-                total_loss_local.append(loss_local)
+                total_loss_local.append(np.average(loss_local))
                 acc1, acc2, acc3, tmp_out = _check_strategy(pred, true, val)
                 total_acc1.append(acc1)
                 total_acc2.append(acc2)
@@ -275,11 +288,11 @@ class Exp_Informer(Exp_Basic):
         total_acc2_ex = np.average(total_acc2_ex)
         total_acc3 = np.average(total_acc3)
         total_acc3_ex = np.average(total_acc3_ex)
-        trade_data = strategy_data.groupby('date').mean().reset_index()
-        trade_data.to_csv('trade_data.csv')
-        backtest_min_max, total_profit_min_max = _back_test_spot_swing(trade_data, threshold=15000,
+        strategy_data = strategy_data.reset_index(drop=True)
+
+        backtest_min_max, total_profit_min_max = _back_test_spot_swing(strategy_data, threshold=15000,
                                                                        pred_opsion='min_max')
-        backtest_mean, total_profit_mean = _back_test_spot_swing(trade_data, threshold=15000,
+        backtest_mean, total_profit_mean = _back_test_spot_swing(strategy_data, threshold=15000,
                                                                        pred_opsion='mean')
 
         self.model.train()

@@ -117,7 +117,7 @@ class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='ALL', data_path='GMO_BTC_JPY_ohclv.csv',
                  target='cl', scale=True, inverse=False, timeenc=0, freq='t',
-                 feature_add=0, option='pct'):
+                 feature_add=0, option='pct', eval_mode=False):
         # size [seq_len, label_len, pred_len]
         # info
         self.seq_len = size[0]
@@ -142,6 +142,7 @@ class Dataset_BTC(Dataset):
 
         self.option = option
         self.feature_add = feature_add
+        self.eval_mode = eval_mode
         self.__read_data__()
 
     def __read_data__(self):
@@ -228,8 +229,10 @@ class Dataset_BTC(Dataset):
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
         seq_val = self.data_val[r_begin:r_end]
-
-        return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
+        if self.eval_mode:
+            return index, seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
+        else:
+            return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
 
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
