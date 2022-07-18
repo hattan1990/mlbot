@@ -24,7 +24,7 @@ warnings.filterwarnings('ignore')
 class Exp_Informer(Exp_Basic):
     def __init__(self, args):
         super(Exp_Informer, self).__init__(args)
-    
+
     def _build_model(self):
         model_dict = {
             'informer':Informer,
@@ -34,18 +34,18 @@ class Exp_Informer(Exp_Basic):
             e_layers = self.args.e_layers if self.args.model=='informer' else self.args.s_layers
             model = model_dict[self.args.model](
                 self.args.enc_in,
-                self.args.dec_in, 
-                self.args.c_out, 
-                self.args.seq_len, 
+                self.args.dec_in,
+                self.args.c_out,
+                self.args.seq_len,
                 self.args.label_len,
-                self.args.pred_len, 
+                self.args.pred_len,
                 self.args.factor,
-                self.args.d_model, 
-                self.args.n_heads, 
+                self.args.d_model,
+                self.args.n_heads,
                 e_layers, # self.args.e_layers,
-                self.args.d_layers, 
+                self.args.d_layers,
                 self.args.d_ff,
-                self.args.dropout, 
+                self.args.dropout,
                 self.args.attn,
                 self.args.embed,
                 self.args.freq,
@@ -55,7 +55,7 @@ class Exp_Informer(Exp_Basic):
                 self.args.mix,
                 self.device
             ).float()
-        
+
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
 
@@ -102,7 +102,7 @@ class Exp_Informer(Exp_Basic):
     def _select_optimizer(self):
         model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
         return model_optim
-    
+
     def _select_criterion(self):
         criterion = CustomLoss(self.args.loss_mode)
         return criterion
@@ -297,10 +297,10 @@ class Exp_Informer(Exp_Basic):
             os.makedirs(path)
 
         time_now = time.time()
-        
+
         train_steps = len(train_loader)
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
-        
+
         model_optim = self._select_optimizer()
         criterion =  self._select_criterion()
 
@@ -310,7 +310,7 @@ class Exp_Informer(Exp_Basic):
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
-            
+
             self.model.train()
             epoch_time = time.time()
             for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(train_loader):
@@ -371,6 +371,14 @@ class Exp_Informer(Exp_Basic):
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f}  Vali Loss ex: {7:.7f} ACC1 ex: {8:.7f} ACC2 ex: {9:.7f} ACC3 ex: {10:.7f} ex count: {11:.1f} Profit min max: {12} Profit mean: {13}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
 
+            vali_loss, vali_loss_local, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, profit_min_max, profit_mean = self.vali(vali_data, vali_loader, criterion)
+            print("Epoch V2: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f}  Vali Loss ex: {7:.7f} ACC1 ex: {8:.7f} ACC2 ex: {9:.7f} ACC3 ex: {10:.7f} ex count: {11:.1f} Profit min max: {12} Profit mean: {13}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
+
+            vali_loss, vali_loss_local, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, profit_min_max, profit_mean = self.vali(vali_data, vali_loader, criterion)
+            print("Epoch V3: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f}  Vali Loss ex: {7:.7f} ACC1 ex: {8:.7f} ACC2 ex: {9:.7f} ACC3 ex: {10:.7f} ex count: {11:.1f} Profit min max: {12} Profit mean: {13}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
+
             if acc1 > 0.6:
                 torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
             early_stopping(vali_loss, self.model, path)
@@ -380,10 +388,10 @@ class Exp_Informer(Exp_Basic):
                 break
 
             adjust_learning_rate(model_optim, epoch+1, self.args)
-            
+
         best_model_path = 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
-        
+
         return self.model
 
 
@@ -438,7 +446,7 @@ class Exp_Informer(Exp_Basic):
         )
         data_values, target_val, data_stamp, df_raw = eval_data.read_data()
         road_data = eval_data.extract_data(data_values, target_val, data_stamp, df_raw)
-        
+
         if load:
             seq_len = str(args.seq_len)
             label_len = str(args.label_len)
