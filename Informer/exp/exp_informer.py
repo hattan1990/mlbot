@@ -75,7 +75,7 @@ class Exp_Informer(Exp_Basic):
         Data = Dataset_BTC
         timeenc = 0 if args.embed!='timeF' else 1
 
-        shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+        shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -369,14 +369,6 @@ class Exp_Informer(Exp_Basic):
             mlflow.log_metric("EX count", ex_count, step=epoch + 1)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f}  Vali Loss ex: {7:.7f} ACC1 ex: {8:.7f} ACC2 ex: {9:.7f} ACC3 ex: {10:.7f} ex count: {11:.1f} Profit min max: {12} Profit mean: {13}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
-
-            vali_loss, vali_loss_local, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, profit_min_max, profit_mean = self.vali(vali_data, vali_loader, criterion)
-            print("Epoch V2: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f}  Vali Loss ex: {7:.7f} ACC1 ex: {8:.7f} ACC2 ex: {9:.7f} ACC3 ex: {10:.7f} ex count: {11:.1f} Profit min max: {12} Profit mean: {13}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
-
-            vali_loss, vali_loss_local, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, profit_min_max, profit_mean = self.vali(vali_data, vali_loader, criterion)
-            print("Epoch V3: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f}  Vali Loss ex: {7:.7f} ACC1 ex: {8:.7f} ACC2 ex: {9:.7f} ACC3 ex: {10:.7f} ex count: {11:.1f} Profit min max: {12} Profit mean: {13}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
 
             if acc1 > 0.6:
