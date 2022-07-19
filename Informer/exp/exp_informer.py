@@ -77,10 +77,12 @@ class Exp_Informer(Exp_Basic):
 
         if flag == 'val':
             eval_mode = True
+            shuffle_flag = False
         else:
             eval_mode = False
+            shuffle_flag = True
 
-        shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
+        drop_last = True; batch_size = args.batch_size; freq=args.freq
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
