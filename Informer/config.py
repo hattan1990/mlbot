@@ -15,7 +15,7 @@ args.data_option = "pct"
 args.data = 'GMO-BTCJPY'
 args.root_path = './dataset/'
 args.data_path = 'GMO_BTC_JPY_ohclv.csv'
-args.eval_data = 'GMO_BTC_JPY_ohclv_eval_202205_test_short.csv'
+args.eval_data = 'GMO_BTC_JPY_ohclv_eval_202205.csv'
 
 #予測タスク、ターゲット(y)、時間フィーチャーエンコーディングを指定
 args.add_feature_num = add_feature_num
@@ -31,7 +31,7 @@ args.checkpoints = './informer_checkpoints'
 
 #EncoderとDecoderの入力するデータの長さを指定
 args.seq_len = 96
-args.label_len = 36
+args.label_len = 48
 args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
@@ -44,7 +44,7 @@ args.dec_in = 2 # decoder input size
 args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
-args.n_heads = 8 # num of heads
+args.n_heads = 16 # num of heads
 args.e_layers = 2 # num of encoder layers
 args.d_layers = 1 # num of decoder layers
 args.d_ff = 2048 # dimension of fcn in model

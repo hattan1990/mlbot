@@ -219,12 +219,12 @@ class Exp_Informer(Exp_Basic):
             true_hi = true[:,:,0].detach().cpu() * 10000000
             true_lo = true[:,:,1].detach().cpu() * 10000000
 
-            pred_min = pred.min(axis=1)[0]
+            pred_min = pred_lo[: ,0]
             pred_min2 = pred_lo.min(axis=1)[0]
             pred_min3 = pred_lo.mean(axis=1)
             true_min = true_lo.min(axis=1)[0]
 
-            pred_max = pred.max(axis=1)[0]
+            pred_max = pred_hi[: ,0]
             pred_max2 = pred_hi.max(axis=1)[0]
             pred_max3 = pred_hi.mean(axis=1)
             true_max = true_hi.max(axis=1)[0]
@@ -289,16 +289,21 @@ class Exp_Informer(Exp_Basic):
         total_acc3_ex = np.average(total_acc3_ex)
         strategy_data = strategy_data.reset_index(drop=True)
 
+        backtest_zero, total_profit_zero = _back_test_spot_swing(strategy_data, threshold=15000,
+                                                                       pred_opsion='zero')
         backtest_min_max, total_profit_min_max = _back_test_spot_swing(strategy_data, threshold=15000,
                                                                        pred_opsion='min_max')
         backtest_mean, total_profit_mean = _back_test_spot_swing(strategy_data, threshold=15000,
                                                                        pred_opsion='mean')
 
         self.model.train()
-        ex_count = backtest_mean.shape[0]
+        ex_count_zero = backtest_zero.shape[0]
+        ex_count_min_max = backtest_min_max.shape[0]
+        ex_count_mean = backtest_mean.shape[0]
+        backtest_zero.to_csv('backtest_zero.csv')
         backtest_min_max.to_csv('backtest_min_max.csv')
         backtest_mean.to_csv('backtest_mean.csv')
-        return total_loss, total_loss_local, total_acc1, total_acc2, total_acc3, total_loss_ex, total_acc1_ex, total_acc2_ex, total_acc3_ex, ex_count, total_profit_min_max, total_profit_mean
+        return total_loss, total_loss_local, total_acc1, total_acc2, total_acc3, total_loss_ex, total_acc1_ex, total_acc2_ex, total_acc3_ex, ex_count_zero, ex_count_min_max, ex_count_mean, total_profit_zero, total_profit_min_max, total_profit_mean
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -368,7 +373,7 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_local, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, profit_min_max, profit_mean = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_local, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count1, ex_count2, ex_count3, profit_zero, profit_min_max, profit_mean = self.vali(vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
@@ -378,10 +383,9 @@ class Exp_Informer(Exp_Basic):
             mlflow.log_metric("ACC1 ex", acc1_ex, step=epoch + 1)
             mlflow.log_metric("ACC2", acc2, step=epoch + 1)
             mlflow.log_metric("ACC3", acc3, step=epoch + 1)
-            mlflow.log_metric("EX count", ex_count, step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ACC1: {4:.7f} ACC2: {5:.7f} ACC3: {6:.7f}  Vali Loss ex: {7:.7f} ACC1 ex: {8:.7f} ACC2 ex: {9:.7f} ACC3 ex: {10:.7f} ex count: {11:.1f} Profit min max: {12} Profit mean: {13}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count, str(profit_min_max), str(profit_mean)))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1 ex: {5:.7f} ACC min max ex: {6:.7f} ACC mean ex: {7:.7f} ex count1: {8:.1f} Profit zero: {9} ex count2: {10:.1f} Profit min max: {11} ex count3: {12:.1f} Profit mean: {13}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count1, str(profit_zero), ex_count2, str(profit_min_max), ex_count3, str(profit_mean)))
 
             if acc1 > 0.6:
                 torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
