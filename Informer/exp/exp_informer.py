@@ -116,12 +116,22 @@ class Exp_Informer(Exp_Basic):
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
-        def _create_tmp_data(pred_data, true_data, val_data):
+        def _create_tmp_data(pred_data, true_data, val_data, index, option='mean'):
             output = pd.DataFrame()
-            for true, pred, val in zip(true_data, pred_data, val_data):
+            index = index.detach().cpu().numpy()
+            for i, true, pred, val in zip(index, true_data, pred_data, val_data):
                 true = true.detach().cpu().numpy()
                 pred = pred.detach().cpu().numpy()
                 val = val.detach().cpu().numpy()
+
+                if option == 'mean':
+                    target_index = i % 6
+                    from_index = 6 - target_index - 1
+                    to_index = 12 - target_index - 1
+                    true = true[from_index:to_index]
+                    pred = pred[from_index:to_index]
+                    val = val[from_index:to_index]
+
                 tmp_values = np.concatenate([val, true, pred], axis=1) * 10000000
                 columns = ['date', 'op', 'cl', 'hi', 'lo', 'pred_hi', 'pred_lo']
 
@@ -130,28 +140,34 @@ class Exp_Informer(Exp_Basic):
 
             return output
 
-        def _back_test_spot_swing(trade_data, threshold=15000, pred_opsion=''):
+        def _back_test_spot_swing(trade_data, threshold=15000, pred_option='', mode=''):
             output = []
             total = 0
             trade_cnt = 0
             for i in range(0, trade_data.shape[0], 12):
-                if i == 0:
-                    start = 0
-                    end = 12 - 1
+                if mode == 'mean':
+                    if i == 0:
+                        start = 0
+                        end = 6 - 1
+                    else:
+                        end = i + 6 - 1
                 else:
-                    end = i + 12 - 1
+                    if i == 0:
+                        start = 0
+                        end = 12 - 1
+                    else:
+                        end = i + 12 - 1
 
                 tmp_data = trade_data.loc[start:end]
                 base_price = tmp_data['op'].values[0]
-                if pred_opsion == 'mean':
+                if pred_option == 'mean':
                     pred_spread_min = int(tmp_data['pred_lo'].mean())
                     pred_spread_max = int(tmp_data['pred_hi'].mean())
-                elif pred_opsion == 'min_max':
+                elif pred_option == 'min_max':
                     spread = tmp_data['pred_hi'].max() - tmp_data['pred_lo'].min()
                     pred_spread_min = int(tmp_data['pred_lo'].min() + spread / 4)
                     pred_spread_max = int(tmp_data['pred_hi'].max() - spread / 4)
-
-                elif pred_opsion == 'zero':
+                elif pred_option == 'zero':
                     pred_spread_min = int(tmp_data['pred_lo'].values[0])
                     pred_spread_max = int(tmp_data['pred_hi'].values[0])
                 else:
@@ -203,15 +219,19 @@ class Exp_Informer(Exp_Basic):
             profit_win = output.loc[term, 'profit'].sum()
             profit_loss = output.loc[~term, 'profit'].sum()
 
+            total = np.round(total / 1000000, 2)
+            profit_win = np.round(profit_win / 1000000, 2)
+            profit_loss = np.round(profit_loss / 1000000, 2)
+
             return output, (total, profit_win, profit_loss)
 
-        def _check_strategy(pred_data, true, val, eval_masks):
+        def _check_strategy(pred_data, true, val, eval_masks, index):
             if val is not None:
-                tmp_out = _create_tmp_data(pred_data[eval_masks], true[eval_masks], val[eval_masks])
+                tmp_out1 = _create_tmp_data(pred_data[eval_masks], true[eval_masks], val[eval_masks], index, option='none')
+                tmp_out2 = _create_tmp_data(pred_data, true, val, index, option='mean')
             else:
-                tmp_out = []
-            #profit_min_max = _back_test_spot_swing(pred_data, true, val, threshold=15000, pred_opsion='min_max')
-            #profit_mean = _back_test_spot_swing(pred_data, true, val, threshold=15000, pred_opsion='mean')
+                tmp_out1 = []
+                tmp_out2 = []
 
             pred_hi = pred_data[:,:,0].detach().cpu() * 10000000
             pred_lo = pred_data[:,:,1].detach().cpu() * 10000000
@@ -235,20 +255,17 @@ class Exp_Informer(Exp_Basic):
             acc2 = ((pred_min2 + spread_4) > true_min) & ((pred_max2 - spread_4) < true_max) & ((pred_max2 - pred_min2) > 0)
             acc3 = (pred_min3 > true_min) & (pred_max3 < true_max) & ((pred_max3 - pred_min3) > 0)
 
-            return acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0], tmp_out
-
+            return acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0], tmp_out1, tmp_out2
 
         self.model.eval()
         total_loss = []
         total_loss_ex = []
         total_loss_local = []
-        total_acc1 = []
         total_acc1_ex = []
-        total_acc2 = []
         total_acc2_ex = []
-        total_acc3 = []
         total_acc3_ex = []
-        strategy_data = pd.DataFrame()
+        strategy_data1 = pd.DataFrame()
+        strategy_data2 = pd.DataFrame()
         for i, (index,batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(vali_loader):
             if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
                     (batch_x.shape[1] == self.args.seq_len):
@@ -263,7 +280,7 @@ class Exp_Informer(Exp_Basic):
                     if true_ex.shape[0] > 0:
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
-                        acc1_ex, acc2_ex, acc3_ex, _ = _check_strategy(pred_ex, true_ex, None, None)
+                        acc1_ex, acc2_ex, acc3_ex, _, _ = _check_strategy(pred_ex, true_ex, None, None, None)
                         total_acc1_ex.append(acc1_ex)
                         total_acc2_ex.append(acc2_ex)
                         total_acc3_ex.append(acc3_ex)
@@ -272,38 +289,49 @@ class Exp_Informer(Exp_Basic):
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(np.average(loss_local))
-                acc1, acc2, acc3, tmp_out = _check_strategy(pred, true, val, eval_masks)
-                total_acc1.append(acc1)
-                total_acc2.append(acc2)
-                total_acc3.append(acc3)
-                strategy_data = pd.concat([strategy_data, tmp_out])
+                _, _, _, tmp_out1, tmp_out2 = _check_strategy(pred, true, val, eval_masks, index)
+                strategy_data1 = pd.concat([strategy_data1, tmp_out1])
+                strategy_data2 = pd.concat([strategy_data2, tmp_out2])
 
-        total_loss = np.average(total_loss)
-        total_loss_ex = np.average(total_loss_ex)
-        total_loss_local = np.average(total_loss_local) * 10000000
-        total_acc1 = np.average(total_acc1)
-        total_acc1_ex = np.average(total_acc1_ex)
-        total_acc2 = np.average(total_acc2)
-        total_acc2_ex = np.average(total_acc2_ex)
-        total_acc3 = np.average(total_acc3)
-        total_acc3_ex = np.average(total_acc3_ex)
-        strategy_data = strategy_data.reset_index(drop=True)
+        tl = np.average(total_loss)
+        tl_ex = np.average(total_loss_ex)
+        acc1 = np.average(total_acc1_ex)
+        acc2 = np.average(total_acc2_ex)
+        acc3 = np.average(total_acc3_ex)
+        strategy_data1 = strategy_data1.reset_index(drop=True)
+        strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
-        backtest_zero, total_profit_zero = _back_test_spot_swing(strategy_data, threshold=15000,
-                                                                       pred_opsion='zero')
-        backtest_min_max, total_profit_min_max = _back_test_spot_swing(strategy_data, threshold=15000,
-                                                                       pred_opsion='min_max')
-        backtest_mean, total_profit_mean = _back_test_spot_swing(strategy_data, threshold=15000,
-                                                                       pred_opsion='mean')
+        backtest_zero1, p_zero1 = _back_test_spot_swing(strategy_data1, threshold=15000,
+                                                                       pred_option='zero')
+        backtest_min_max1, p_min_max1 = _back_test_spot_swing(strategy_data1, threshold=15000,
+                                                                       pred_option='min_max')
+        backtest_mean1, p_mean1 = _back_test_spot_swing(strategy_data1, threshold=15000,
+                                                                       pred_option='mean')
+
+
+        cnt_zero1 = backtest_zero1.shape[0]
+        cnt_min_max1 = backtest_min_max1.shape[0]
+        cnt_mean1 = backtest_mean1.shape[0]
+        backtest_zero1.to_csv('backtest_zero1.csv')
+        backtest_min_max1.to_csv('backtest_min_max1.csv')
+        backtest_mean1.to_csv('backtest_mean1.csv')
+
+        backtest_zero2, p_zero2 = _back_test_spot_swing(strategy_data2, threshold=15000,
+                                                        pred_option='zero', mode='mean')
+        backtest_min_max2, p_min_max2 = _back_test_spot_swing(strategy_data2, threshold=15000,
+                                                              pred_option='min_max', mode='mean')
+        backtest_mean2, p_mean2 = _back_test_spot_swing(strategy_data2, threshold=15000,
+                                                        pred_option='mean', mode='mean')
+
+        cnt_zero2 = backtest_zero2.shape[0]
+        cnt_min_max2 = backtest_min_max2.shape[0]
+        cnt_mean2 = backtest_mean2.shape[0]
+        backtest_zero2.to_csv('backtest_zero2.csv')
+        backtest_min_max2.to_csv('backtest_min_max2.csv')
+        backtest_mean2.to_csv('backtest_mean2.csv')
 
         self.model.train()
-        ex_count_zero = backtest_zero.shape[0]
-        ex_count_min_max = backtest_min_max.shape[0]
-        ex_count_mean = backtest_mean.shape[0]
-        backtest_zero.to_csv('backtest_zero.csv')
-        backtest_min_max.to_csv('backtest_min_max.csv')
-        backtest_mean.to_csv('backtest_mean.csv')
-        return total_loss, total_loss_local, total_acc1, total_acc2, total_acc3, total_loss_ex, total_acc1_ex, total_acc2_ex, total_acc3_ex, ex_count_zero, ex_count_min_max, ex_count_mean, total_profit_zero, total_profit_min_max, total_profit_mean
+        return tl, tl_ex, acc1, acc2, acc3, cnt_zero1, cnt_min_max1, cnt_mean1, p_zero1, p_min_max1, p_mean1, cnt_zero2, cnt_min_max2, cnt_mean2, p_zero2, p_min_max2, p_mean2
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -373,23 +401,23 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_local, acc1, acc2, acc3, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count1, ex_count2, ex_count3, profit_zero, profit_min_max, profit_mean = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_ex, acc1, acc2, acc3, cnt11, cnt12, cnt13, p_zero1, p_min_max1, p_mean1, cnt21, cnt22, cnt23, p_zero2, p_min_max2, p_mean2 = self.vali(vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss", vali_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss ex", vali_loss_ex, step=epoch + 1)
-            mlflow.log_metric("ACC1", acc1, step=epoch + 1)
-            mlflow.log_metric("ACC1 ex", acc1_ex, step=epoch + 1)
-            mlflow.log_metric("ACC2", acc2, step=epoch + 1)
-            mlflow.log_metric("ACC3", acc3, step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1 ex: {5:.7f} ACC min max ex: {6:.7f} ACC mean ex: {7:.7f} ex count1: {8:.1f} Profit zero: {9} ex count2: {10:.1f} Profit min max: {11} ex count3: {12:.1f} Profit mean: {13}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1_ex, acc2_ex, acc3_ex, ex_count1, str(profit_zero), ex_count2, str(profit_min_max), ex_count3, str(profit_mean)))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3))
+            print("Default mode | cnt: {0} profit zero: {1} cnt: {2} profit min max: {3} cnt: {4} profit mean: {5}".format(
+                cnt11, p_zero1, cnt12, p_min_max1, cnt13, p_mean1))
+            print("Mean mode | cnt: {0} profit zero: {1} cnt: {2} profit min max: {3} cnt: {4} profit mean: {5}".format(
+                cnt21, p_zero2, cnt22, p_min_max2, cnt23, p_mean2))
 
-            if acc1 > 0.6:
+            if (p_zero1[0] > 2000000) or (p_min_max1[0] > 2000000) or (p_mean1[0] > 2000000)or (p_zero2[0] > 2000000)or (p_mean2[0] > 2000000):
                 torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
-            early_stopping(vali_loss, self.model, path)
+            early_stopping(-acc2, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
