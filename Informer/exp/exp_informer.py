@@ -140,23 +140,16 @@ class Exp_Informer(Exp_Basic):
 
             return output
 
-        def _back_test_spot_swing(trade_data, threshold=15000, pred_option='', mode=''):
+        def _back_test_spot_swing(trade_data, threshold=15000, pred_option='', num=12):
             output = []
             total = 0
             trade_cnt = 0
-            for i in range(0, trade_data.shape[0], 12):
-                if mode == 'mean':
-                    if i == 0:
-                        start = 0
-                        end = 6 - 1
-                    else:
-                        end = i + 6 - 1
+            for i in range(0, trade_data.shape[0], num):
+                if i == 0:
+                    start = 0
+                    end = num - 1
                 else:
-                    if i == 0:
-                        start = 0
-                        end = 12 - 1
-                    else:
-                        end = i + 12 - 1
+                    end = i + num - 1
 
                 tmp_data = trade_data.loc[start:end]
                 base_price = tmp_data['op'].values[0]
@@ -302,11 +295,11 @@ class Exp_Informer(Exp_Basic):
         strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
         backtest_zero1, p_zero1 = _back_test_spot_swing(strategy_data1, threshold=15000,
-                                                                       pred_option='zero')
+                                                                       pred_option='zero', num=12)
         backtest_min_max1, p_min_max1 = _back_test_spot_swing(strategy_data1, threshold=15000,
-                                                                       pred_option='min_max')
+                                                                       pred_option='min_max', num=12)
         backtest_mean1, p_mean1 = _back_test_spot_swing(strategy_data1, threshold=15000,
-                                                                       pred_option='mean')
+                                                                       pred_option='mean', num=12)
 
 
         cnt_zero1 = backtest_zero1.shape[0]
@@ -317,11 +310,11 @@ class Exp_Informer(Exp_Basic):
         backtest_mean1.to_csv('backtest_mean1.csv')
 
         backtest_zero2, p_zero2 = _back_test_spot_swing(strategy_data2, threshold=15000,
-                                                        pred_option='zero', mode='mean')
+                                                        pred_option='zero', num=6)
         backtest_min_max2, p_min_max2 = _back_test_spot_swing(strategy_data2, threshold=15000,
-                                                              pred_option='min_max', mode='mean')
+                                                              pred_option='min_max', num=6)
         backtest_mean2, p_mean2 = _back_test_spot_swing(strategy_data2, threshold=15000,
-                                                        pred_option='mean', mode='mean')
+                                                        pred_option='mean', num=6)
 
         cnt_zero2 = backtest_zero2.shape[0]
         cnt_min_max2 = backtest_min_max2.shape[0]
@@ -415,7 +408,7 @@ class Exp_Informer(Exp_Basic):
             print("Mean mode | cnt: {0} profit zero: {1} cnt: {2} profit min max: {3} cnt: {4} profit mean: {5}".format(
                 cnt21, p_zero2, cnt22, p_min_max2, cnt23, p_mean2))
 
-            if (p_zero1[0] > 2000000) or (p_min_max1[0] > 2000000) or (p_mean1[0] > 2000000)or (p_zero2[0] > 2000000)or (p_mean2[0] > 2000000):
+            if p_zero2[0] > 3:
                 torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
             early_stopping(-acc2, self.model, path)
             self.model.to(self.device)
