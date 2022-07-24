@@ -140,6 +140,147 @@ class Exp_Informer(Exp_Basic):
 
             return output
 
+        def _back_test_mm(trade_data, threshold=10000, pred_option='', num=12):
+            def drop_off_sell_stocks(stocks, lo):
+                output = []
+                for i, stock in enumerate(stocks):
+                    date = stock[0]
+                    stock_price = stock[1]
+                    stay_count = stock[2]
+                    drop_off = stock[3]
+                    diff = stock[4]
+                    if drop_off == False:
+                        if stock_price > lo:
+                            diff = stock_price - lo
+                            drop_off = True
+                        else:
+                            stay_count += 1
+                        output.append([date, stock_price, stay_count, drop_off, diff])
+                    else:
+                        output.append(stock)
+
+                return output
+
+            def drop_off_buy_stocks(stocks, hi):
+                output = []
+                for i, stock in enumerate(stocks):
+                    date = stock[0]
+                    stock_price = stock[1]
+                    stay_count = stock[2]
+                    drop_off = stock[3]
+                    diff = stock[4]
+                    if drop_off == False:
+                        if stock_price < hi:
+                            diff = hi - stock_price
+                            drop_off = True
+                        else:
+                            stay_count += 1
+                        output.append([date, stock_price, stay_count, drop_off, diff])
+                    else:
+                        output.append(stock)
+
+                return output
+
+            def calc_stock_count(buy_stocks, sell_stocks):
+                stock_count = 0
+                for b_stock in buy_stocks:
+                    if b_stock[3] == False:
+                        stock_count += 1
+
+                for s_stock in sell_stocks:
+                    if s_stock[3] == False:
+                        stock_count += 1
+
+                return stock_count
+            output = []
+            buy_stocks = []
+            sell_stocks = []
+            stock_counts = []
+            total = 0
+            trade_cnt = 0
+            max_stocks = 0
+            for i in range(0, trade_data.shape[0], num):
+                if i == 0:
+                    start = 0
+                    end = num - 1
+                else:
+                    end = i + num - 1
+
+                tmp_data = trade_data.loc[start:end]
+                if pred_option == 'mean':
+                    pred_spread_min = int(tmp_data['pred_lo'].mean())
+                    pred_spread_max = int(tmp_data['pred_hi'].mean())
+                elif pred_option == 'min_max':
+                    spread = tmp_data['pred_hi'].max() - tmp_data['pred_lo'].min()
+                    pred_spread_min = int(tmp_data['pred_lo'].min() + spread / 4)
+                    pred_spread_max = int(tmp_data['pred_hi'].max() - spread / 4)
+                elif pred_option == 'zero':
+                    pred_spread_min = int(tmp_data['pred_lo'].values[0])
+                    pred_spread_max = int(tmp_data['pred_hi'].values[0])
+                else:
+                    pred_spread_min = int(tmp_data['pred'].min())
+                    pred_spread_max = int(tmp_data['pred'].max())
+
+                spread_mergin = (pred_spread_max - pred_spread_min)
+
+                buy = False
+                sell = False
+                trade = False
+
+                for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
+                    buy_stocks = drop_off_buy_stocks(buy_stocks, hi)
+                    sell_stocks = drop_off_sell_stocks(sell_stocks, lo)
+
+                    if spread_mergin >= threshold:
+                        trade = True
+                        if hi > pred_spread_max:
+                            sell = True
+                            sell_price = pred_spread_max
+                            sell_date = date
+                        if lo < pred_spread_min:
+                            buy = True
+                            buy_price = pred_spread_min
+                            buy_date = date
+
+                stocks_count = calc_stock_count(buy_stocks, sell_stocks)
+                stock_counts.append(stocks_count)
+                if stocks_count > max_stocks:
+                    max_stocks = stocks_count
+
+                close_date = tmp_data['date'].values[-1]
+                profit = 0
+
+                if trade == True:
+                    if (sell == True) & (buy == True):
+                        profit = sell_price - buy_price
+                    elif (sell == True) & (buy == False):
+                        sell_stocks.append([sell_date, sell_price, 0, False, 0])
+                    elif (sell == False) & (buy == True):
+                        buy_stocks.append([buy_date, buy_price, 0, False, 0])
+                    else:
+                        pass
+
+                    total += profit
+                    trade_cnt += 1
+                else:
+                    pass
+
+                output.append([close_date, total, profit, buy, sell])
+                start = end + 1
+
+            stock_df = pd.DataFrame(buy_stocks + sell_stocks, columns=['date', 'price', 'stay_cnt', 'drop_off', 'diff'])
+            output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
+            output = output[output['profit'] != 0]
+            term = (output['buy'] == True) & (output['sell'] == True)
+            profit_win = output.loc[term, 'profit'].sum()
+            profit_loss = output.loc[~term, 'profit'].sum()
+
+            total = np.round(total / 1000000, 2) / max_stocks
+            profit_win = np.round(profit_win / 1000000, 2) / max_stocks
+            profit_loss = np.round(profit_loss / 1000000, 2) / max_stocks
+
+            return output, (total, profit_win, profit_loss)
+
         def _back_test_spot_swing(trade_data, threshold=15000, pred_option='', num=12):
             output = []
             total = 0
@@ -250,6 +391,25 @@ class Exp_Informer(Exp_Basic):
 
             return acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0], tmp_out1, tmp_out2
 
+        def execute_back_test(backtest, input_dict):
+            trade_data = input_dict['trade_data']
+            num = input_dict['num']
+            thresh_list = input_dict['thresh_list']
+            pred_ops = input_dict['pred_ops']
+            best_score = 0
+            for i, thresh in enumerate(thresh_list):
+                for option in pred_ops:
+                    threshold = thresh
+                    pred_option = option
+                    output, scores = backtest(trade_data, threshold=threshold, pred_option=pred_option, num=num)
+                    if (scores[0] > best_score) or (i == 0):
+                        best_score = scores[0]
+                        best_output = output
+                        best_score_values = scores
+                        out_dict = {'vesion': num, 'thresh': threshold, 'option': pred_option}
+
+            return best_output, best_score_values, out_dict
+
         self.model.eval()
         total_loss = []
         total_loss_ex = []
@@ -274,15 +434,16 @@ class Exp_Informer(Exp_Basic):
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
                         acc1_ex, acc2_ex, acc3_ex, _, _ = _check_strategy(pred_ex, true_ex, None, None, None)
-                        total_acc1_ex.append(acc1_ex)
-                        total_acc2_ex.append(acc2_ex)
-                        total_acc3_ex.append(acc3_ex)
+
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(np.average(loss_local))
-                _, _, _, tmp_out1, tmp_out2 = _check_strategy(pred, true, val, eval_masks, index)
+                acc1_ex, acc2_ex, acc3_ex, tmp_out1, tmp_out2 = _check_strategy(pred, true, val, eval_masks, index)
+                total_acc1_ex.append(acc1_ex)
+                total_acc2_ex.append(acc2_ex)
+                total_acc3_ex.append(acc3_ex)
                 strategy_data1 = pd.concat([strategy_data1, tmp_out1])
                 strategy_data2 = pd.concat([strategy_data2, tmp_out2])
 
@@ -294,37 +455,25 @@ class Exp_Informer(Exp_Basic):
         strategy_data1 = strategy_data1.reset_index(drop=True)
         strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
-        backtest_zero1, p_zero1 = _back_test_spot_swing(strategy_data1, threshold=15000,
-                                                                       pred_option='zero', num=12)
-        backtest_min_max1, p_min_max1 = _back_test_spot_swing(strategy_data1, threshold=15000,
-                                                                       pred_option='min_max', num=12)
-        backtest_mean1, p_mean1 = _back_test_spot_swing(strategy_data1, threshold=15000,
-                                                                       pred_option='mean', num=12)
+        input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [10000, 15000, 20000, 25000],
+                       'pred_ops': ['mean', 'min_max', 'zero']}
+        best_output11, values11, dict11 = execute_back_test(_back_test_spot_swing, input_dict1)
+        best_output12, values12, dict12 = execute_back_test(_back_test_mm, input_dict1)
+
+        input_dict2 = {'trade_data': strategy_data2, 'num': 6, 'thresh_list': [5000, 10000, 15000, 20000],
+                       'pred_ops': ['mean', 'min_max', 'zero']}
+        best_output21, values21, dict21 = execute_back_test(_back_test_spot_swing, input_dict2)
+        best_output22, values22, dict22 = execute_back_test(_back_test_mm, input_dict2)
 
 
-        cnt_zero1 = backtest_zero1.shape[0]
-        cnt_min_max1 = backtest_min_max1.shape[0]
-        cnt_mean1 = backtest_mean1.shape[0]
-        backtest_zero1.to_csv('backtest_zero1.csv')
-        backtest_min_max1.to_csv('backtest_min_max1.csv')
-        backtest_mean1.to_csv('backtest_mean1.csv')
-
-        backtest_zero2, p_zero2 = _back_test_spot_swing(strategy_data2, threshold=15000,
-                                                        pred_option='zero', num=6)
-        backtest_min_max2, p_min_max2 = _back_test_spot_swing(strategy_data2, threshold=15000,
-                                                              pred_option='min_max', num=6)
-        backtest_mean2, p_mean2 = _back_test_spot_swing(strategy_data2, threshold=15000,
-                                                        pred_option='mean', num=6)
-
-        cnt_zero2 = backtest_zero2.shape[0]
-        cnt_min_max2 = backtest_min_max2.shape[0]
-        cnt_mean2 = backtest_mean2.shape[0]
-        backtest_zero2.to_csv('backtest_zero2.csv')
-        backtest_min_max2.to_csv('backtest_min_max2.csv')
-        backtest_mean2.to_csv('backtest_mean2.csv')
+        cnt11 = best_output11.shape[0]
+        cnt21 = best_output21.shape[0]
+        best_output11.to_csv('best_output11.csv')
+        best_output21.to_csv('best_output21.csv')
+        strategy_data1.to_csv('strategy_data1.csv')
 
         self.model.train()
-        return tl, tl_ex, acc1, acc2, acc3, cnt_zero1, cnt_min_max1, cnt_mean1, p_zero1, p_min_max1, p_mean1, cnt_zero2, cnt_min_max2, cnt_mean2, p_zero2, p_min_max2, p_mean2
+        return tl, tl_ex, acc1, acc2, acc3, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -365,6 +514,7 @@ class Exp_Informer(Exp_Basic):
                         loss = criterion(pred, true[:,:,num].unsqueeze(2))
                     else:
                         loss = criterion(pred, true)
+                        loss_ex = None
                         if self.args['extra'] == True:
                             pred_ex = pred[masks]
                             true_ex = true[masks]
@@ -373,7 +523,6 @@ class Exp_Informer(Exp_Basic):
                                 loss_all = loss.item() + loss_ex.item()
                                 train_loss.append(loss_all)
                             else:
-                                loss_ex = None
                                 train_loss.append(loss.item())
 
                         else:
@@ -394,7 +543,7 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_ex, acc1, acc2, acc3, cnt11, cnt12, cnt13, p_zero1, p_min_max1, p_mean1, cnt21, cnt22, cnt23, p_zero2, p_min_max2, p_mean2 = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_ex, acc1, acc2, acc3, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
@@ -403,13 +552,11 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3))
-            print("Default mode | cnt: {0} profit zero: {1} cnt: {2} profit min max: {3} cnt: {4} profit mean: {5}".format(
-                cnt11, p_zero1, cnt12, p_min_max1, cnt13, p_mean1))
-            print("Mean mode | cnt: {0} profit zero: {1} cnt: {2} profit min max: {3} cnt: {4} profit mean: {5}".format(
-                cnt21, p_zero2, cnt22, p_min_max2, cnt23, p_mean2))
+            print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
+                cnt11, values11, dict11, values12, dict12))
+            print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
+                cnt21, values21, dict21, values22, dict22))
 
-            if p_zero2[0] > 3:
-                torch.save(self.model.to('cpu').state_dict(), str(acc1)+'_best_model_checkpoint_cpu.pth')
             early_stopping(-acc2, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
