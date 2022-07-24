@@ -115,7 +115,7 @@ class Exp_Informer(Exp_Basic):
         criterion = CustomLoss(self.args.loss_mode)
         return criterion
 
-    def vali(self, vali_data, vali_loader, criterion):
+    def vali(self, epoch ,vali_data, vali_loader, criterion):
         def _create_tmp_data(pred_data, true_data, val_data, index, option='mean'):
             output = pd.DataFrame()
             index = index.detach().cpu().numpy()
@@ -455,22 +455,25 @@ class Exp_Informer(Exp_Basic):
         strategy_data1 = strategy_data1.reset_index(drop=True)
         strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
-        input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [10000, 15000, 20000, 25000],
-                       'pred_ops': ['mean', 'min_max', 'zero']}
-        best_output11, values11, dict11 = execute_back_test(_back_test_spot_swing, input_dict1)
-        best_output12, values12, dict12 = execute_back_test(_back_test_mm, input_dict1)
+        if epoch > 10:
+            input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [10000, 15000, 20000, 25000],
+                           'pred_ops': ['mean', 'min_max', 'zero']}
+            best_output11, values11, dict11 = execute_back_test(_back_test_spot_swing, input_dict1)
+            best_output12, values12, dict12 = execute_back_test(_back_test_mm, input_dict1)
 
-        input_dict2 = {'trade_data': strategy_data2, 'num': 6, 'thresh_list': [5000, 10000, 15000, 20000],
-                       'pred_ops': ['mean', 'min_max', 'zero']}
-        best_output21, values21, dict21 = execute_back_test(_back_test_spot_swing, input_dict2)
-        best_output22, values22, dict22 = execute_back_test(_back_test_mm, input_dict2)
+            input_dict2 = {'trade_data': strategy_data2, 'num': 6, 'thresh_list': [5000, 10000, 15000, 20000],
+                           'pred_ops': ['mean', 'min_max', 'zero']}
+            best_output21, values21, dict21 = execute_back_test(_back_test_spot_swing, input_dict2)
+            best_output22, values22, dict22 = execute_back_test(_back_test_mm, input_dict2)
 
 
-        cnt11 = best_output11.shape[0]
-        cnt21 = best_output21.shape[0]
-        best_output11.to_csv('best_output11.csv')
-        best_output21.to_csv('best_output21.csv')
-        strategy_data1.to_csv('strategy_data1.csv')
+            cnt11 = best_output11.shape[0]
+            cnt21 = best_output21.shape[0]
+            best_output11.to_csv('best_output11.csv')
+            best_output21.to_csv('best_output21.csv')
+            strategy_data1.to_csv('strategy_data1.csv')
+        else:
+            cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = values12 = dict12 = values22 = dict22 = None
 
         self.model.train()
         return tl, tl_ex, acc1, acc2, acc3, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
@@ -540,10 +543,11 @@ class Exp_Informer(Exp_Basic):
                             loss.backward()
 
                         model_optim.step()
+                    break
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_ex, acc1, acc2, acc3, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_ex, acc1, acc2, acc3, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(epoch, vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
@@ -552,10 +556,12 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3))
-            print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
-                cnt11, values11, dict11, values12, dict12))
-            print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
-                cnt21, values21, dict21, values22, dict22))
+
+            if epoch > 10:
+                print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
+                    cnt11, values11, dict11, values12, dict12))
+                print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
+                    cnt21, values21, dict21, values22, dict22))
 
             early_stopping(-acc2, self.model, path)
             self.model.to(self.device)
