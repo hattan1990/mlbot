@@ -311,18 +311,18 @@ def back_test_mm(version='v1'):
 
     return pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell']), stock_df
 
-def back_test_spot_swing(threshold=15000, version='v1', pred_opsion=''):
-    trade_data = pd.read_excel('output_' + version + '.xlsx')
+def back_test_spot_swing(threshold=15000, version='v1', pred_opsion='', num=12):
+    trade_data = pd.read_csv('output_' + version + '.csv')
 
     output = []
     total = 0
     trade_cnt = 0
-    for i in range(0, trade_data.shape[0], 12):
+    for i in range(0, trade_data.shape[0], num):
         if i == 0:
             start = 0
-            end = 12 - 1
+            end = num - 1
         else:
-            end = i + 12 - 1
+            end = i + num - 1
 
         tmp_data = trade_data.loc[start:end]
         base_price = tmp_data['op'].values[0]
@@ -342,6 +342,7 @@ def back_test_spot_swing(threshold=15000, version='v1', pred_opsion=''):
             pred_spread_max = int(tmp_data['pred'].max())
         spread_to_max = (pred_spread_max - base_price)
         spread_to_min = (base_price - pred_spread_min)
+        spread = pred_spread_max - pred_spread_min
 
         buy = False
         sell = False
@@ -379,13 +380,14 @@ def back_test_spot_swing(threshold=15000, version='v1', pred_opsion=''):
         total += profit
         if profit != 0:
             print('TOTAL:{} date:{} profit:{} buy:{} sell:{} tradeCount:{}'.format(total, close_date, profit, buy, sell, trade_cnt))
-        output.append([close_date, total, profit, buy, sell])
+            print('spread_to_max:{} spread_to_min:{}'.format(spread_to_max, spread_to_min))
+        output.append([close_date, total, profit, spread, buy, sell])
         start = end + 1
 
-    return pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
+    return pd.DataFrame(output, columns=['date', 'total', 'profit', 'spread', 'buy', 'sell'])
 
 if __name__ == '__main__':
-    main(args)
+    #main(args)
     #output = back_test_megin_swing(version='v1')
     #plot_output()
     #plot_spread()
@@ -393,5 +395,5 @@ if __name__ == '__main__':
     #print(stocks)
     #output.to_excel('back_test_megin_swing.xlsx')
 
-    output = back_test_spot_swing(threshold=15000, version='v1', pred_opsion='min_max')
+    output = back_test_spot_swing(threshold=15000, version='v1', pred_opsion='min_max', num=6)
     output.to_excel('ck.xlsx')

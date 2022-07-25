@@ -275,9 +275,10 @@ class Exp_Informer(Exp_Basic):
             profit_win = output.loc[term, 'profit'].sum()
             profit_loss = output.loc[~term, 'profit'].sum()
 
-            total = np.round(total / 1000000, 2) / max_stocks
-            profit_win = np.round(profit_win / 1000000, 2) / max_stocks
-            profit_loss = np.round(profit_loss / 1000000, 2) / max_stocks
+            stock_mean = np.mean(stock_counts)
+            total = np.round(total / stock_mean, 2) / 1000000
+            profit_win = np.round(profit_win / stock_mean, 2) / 1000000
+            profit_loss = np.round(profit_loss / stock_mean, 2) / 1000000
 
             return output, (total, profit_win, profit_loss)
 
@@ -472,6 +473,7 @@ class Exp_Informer(Exp_Basic):
             best_output11.to_csv('best_output11.csv')
             best_output21.to_csv('best_output21.csv')
             strategy_data1.to_csv('strategy_data1.csv')
+            strategy_data2.to_csv('strategy_data2.csv')
         else:
             cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = values12 = dict12 = values22 = dict22 = None
 
@@ -556,7 +558,7 @@ class Exp_Informer(Exp_Basic):
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3))
 
-            if epoch > 10:
+            if epoch+1 > 10:
                 print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                     cnt11, values11, dict11, values12, dict12))
                 print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
