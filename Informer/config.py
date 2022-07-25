@@ -9,7 +9,7 @@ add_feature_num = 60
 args.loss_mode = 'default'
 args.extra = False
 args.load_models = False
-args.data_option = "feature_engineering"
+args.data_option = "pct"
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
@@ -36,7 +36,7 @@ args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
-if args.data_option == 'pct':
+if args.data_option == 'feature_engineering':
     args.enc_in = (add_feature_num * 6) - 5 + 2
 else:
     args.enc_in = (add_feature_num * 5) - 5
