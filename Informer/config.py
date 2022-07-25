@@ -36,7 +36,7 @@ args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
-if args.data_option == 'feature_engineering':
+if args.data_option == 'pct':
     args.enc_in = (add_feature_num * 6) - 5 + 2
 else:
     args.enc_in = (add_feature_num * 5) - 5
