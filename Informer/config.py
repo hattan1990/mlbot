@@ -7,7 +7,7 @@ args.runname = 'Add Features'
 args.model = 'informer'
 add_feature_num = 60
 args.loss_mode = 'default'
-args.extra = True
+args.extra = False
 args.load_models = False
 args.data_option = "pct"
 
