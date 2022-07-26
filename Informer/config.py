@@ -9,12 +9,13 @@ add_feature_num = 60
 args.loss_mode = 'default'
 args.extra = False
 args.load_models = False
-args.feature_engineering = True
+args.data_option = "pct"
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
 args.root_path = './dataset/'
 args.data_path = 'GMO_BTC_JPY_ohclv.csv'
+args.eval_data = 'GMO_BTC_JPY_ohclv_eval_202205.csv'
 
 #予測タスク、ターゲット(y)、時間フィーチャーエンコーディングを指定
 args.add_feature_num = add_feature_num
@@ -29,14 +30,14 @@ args.scaler2 = 500 #BTC Volumeのスケーリング
 args.checkpoints = './informer_checkpoints'
 
 #EncoderとDecoderの入力するデータの長さを指定
-args.seq_len = 72
+args.seq_len = 96
 args.label_len = 36
 args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
-if args.feature_engineering == True:
-    args.enc_in = (add_feature_num * 6) - 5
+if args.data_option == 'feature_engineering':
+    args.enc_in = (add_feature_num * 6) - 5 + 2
 else:
     args.enc_in = (add_feature_num * 5) - 5
 args.dec_in = 2 # decoder input size
@@ -50,7 +51,7 @@ args.d_ff = 2048 # dimension of fcn in model
 args.dropout = 0.0005 # dropout 0.005 ->0.0005
 
 #デフォルトのパラメーター設定
-args.attn = 'prob' # attention used in encoder, options:[prob, full]
+args.attn = 'full' # attention used in encoder, options:[prob, full]
 args.embed = 'timeF' # time features encoding, options:[timeF, fixed, learned]
 args.activation = 'gelu' # activation
 args.distil = True # whether to use distilling in encoder
@@ -68,7 +69,7 @@ args.use_amp = False # whether to use automatic mixed precision training
 #並列計算するかどうか、トレーニングepoch数を指定
 args.num_workers = 0
 args.itr = 1
-args.train_epochs = 20
+args.train_epochs = 15
 args.patience = 15 # 10 -> 15
 args.des = 'exp'
 

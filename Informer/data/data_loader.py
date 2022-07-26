@@ -57,7 +57,10 @@ class EvalDataset():
 
         self.option = option
         self.feature_add = feature_add
-        self.scaler = pickle.load(open('./weights/scaler.pkl', 'rb'))
+        if self.option == 'pct':
+            self.scaler = pickle.load(open('./weights/scaler.pkl', 'rb'))
+        else:
+            self.scaler = pickle.load(open('./weights/scaler_add.pkl', 'rb'))
 
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
@@ -73,8 +76,8 @@ class EvalDataset():
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
             df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
 
-            #df_raw['transition'] = df_raw['cl'] - df_raw['op']
-            #df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
+            df_raw['transition'] = df_raw['cl'] - df_raw['op']
+            df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
 
         df_raw = df_raw.reset_index(drop=True)
         data = copy.deepcopy(df_raw)
@@ -114,7 +117,7 @@ class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='ALL', data_path='GMO_BTC_JPY_ohclv.csv',
                  target='cl', scale=True, inverse=False, timeenc=0, freq='t',
-                 feature_add=0, option='feature_engineering'):
+                 feature_add=0, option='pct', eval_mode=False):
         # size [seq_len, label_len, pred_len]
         # info
         self.seq_len = size[0]
@@ -139,6 +142,7 @@ class Dataset_BTC(Dataset):
 
         self.option = option
         self.feature_add = feature_add
+        self.eval_mode = eval_mode
         self.__read_data__()
 
     def __read_data__(self):
@@ -157,8 +161,8 @@ class Dataset_BTC(Dataset):
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
             df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
 
-            #df_raw['transition'] = df_raw['cl'] - df_raw['op']
-            #df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
+            df_raw['transition'] = df_raw['cl'] - df_raw['op']
+            df_raw['volatility'] = df_raw['spread'] - abs(df_raw['transition'])
 
         df_raw = df_raw.reset_index(drop=True)
         range1 = 0
@@ -185,7 +189,10 @@ class Dataset_BTC(Dataset):
         if self.scale:
             self.scaler.fit(df_data.values)
             data = self.scaler.transform(df_data.values)
-            pickle.dump(self.scaler, open("scaler.pkl", "wb"))
+            if self.option == 'pct':
+                pickle.dump(self.scaler, open("scaler.pkl", "wb"))
+            else:
+                pickle.dump(self.scaler, open("scaler_add.pkl", "wb"))
 
         else:
             data = df_data.values
@@ -203,6 +210,8 @@ class Dataset_BTC(Dataset):
             else:
                 self.data_y = df_data[[self.target[0], self.target[1]]].values[border1:border2] / 10000000
         self.data_stamp = data_stamp
+        df_raw['date'] = df_raw['date'].apply(lambda x:int(x[:4]+x[5:7]+x[8:10]+x[11:13]+x[14:16]))
+        self.data_val = df_raw[['date', 'op', 'cl']].values[border1:border2] / 10000000
 
     def __getitem__(self, index):
         s_begin = index
@@ -219,7 +228,11 @@ class Dataset_BTC(Dataset):
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
+        seq_val = self.data_val[r_begin:r_end]
+        if self.eval_mode:
+            return index, seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
+        else:
+            return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
 
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
