@@ -278,9 +278,8 @@ class Exp_Informer(Exp_Basic):
             stock_mean = np.mean(stock_counts)
             total = np.round(total / stock_mean, 2) / 1000000
             profit_win = np.round(profit_win / stock_mean, 2) / 1000000
-            profit_loss = np.round(profit_loss / stock_mean, 2) / 1000000
 
-            return output, (total, profit_win, profit_loss)
+            return output, (total, profit_win, stock_mean, max_stocks)
 
         def _back_test_spot_swing(trade_data, threshold=15000, pred_option='', num=12):
             output = []
