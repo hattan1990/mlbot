@@ -276,6 +276,9 @@ class Exp_Informer(Exp_Basic):
             profit_loss = output.loc[~term, 'profit'].sum()
 
             stock_mean = np.mean(stock_counts)
+
+            if stock_mean < 1:
+                stock_mean = 1
             total = np.round(total / stock_mean, 2) / 1000000
             profit_win = np.round(profit_win / stock_mean, 2) / 1000000
 
@@ -455,7 +458,7 @@ class Exp_Informer(Exp_Basic):
         strategy_data1 = strategy_data1.reset_index(drop=True)
         strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
-        if epoch > 10:
+        if epoch + 1 >= 10:
             input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [10000, 15000, 20000, 25000],
                            'pred_ops': ['mean', 'min_max', 'zero']}
             best_output11, values11, dict11 = execute_back_test(_back_test_spot_swing, input_dict1)
@@ -557,13 +560,13 @@ class Exp_Informer(Exp_Basic):
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3))
 
-            if epoch+1 > 10:
+            if epoch+1 >= 10:
                 print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                     cnt11, values11, dict11, values12, dict12))
                 print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                     cnt21, values21, dict21, values22, dict22))
 
-            early_stopping(-acc2, self.model, path)
+            early_stopping(-acc1, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
