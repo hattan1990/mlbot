@@ -40,8 +40,8 @@ if args.data_option == 'feature_engineering':
     args.enc_in = (add_feature_num * 6) - 5 + 2
 else:
     args.enc_in = (add_feature_num * 5) - 5
-args.dec_in = 2 # decoder input size
-args.c_out = 2 # output size
+args.dec_in = 1 # decoder input size
+args.c_out = 1 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
 args.n_heads = 8 # num of heads

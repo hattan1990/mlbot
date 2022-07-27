@@ -133,14 +133,14 @@ class Exp_Informer(Exp_Basic):
                     val = val[from_index:to_index]
 
                 tmp_values = np.concatenate([val, true, pred], axis=1) * 10000000
-                columns = ['date', 'op', 'cl', 'hi', 'lo', 'pred_hi', 'pred_lo']
+                columns = ['date', 'op', 'cl', 'hi', 'lo', 'true', 'pred']
 
                 tmp_data = pd.DataFrame(tmp_values, columns=columns)
                 output = pd.concat([output, tmp_data])
 
             return output
 
-        def _back_test_mm(trade_data, threshold=10000, pred_option='', num=12):
+        def _back_test_mm(trade_data, threshold=10000, num=12):
             def drop_off_sell_stocks(stocks, lo):
                 output = []
                 for i, stock in enumerate(stocks):
@@ -207,19 +207,8 @@ class Exp_Informer(Exp_Basic):
                     end = i + num - 1
 
                 tmp_data = trade_data.loc[start:end]
-                if pred_option == 'mean':
-                    pred_spread_min = int(tmp_data['pred_lo'].mean())
-                    pred_spread_max = int(tmp_data['pred_hi'].mean())
-                elif pred_option == 'min_max':
-                    spread = tmp_data['pred_hi'].max() - tmp_data['pred_lo'].min()
-                    pred_spread_min = int(tmp_data['pred_lo'].min() + spread / 4)
-                    pred_spread_max = int(tmp_data['pred_hi'].max() - spread / 4)
-                elif pred_option == 'zero':
-                    pred_spread_min = int(tmp_data['pred_lo'].values[0])
-                    pred_spread_max = int(tmp_data['pred_hi'].values[0])
-                else:
-                    pred_spread_min = int(tmp_data['pred'].min())
-                    pred_spread_max = int(tmp_data['pred'].max())
+                pred_spread_min = int(tmp_data['pred'].min())
+                pred_spread_max = int(tmp_data['pred'].max())
 
                 spread_mergin = (pred_spread_max - pred_spread_min)
 
@@ -268,12 +257,10 @@ class Exp_Informer(Exp_Basic):
                 output.append([close_date, total, profit, buy, sell])
                 start = end + 1
 
-            stock_df = pd.DataFrame(buy_stocks + sell_stocks, columns=['date', 'price', 'stay_cnt', 'drop_off', 'diff'])
             output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
             output = output[output['profit'] != 0]
             term = (output['buy'] == True) & (output['sell'] == True)
             profit_win = output.loc[term, 'profit'].sum()
-            profit_loss = output.loc[~term, 'profit'].sum()
 
             stock_mean = np.mean(stock_counts)
 
@@ -284,7 +271,7 @@ class Exp_Informer(Exp_Basic):
 
             return output, (total, profit_win, stock_mean, max_stocks)
 
-        def _back_test_spot_swing(trade_data, threshold=15000, pred_option='', num=12):
+        def _back_test_spot_swing(trade_data, threshold=15000, num=12):
             output = []
             total = 0
             trade_cnt = 0
@@ -297,19 +284,8 @@ class Exp_Informer(Exp_Basic):
 
                 tmp_data = trade_data.loc[start:end]
                 base_price = tmp_data['op'].values[0]
-                if pred_option == 'mean':
-                    pred_spread_min = int(tmp_data['pred_lo'].mean())
-                    pred_spread_max = int(tmp_data['pred_hi'].mean())
-                elif pred_option == 'min_max':
-                    spread = tmp_data['pred_hi'].max() - tmp_data['pred_lo'].min()
-                    pred_spread_min = int(tmp_data['pred_lo'].min() + spread / 4)
-                    pred_spread_max = int(tmp_data['pred_hi'].max() - spread / 4)
-                elif pred_option == 'zero':
-                    pred_spread_min = int(tmp_data['pred_lo'].values[0])
-                    pred_spread_max = int(tmp_data['pred_hi'].values[0])
-                else:
-                    pred_spread_min = int(tmp_data['pred'].min())
-                    pred_spread_max = int(tmp_data['pred'].max())
+                pred_spread_min = int(tmp_data['pred'].min())
+                pred_spread_max = int(tmp_data['pred'].max())
                 spread_to_max = (pred_spread_max - base_price)
                 spread_to_min = (base_price - pred_spread_min)
 
@@ -370,27 +346,39 @@ class Exp_Informer(Exp_Basic):
                 tmp_out1 = []
                 tmp_out2 = []
 
-            pred_hi = pred_data[:,:,0].detach().cpu() * 10000000
-            pred_lo = pred_data[:,:,1].detach().cpu() * 10000000
-            pred = (pred_hi+pred_lo)/2
-            true_hi = true[:,:,0].detach().cpu() * 10000000
-            true_lo = true[:,:,1].detach().cpu() * 10000000
+            pred = pred_data[:,:,0].detach().cpu() * 10000000
+            true = true[:,:,0].detach().cpu() * 10000000
 
-            pred_min = pred_lo[: ,0]
-            pred_min2 = pred_lo.min(axis=1)[0]
-            pred_min3 = pred_lo.mean(axis=1)
-            true_min = true_lo.min(axis=1)[0]
+            pred_min = pred.min(axis=1)[0]
+            true_min = true.min(axis=1)[0]
+            pred_max = pred.max(axis=1)[0]
+            true_max = true.max(axis=1)[0]
+            op = val[:,0,1].detach().cpu() * 10000000
 
-            pred_max = pred_hi[: ,0]
-            pred_max2 = pred_hi.max(axis=1)[0]
-            pred_max3 = pred_hi.mean(axis=1)
-            true_max = true_hi.max(axis=1)[0]
-
-            spread_4 = (pred_max2 - pred_min2) / 4
+            spread_4 = (pred_max - pred_min) / 4
+            spread_3 = (pred_max - pred_min) / 3
 
             acc1 = (pred_min > true_min) & (pred_max < true_max) & ((pred_max - pred_min) > 0)
-            acc2 = ((pred_min2 + spread_4) > true_min) & ((pred_max2 - spread_4) < true_max) & ((pred_max2 - pred_min2) > 0)
-            acc3 = (pred_min3 > true_min) & (pred_max3 < true_max) & ((pred_max3 - pred_min3) > 0)
+            acc2 = ((pred_min + spread_4) > true_min) & ((pred_max - spread_4) < true_max) & ((pred_max - pred_min) > 0)
+
+            acc3 = []
+            for p_min, p_max, t_min, t_max, base in zip(pred_min, pred_max, true_min, true_max, op):
+                spread1 = p_max - base
+                spread2 = base - p_min
+
+                if spread1 > spread2:
+                    if t_max > p_max:
+                        out = True
+                    else:
+                        out = False
+                else:
+                    if t_min < p_min:
+                        out = True
+                    else:
+                        out = False
+                acc3.append(out)
+
+            acc3 = torch.tensor(acc3)
 
             return acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0], tmp_out1, tmp_out2
 
@@ -398,18 +386,15 @@ class Exp_Informer(Exp_Basic):
             trade_data = input_dict['trade_data']
             num = input_dict['num']
             thresh_list = input_dict['thresh_list']
-            pred_ops = input_dict['pred_ops']
             best_score = 0
             for i, thresh in enumerate(thresh_list):
-                for option in pred_ops:
-                    threshold = thresh
-                    pred_option = option
-                    output, scores = backtest(trade_data, threshold=threshold, pred_option=pred_option, num=num)
-                    if (scores[0] > best_score) or (i == 0):
-                        best_score = scores[0]
-                        best_output = output
-                        best_score_values = scores
-                        out_dict = {'vesion': num, 'thresh': threshold, 'option': pred_option}
+                threshold = thresh
+                output, scores = backtest(trade_data, threshold=threshold, num=num)
+                if (scores[0] > best_score) or (i == 0):
+                    best_score = scores[0]
+                    best_output = output
+                    best_score_values = scores
+                    out_dict = {'vesion': num, 'thresh': threshold}
 
             return best_output, best_score_values, out_dict
 
@@ -459,13 +444,11 @@ class Exp_Informer(Exp_Basic):
         strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
         if epoch + 1 >= 10:
-            input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [10000, 15000, 20000, 25000],
-                           'pred_ops': ['mean', 'min_max', 'zero']}
+            input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [10000, 15000, 20000, 25000]}
             best_output11, values11, dict11 = execute_back_test(_back_test_spot_swing, input_dict1)
             best_output12, values12, dict12 = execute_back_test(_back_test_mm, input_dict1)
 
-            input_dict2 = {'trade_data': strategy_data2, 'num': 6, 'thresh_list': [5000, 10000, 15000, 20000],
-                           'pred_ops': ['mean', 'min_max', 'zero']}
+            input_dict2 = {'trade_data': strategy_data2, 'num': 6, 'thresh_list': [5000, 10000, 15000, 20000]}
             best_output21, values21, dict21 = execute_back_test(_back_test_spot_swing, input_dict2)
             best_output22, values22, dict22 = execute_back_test(_back_test_mm, input_dict2)
 
@@ -547,6 +530,7 @@ class Exp_Informer(Exp_Basic):
                             loss.backward()
 
                         model_optim.step()
+                    break
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
@@ -670,13 +654,15 @@ class Exp_Informer(Exp_Basic):
 
         return output.reset_index(), pd.DataFrame(spread_out1), pd.DataFrame(spread_out2, columns=['date', 't_max', 't_min', 'p_max', 'p_min', 'spread', 'max_tf', 'min_tf'])
 
-    def _create_masks(self, batch_y, mergin=30000):
+    def _create_masks(self, batch_y, batch_val, mergin=30000):
         masks = []
-        for hi_lo in batch_y:
+        for hi_lo, val in zip(batch_y, batch_val):
+            op = val[0, 1]
             hi_max = hi_lo[: ,0].max()
-            lo_min = hi_lo[: ,1].min()
-            spread = (hi_max - lo_min) * 10000000
-            if spread >= mergin:
+            lo_min = hi_lo[: ,0].min()
+            spread1 = (hi_max - op) * 10000000
+            spread2 = (op - lo_min) * 10000000
+            if (spread1 >= mergin) or (spread2 >= mergin):
                 masks.append(True)
             else:
                 masks.append(False)
@@ -716,7 +702,7 @@ class Exp_Informer(Exp_Basic):
             batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
             batch_val = batch_val[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-            masks = self._create_masks(outputs)
+            masks = self._create_masks(outputs, batch_val)
 
             return outputs, batch_y, masks, batch_val
 
