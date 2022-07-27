@@ -662,7 +662,7 @@ class Exp_Informer(Exp_Basic):
 
         return output.reset_index(), pd.DataFrame(spread_out1), pd.DataFrame(spread_out2, columns=['date', 't_max', 't_min', 'p_max', 'p_min', 'spread', 'max_tf', 'min_tf'])
 
-    def _create_masks(self, batch_y, batch_val, mergin=30000):
+    def _create_masks(self, batch_y, batch_val, mergin=20000):
         masks = []
         for hi_lo, val in zip(batch_y, batch_val):
             op = val[0, 1]
