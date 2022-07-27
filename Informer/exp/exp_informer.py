@@ -402,6 +402,9 @@ class Exp_Informer(Exp_Basic):
         total_loss = []
         total_loss_ex = []
         total_loss_local = []
+        total_acc1 = []
+        total_acc2 = []
+        total_acc3 = []
         total_acc1_ex = []
         total_acc2_ex = []
         total_acc3_ex = []
@@ -422,24 +425,30 @@ class Exp_Informer(Exp_Basic):
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
                         acc1_ex, acc2_ex, acc3_ex, _, _ = _check_strategy(pred_ex, true_ex, None, None, None)
+                        total_acc1_ex.append(acc1_ex)
+                        total_acc2_ex.append(acc2_ex)
+                        total_acc3_ex.append(acc3_ex)
 
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(np.average(loss_local))
-                acc1_ex, acc2_ex, acc3_ex, tmp_out1, tmp_out2 = _check_strategy(pred, true, val, eval_masks, index)
-                total_acc1_ex.append(acc1_ex)
-                total_acc2_ex.append(acc2_ex)
-                total_acc3_ex.append(acc3_ex)
+                acc1, acc2, acc3, tmp_out1, tmp_out2 = _check_strategy(pred, true, val, eval_masks, index)
+                total_acc1.append(acc1)
+                total_acc2.append(acc2)
+                total_acc3.append(acc3)
                 strategy_data1 = pd.concat([strategy_data1, tmp_out1])
                 strategy_data2 = pd.concat([strategy_data2, tmp_out2])
 
         tl = np.average(total_loss)
         tl_ex = np.average(total_loss_ex)
-        acc1 = np.average(total_acc1_ex)
-        acc2 = np.average(total_acc2_ex)
-        acc3 = np.average(total_acc3_ex)
+        acc1 = np.average(total_acc1)
+        acc2 = np.average(total_acc2)
+        acc3 = np.average(total_acc3)
+        acc1_ex = np.average(total_acc1_ex)
+        acc2_ex = np.average(total_acc2_ex)
+        acc3_ex = np.average(total_acc3_ex)
         strategy_data1 = strategy_data1.reset_index(drop=True)
         strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
@@ -463,7 +472,7 @@ class Exp_Informer(Exp_Basic):
             cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = values12 = dict12 = values22 = dict22 = None
 
         self.model.train()
-        return tl, tl_ex, acc1, acc2, acc3, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
+        return tl, tl_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -533,15 +542,15 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_ex, acc1, acc2, acc3, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(epoch, vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(epoch, vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss", vali_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss ex", vali_loss_ex, step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}  ACC1Ex: {8:.5f} ACC2Ex: {9:.5f} ACC3Ex: {10:.5f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex))
 
             if epoch+1 >= 10:
                 print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
