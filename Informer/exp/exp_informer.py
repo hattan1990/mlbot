@@ -339,7 +339,7 @@ class Exp_Informer(Exp_Basic):
             return output, (total, profit_win, profit_loss)
 
         def _check_strategy(pred_data, true, val, eval_masks, index):
-            if val is not None:
+            if eval_masks is not None:
                 tmp_out1 = _create_tmp_data(pred_data[eval_masks], true[eval_masks], val[eval_masks], index, option='none')
                 tmp_out2 = _create_tmp_data(pred_data, true, val, index, option='mean')
             else:
@@ -420,11 +420,11 @@ class Exp_Informer(Exp_Basic):
                 if self.args['extra'] == True:
                     pred_ex = pred[masks]
                     true_ex = true[masks]
-                    #val_ex = val[masks]
+                    val_ex = val[masks]
                     if true_ex.shape[0] > 0:
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
-                        acc1_ex, acc2_ex, acc3_ex, _, _ = _check_strategy(pred_ex, true_ex, None, None, None)
+                        acc1_ex, acc2_ex, acc3_ex, _, _ = _check_strategy(pred_ex, true_ex, val_ex, None, None)
                         total_acc1_ex.append(acc1_ex)
                         total_acc2_ex.append(acc2_ex)
                         total_acc3_ex.append(acc3_ex)
