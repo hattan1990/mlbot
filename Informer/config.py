@@ -9,7 +9,7 @@ add_feature_num = 60
 args.loss_mode = 'default'
 args.extra = True
 args.load_models = False
-args.data_option = "pct"
+args.data_option = "feature_engineering"
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
@@ -44,7 +44,7 @@ args.dec_in = 1 # decoder input size
 args.c_out = 1 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
-args.n_heads = 8 # num of heads
+args.n_heads = 16 # num of heads
 args.e_layers = 2 # num of encoder layers
 args.d_layers = 1 # num of decoder layers
 args.d_ff = 2048 # dimension of fcn in model
