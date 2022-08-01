@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import mlflow
 
-title = 'Predict hi&lo'
+title = 'Predict hi&lo eth'
 
 def main(args):
     print('Args in experiment:')
@@ -82,8 +82,8 @@ def validation(args_list):
         main(args_update)
 
 if __name__ == '__main__':
-    seq_len_list = [[96, 36, 12]]
-    n_heads_list = [16]
+    seq_len_list = [[96, 48, 12], [96, 36, 12], [72, 36, 12], [72, 48, 12]]
+    n_heads_list = [8, 16]
     learning_rate_list = [0.001]
     loss_mode_list = ["default"]
 

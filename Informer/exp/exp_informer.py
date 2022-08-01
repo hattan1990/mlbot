@@ -132,7 +132,7 @@ class Exp_Informer(Exp_Basic):
                     pred = pred[from_index:to_index]
                     val = val[from_index:to_index]
 
-                tmp_values = np.concatenate([val, true, pred], axis=1) * 10000000
+                tmp_values = np.concatenate([val, true, pred], axis=1) * 1000000
                 columns = ['date', 'op', 'cl', 'hi', 'lo', 'true', 'pred']
 
                 tmp_data = pd.DataFrame(tmp_values, columns=columns)
@@ -140,7 +140,7 @@ class Exp_Informer(Exp_Basic):
 
             return output
 
-        def _back_test_mm(trade_data, threshold=10000, num=12):
+        def _back_test_mm(trade_data, threshold=1000, num=12):
             def drop_off_sell_stocks(stocks, lo):
                 output = []
                 for i, stock in enumerate(stocks):
@@ -271,7 +271,7 @@ class Exp_Informer(Exp_Basic):
 
             return output, (total, profit_win, stock_mean, max_stocks)
 
-        def _back_test_spot_swing(trade_data, threshold=15000, num=12):
+        def _back_test_spot_swing(trade_data, threshold=1500, num=12):
             output = []
             total = 0
             trade_cnt = 0
@@ -346,14 +346,14 @@ class Exp_Informer(Exp_Basic):
                 tmp_out1 = []
                 tmp_out2 = []
 
-            pred = pred_data[:,:,0].detach().cpu() * 10000000
-            true = true[:,:,0].detach().cpu() * 10000000
+            pred = pred_data[:,:,0].detach().cpu() * 1000000
+            true = true[:,:,0].detach().cpu() * 1000000
 
             pred_min = pred.min(axis=1)[0]
             true_min = true.min(axis=1)[0]
             pred_max = pred.max(axis=1)[0]
             true_max = true.max(axis=1)[0]
-            op = val[:,0,1].detach().cpu() * 10000000
+            op = val[:,0,1].detach().cpu() * 1000000
 
             spread_4 = (pred_max - pred_min) / 4
             spread_3 = (pred_max - pred_min) / 3
@@ -453,11 +453,11 @@ class Exp_Informer(Exp_Basic):
         strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
         if epoch + 1 >= 10:
-            input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [10000, 15000, 20000, 25000]}
+            input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [1000, 1500, 2000, 2500]}
             best_output11, values11, dict11 = execute_back_test(_back_test_spot_swing, input_dict1)
             best_output12, values12, dict12 = execute_back_test(_back_test_mm, input_dict1)
 
-            input_dict2 = {'trade_data': strategy_data2, 'num': 6, 'thresh_list': [5000, 10000, 15000, 20000]}
+            input_dict2 = {'trade_data': strategy_data2, 'num': 6, 'thresh_list': [500, 1000, 1500, 2000]}
             best_output21, values21, dict21 = execute_back_test(_back_test_spot_swing, input_dict2)
             best_output22, values22, dict22 = execute_back_test(_back_test_mm, input_dict2)
 
@@ -652,8 +652,8 @@ class Exp_Informer(Exp_Basic):
                 pred_hi = pred[0, :, 0].detach().cpu().numpy()
                 pred_lo = pred[0, :, 1].detach().cpu().numpy()
                 raw = pd.DataFrame(raw[-self.args.pred_len:, :6], columns=cols)
-                raw['pred_hi'] = pred_hi * 10000000
-                raw['pred_lo'] = pred_lo * 10000000
+                raw['pred_hi'] = pred_hi * 1000000
+                raw['pred_lo'] = pred_lo * 1000000
                 raw['pred'] = (raw['pred_hi'] + raw['pred_lo'])/2
                 output = pd.concat([output, raw])
                 out1, out2 = _check_mergin(raw)
@@ -662,14 +662,14 @@ class Exp_Informer(Exp_Basic):
 
         return output.reset_index(), pd.DataFrame(spread_out1), pd.DataFrame(spread_out2, columns=['date', 't_max', 't_min', 'p_max', 'p_min', 'spread', 'max_tf', 'min_tf'])
 
-    def _create_masks(self, batch_y, batch_val, mergin=20000):
+    def _create_masks(self, batch_y, batch_val, mergin=1500):
         masks = []
         for hi_lo, val in zip(batch_y, batch_val):
             op = val[0, 1]
             hi_max = hi_lo[: ,0].max()
             lo_min = hi_lo[: ,0].min()
-            spread1 = (hi_max - op) * 10000000
-            spread2 = (op - lo_min) * 10000000
+            spread1 = (hi_max - op) * 1000000
+            spread2 = (op - lo_min) * 1000000
             if (spread1 >= mergin) or (spread2 >= mergin):
                 masks.append(True)
             else:

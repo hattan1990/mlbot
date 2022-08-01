@@ -92,7 +92,7 @@ class EvalDataset():
         if self.target == None:
             target_val = data_values
         else:
-            target_val = df_data[[self.target[0], self.target[1]]].values / 10000000
+            target_val = df_data[[self.target[0], self.target[1]]].values / 1000000
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
 
@@ -166,8 +166,8 @@ class Dataset_BTC(Dataset):
 
         df_raw = df_raw.reset_index(drop=True)
         range1 = 0
-        range2 = 455500
-        range3 = 600000
+        range2 = 300000
+        range3 = 500000
 
         if self.data_path == 'GMO_BTC_JPY_ohclv5.csv':
             range2 = int(range2 / 5)
@@ -209,11 +209,11 @@ class Dataset_BTC(Dataset):
                 self.data_y = data[border1:border2]
             else:
                 hi_lo = (df_data[self.target[0]] + df_data[self.target[1]]) / 2
-                hi_lo = hi_lo.values[border1:border2] / 10000000
+                hi_lo = hi_lo.values[border1:border2] / 1000000
                 self.data_y = np.expand_dims(hi_lo, 1)
         self.data_stamp = data_stamp
         df_raw['date'] = df_raw['date'].apply(lambda x:int(x[:4]+x[5:7]+x[8:10]+x[11:13]+x[14:16]))
-        self.data_val = df_raw[['date', 'op', 'cl', 'hi', 'lo']].values[border1:border2] / 10000000
+        self.data_val = df_raw[['date', 'op', 'cl', 'hi', 'lo']].values[border1:border2] / 1000000
 
     def __getitem__(self, index):
         s_begin = index
