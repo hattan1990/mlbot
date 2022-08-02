@@ -159,8 +159,9 @@ class Dataset_BTC(Dataset):
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
         elif self.option == 'mean':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add - 1):]
-            df_raw['hi'] = df_raw['hi'].rolling(12).mean()
-            df_raw['lo'] = df_raw['lo'].rolling(12).mean()
+            df_raw['hi_mean'] = df_raw['hi'].rolling(12).mean()
+            df_raw['lo_mean'] = df_raw['lo'].rolling(12).mean()
+            df_raw = df_raw.dropna(how='any')
         elif self.option == 'feature_engineering':
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
             df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
@@ -212,9 +213,15 @@ class Dataset_BTC(Dataset):
             if self.target == None:
                 self.data_y = data[border1:border2]
             else:
-                hi_lo = (df_data[self.target[0]] + df_data[self.target[1]]) / 2
-                hi_lo = hi_lo.values[border1:border2] / 10000000
-                self.data_y = np.expand_dims(hi_lo, 1)
+                if self.option == 'mean':
+                    hi_lo = (df_data[self.target[0]+'_mean'] + df_data[self.target[1]+'_mean']) / 2
+                    hi_lo = hi_lo.values[border1:border2] / 10000000
+                    self.data_y = np.expand_dims(hi_lo, 1)
+                    self.data_x = self.data_x[:, :-2]
+                else:
+                    hi_lo = (df_data[self.target[0]] + df_data[self.target[1]]) / 2
+                    hi_lo = hi_lo.values[border1:border2] / 10000000
+                    self.data_y = np.expand_dims(hi_lo, 1)
         self.data_stamp = data_stamp
         df_raw['date'] = df_raw['date'].apply(lambda x:int(x[:4]+x[5:7]+x[8:10]+x[11:13]+x[14:16]))
         self.data_val = df_raw[['date', 'op', 'cl', 'hi', 'lo']].values[border1:border2] / 10000000
