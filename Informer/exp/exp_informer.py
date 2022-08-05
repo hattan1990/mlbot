@@ -348,12 +348,15 @@ class Exp_Informer(Exp_Basic):
 
             pred = pred_data[:,:,0].detach().cpu() * 1000000
             true = true[:,:,0].detach().cpu() * 1000000
+            val = val.detach().cpu() * 1000000
 
             pred_min = pred.min(axis=1)[0]
-            true_min = true.min(axis=1)[0]
+            #true_min = true.min(axis=1)[0]
+            true_min = val[:, :, 4].min(axis=1)[0]
             pred_max = pred.max(axis=1)[0]
-            true_max = true.max(axis=1)[0]
-            op = val[:,0,1].detach().cpu() * 1000000
+            #true_max = true.max(axis=1)[0]
+            true_max = val[:, :, 3].max(axis=1)[0]
+            op = val[:,0,1]
 
             spread_4 = (pred_max - pred_min) / 4
             spread_3 = (pred_max - pred_min) / 3
