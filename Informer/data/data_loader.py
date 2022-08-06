@@ -159,8 +159,8 @@ class Dataset_BTC(Dataset):
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
         elif self.option == 'mean':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add - 1):]
-            df_raw['hi_mean'] = df_raw['hi'].rolling(6).mean()
-            df_raw['lo_mean'] = df_raw['lo'].rolling(6).mean()
+            df_raw['hi_mean'] = df_raw['hi'].rolling(24).mean()
+            df_raw['lo_mean'] = df_raw['lo'].rolling(24).mean()
             df_raw = df_raw.dropna(how='any')
         elif self.option == 'feature_engineering':
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
