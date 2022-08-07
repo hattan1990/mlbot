@@ -72,6 +72,12 @@ class EvalDataset():
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
+        elif self.option == 'mean':
+            df_raw = add_features(df_raw, self.feature_add)[(self.feature_add - 1):]
+            num = 24
+            df_raw['hi_mean'] = df_raw['hi'].rolling(num).mean()
+            df_raw['lo_mean'] = df_raw['lo'].rolling(num).mean()
+            df_raw = df_raw.dropna(how='any')
         elif self.option == 'feature_engineering':
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
             df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
@@ -86,13 +92,18 @@ class EvalDataset():
         data_values = self.scaler.transform(df_data.values)
         data_values = data_values[:, 5:]
 
+        if self.option == 'mean':
+            data_values = data_values[:, :-2]
+
 
         df_stamp = df_raw[['date']]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
         if self.target == None:
             target_val = data_values
         else:
-            target_val = df_data[[self.target[0], self.target[1]]].values / 10000000
+            target_val = (df_data[self.target[0]] + df_data[self.target[1]]) / 2
+            target_val = target_val.values / 10000000
+            target_val = np.expand_dims(target_val, 1)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
 
@@ -159,7 +170,7 @@ class Dataset_BTC(Dataset):
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
         elif self.option == 'mean':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add - 1):]
-            num = 24
+            num = 6
             df_raw['hi_mean'] = df_raw['hi'].rolling(num).mean()
             df_raw['lo_mean'] = df_raw['lo'].rolling(num).mean()
             df_raw['hi_mean'] = np.append(df_raw['hi_mean'].values[num - 1:], np.array([np.nan] * (num - 1)))

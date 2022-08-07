@@ -31,7 +31,7 @@ args.checkpoints = './informer_checkpoints'
 
 #EncoderとDecoderの入力するデータの長さを指定
 args.seq_len = 96
-args.label_len = 36
+args.label_len = 48
 args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
