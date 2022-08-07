@@ -173,8 +173,8 @@ class Dataset_BTC(Dataset):
             num = 12
             df_raw['hi_mean'] = df_raw['hi'].rolling(num).mean()
             df_raw['lo_mean'] = df_raw['lo'].rolling(num).mean()
-            df_raw['hi_mean'] = np.append(df_raw['hi_mean'].values[num - 1:], np.array([np.nan] * (num - 1)))
-            df_raw['lo_mean'] = np.append(df_raw['lo_mean'].values[num - 1:], np.array([np.nan] * (num - 1)))
+            #df_raw['hi_mean'] = np.append(df_raw['hi_mean'].values[num - 1:], np.array([np.nan] * (num - 1)))
+            #df_raw['lo_mean'] = np.append(df_raw['lo_mean'].values[num - 1:], np.array([np.nan] * (num - 1)))
             df_raw = df_raw.dropna(how='any')
         elif self.option == 'feature_engineering':
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
