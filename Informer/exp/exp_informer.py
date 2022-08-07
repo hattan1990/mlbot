@@ -692,7 +692,10 @@ class Exp_Informer(Exp_Basic):
             dec_inp = torch.zeros([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
         elif self.args.padding==1:
             dec_inp = torch.ones([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
-        dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+        #dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+        custom_dec_inp = (batch_val[:, :, 3] + batch_val[:, :, 3]) / 2
+        custom_dec_inp = custom_dec_inp.unsqueeze(2)
+        dec_inp = torch.cat([custom_dec_inp[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
         # encoder - decoder
 
         try:
