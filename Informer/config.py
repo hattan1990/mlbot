@@ -5,7 +5,7 @@ import torch
 args = dotdict()
 args.runname = 'Add Features'
 args.model = 'informer'
-add_feature_num = 60
+add_feature_num = 120
 args.loss_mode = 'default'
 args.extra = True
 args.load_models = False
@@ -43,7 +43,7 @@ else:
 args.dec_in = 1 # decoder input size
 args.c_out = 1 # output size
 args.factor = 5 # probsparse attn factor
-args.d_model = 512 # dimension of model
+args.d_model = 1024 # dimension of model
 args.n_heads = 16 # num of heads
 args.e_layers = 2 # num of encoder layers
 args.d_layers = 1 # num of decoder layers
@@ -61,7 +61,7 @@ args.padding = 0
 
 #バッチサイズ、学習率、ロースファンクションなどを指定
 args.batch_size = 256
-args.learning_rate = 0.001 #0.0001 -> 0.001
+args.learning_rate = 0.005 #0.0001 -> 0.001
 args.loss = 'mae'
 args.lradj = 'type1'
 args.use_amp = False # whether to use automatic mixed precision training
@@ -77,7 +77,7 @@ args.des = 'exp'
 args.use_gpu = True if torch.cuda.is_available() else False
 args.gpu = 0
 
-args.use_multi_gpu = False
+args.use_multi_gpu = True
 args.devices = '0,1,2,3'
 args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
 
