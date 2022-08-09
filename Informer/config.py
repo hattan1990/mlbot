@@ -5,7 +5,7 @@ import torch
 args = dotdict()
 args.runname = 'Add Features'
 args.model = 'informer'
-add_feature_num = 120
+add_feature_num = 12
 args.loss_mode = 'default'
 args.extra = True
 args.load_models = False
@@ -43,7 +43,7 @@ else:
 args.dec_in = 1 # decoder input size
 args.c_out = 1 # output size
 args.factor = 5 # probsparse attn factor
-args.d_model = 1024 # dimension of model
+args.d_model = 512 # dimension of model
 args.n_heads = 16 # num of heads
 args.e_layers = 2 # num of encoder layers
 args.d_layers = 1 # num of decoder layers
