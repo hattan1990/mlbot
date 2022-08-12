@@ -77,7 +77,7 @@ args.des = 'exp'
 args.use_gpu = True if torch.cuda.is_available() else False
 args.gpu = 0
 
-args.use_multi_gpu = True
+args.use_multi_gpu = False
 args.devices = '0,1,2,3'
 args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
 
