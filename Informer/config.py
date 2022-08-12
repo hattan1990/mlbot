@@ -5,7 +5,7 @@ import torch
 args = dotdict()
 args.runname = 'Add Features'
 args.model = 'informer'
-add_feature_num = 60
+add_feature_num = 12
 args.loss_mode = 'default'
 args.extra = False
 args.load_models = False
@@ -61,7 +61,7 @@ args.padding = 0
 
 #バッチサイズ、学習率、ロースファンクションなどを指定
 args.batch_size = 256
-args.learning_rate = 0.001 #0.0001 -> 0.001
+args.learning_rate = 0.005 #0.0001 -> 0.001
 args.loss = 'mae'
 args.lradj = 'type1'
 args.use_amp = False # whether to use automatic mixed precision training
