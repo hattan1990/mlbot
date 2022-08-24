@@ -72,6 +72,12 @@ class EvalDataset():
 
         if self.option == 'pct':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
+        elif self.option == 'mean':
+            df_raw = add_features(df_raw, self.feature_add)[(self.feature_add - 1):]
+            num = 12
+            df_raw['hi_mean'] = df_raw['hi'].rolling(num).mean()
+            df_raw['lo_mean'] = df_raw['lo'].rolling(num).mean()
+            df_raw = df_raw.dropna(how='any')
         elif self.option == 'feature_engineering':
             df_raw['spread'] = (df_raw['hi'] - df_raw['lo']) + 10
             df_raw = add_features_v2(df_raw, self.feature_add)[(self.feature_add - 1):]
@@ -85,6 +91,9 @@ class EvalDataset():
         df_data = data[cols_data]
         data_values = self.scaler.transform(df_data.values)
         data_values = data_values[:, 5:]
+
+        if self.option == 'mean':
+            data_values = data_values[:, :-2]
 
 
         df_stamp = df_raw[['date']]
@@ -146,7 +155,10 @@ class Dataset_BTC(Dataset):
         self.__read_data__()
 
     def __read_data__(self):
-        self.scaler = StandardScaler()
+        if self.set_type == 2:
+            self.scaler = pickle.load(open('scaler.pkl', 'rb'))
+        else:
+            self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
         if "Unnamed: 0" in df_raw.columns:
@@ -183,8 +195,8 @@ class Dataset_BTC(Dataset):
         else:
             pass
 
-        border1s = [range1, range2 - self.seq_len]
-        border2s = [range2, range3]
+        border1s = [range1, range2 - self.seq_len, range1]
+        border2s = [range2, range3, range3]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
@@ -197,10 +209,7 @@ class Dataset_BTC(Dataset):
         if self.scale:
             self.scaler.fit(df_data.values)
             data = self.scaler.transform(df_data.values)
-            if self.option == 'pct':
-                pickle.dump(self.scaler, open("scaler.pkl", "wb"))
-            else:
-                pickle.dump(self.scaler, open("scaler_add.pkl", "wb"))
+            pickle.dump(self.scaler, open("scaler.pkl", "wb"))
 
         else:
             data = df_data.values
