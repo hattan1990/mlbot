@@ -372,7 +372,9 @@ class Exp_Informer(Exp_Basic):
                 if spread1 > spread2:
                     if t_max > p_max:
                         out1 = True
+                        out2 = True
                     elif t_max > p_max - (spread1/4):
+                        out1 = False
                         out2 = True
                     else:
                         out1 = False
@@ -380,7 +382,9 @@ class Exp_Informer(Exp_Basic):
                 else:
                     if t_min < p_min:
                         out1 = True
+                        out2 = True
                     elif t_min < p_min + (spread2/4):
+                        out1 = False
                         out2 = True
                     else:
                         out1 = False
