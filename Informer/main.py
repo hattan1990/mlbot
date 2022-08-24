@@ -7,7 +7,7 @@ import mlflow
 
 title = 'Predict hi&lo'
 
-def main(args):
+def main(args, best_score):
     print('Args in experiment:')
     print(args)
     client = mlflow.tracking.MlflowClient()
@@ -34,15 +34,18 @@ def main(args):
 
         for ii in range(args.itr):
             # setting record of experiments
+            args.best_score = best_score
             setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_mx{}_{}_{}'.format(args.model, args.data, args.features,
                         args.seq_len, args.label_len, args.pred_len,
                         args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor,
                         args.embed, args.distil, args.mix, args.des, ii)
 
             exp = Exp(args) # set experiments
-            exp.train(setting)
+            best_score = exp.train(setting)
 
             torch.cuda.empty_cache()
+
+    return best_score
 
 def update_args(input_args, update_name, list):
     args_list = []
@@ -75,11 +78,12 @@ def update_args_list(args_list, update_name, list):
     return args_list + add_args
 
 def validation(args_list):
+    best_score = 0
     for i in range(10):
         choice = np.random.choice(len(args_list))
         args_update = args_list[choice]
         args_update = dotdict(args_update)
-        main(args_update)
+        best_score = main(args_update, best_score)
 
 if __name__ == '__main__':
     seq_len_list = [[96, 36, 12], [96, 48, 12]]

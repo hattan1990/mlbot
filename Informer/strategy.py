@@ -386,8 +386,80 @@ def back_test_spot_swing(threshold=15000, version='v1', pred_opsion='', num=12):
 
     return pd.DataFrame(output, columns=['date', 'total', 'profit', 'spread', 'buy', 'sell'])
 
+
+def back_test_spot_swing2(threshold=15000, version='v1', num=12):
+    trade_data = pd.read_csv('output_' + version + '.csv')
+    output = []
+    total = 0
+    trade_cnt = 0
+    for i in range(0, trade_data.shape[0], num):
+        if i == 0:
+            start = 0
+            end = num - 1
+        else:
+            end = i + num - 1
+
+        tmp_data = trade_data.loc[start:end]
+        base_price = tmp_data['op'].values[0]
+        pred_spread_min = int(tmp_data['pred'].min())
+        pred_spread_max = int(tmp_data['pred'].max())
+        spread_to_max = (pred_spread_max - base_price)
+        spread_to_min = (base_price - pred_spread_min)
+
+        buy = False
+        sell = False
+
+        if (spread_to_max >= threshold) & (spread_to_max > spread_to_min):
+            trade_cnt += 1
+            buy = True
+            buy_price = base_price
+            for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
+                if hi > pred_spread_max:
+                    sell = True
+                    sell_price = pred_spread_max
+
+        elif (spread_to_min >= threshold) & (spread_to_max < spread_to_min):
+            trade_cnt += 1
+            sell = True
+            sell_price = base_price
+            for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
+                if lo < pred_spread_min:
+                    buy = True
+                    buy_price = pred_spread_min
+
+        close_price = tmp_data['cl'].values[-1]
+        close_date = tmp_data['date'].values[-1]
+
+        if (sell == True) & (buy == True):
+            profit = sell_price - buy_price
+        elif (sell == True) & (buy == False):
+            profit = sell_price - close_price
+        elif (sell == False) & (buy == True):
+            profit = close_price - buy_price
+        else:
+            profit = 0
+            pass
+        total += profit
+        if profit != 0:
+            print('TOTAL:{} date:{} profit:{} buy:{} sell:{} tradeCount:{}'.format(total, close_date, profit, buy, sell, trade_cnt))
+            print('spread_to_max:{} spread_to_min:{}'.format(spread_to_max, spread_to_min))
+        output.append([close_date, total, profit, buy, sell])
+        start = end + 1
+
+    output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
+    output = output[output['profit'] != 0]
+    term = (output['buy'] == True) & (output['sell'] == True)
+    profit_win = output.loc[term, 'profit'].sum()
+    profit_loss = output.loc[~term, 'profit'].sum()
+
+    total = np.round(total / 1000000, 2)
+    profit_win = np.round(profit_win / 1000000, 2)
+    profit_loss = np.round(profit_loss / 1000000, 2)
+
+    return output, (total, profit_win, profit_loss)
+
 if __name__ == '__main__':
-    main(args)
+    #main(args)
     #output = back_test_megin_swing(version='v1')
     #plot_output()
     #plot_spread()
@@ -395,5 +467,4 @@ if __name__ == '__main__':
     #print(stocks)
     #output.to_excel('back_test_megin_swing.xlsx')
 
-    output = back_test_spot_swing(threshold=10000, version='v1', pred_opsion='min_max', num=12)
-    output.to_excel('ck.xlsx')
+    output = back_test_spot_swing2(threshold=10000, version='v1', num=12)

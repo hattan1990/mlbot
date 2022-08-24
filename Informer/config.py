@@ -9,7 +9,7 @@ add_feature_num = 12
 args.loss_mode = 'default'
 args.extra = True
 args.load_models = False
-args.data_option = "mean"
+args.data_option = "feature_engineering"
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
@@ -69,7 +69,7 @@ args.use_amp = False # whether to use automatic mixed precision training
 #並列計算するかどうか、トレーニングepoch数を指定
 args.num_workers = 0
 args.itr = 1
-args.train_epochs = 15
+args.train_epochs = 20
 args.patience = 15 # 10 -> 15
 args.des = 'exp'
 
