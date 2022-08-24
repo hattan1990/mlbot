@@ -75,7 +75,7 @@ class Exp_Informer(Exp_Basic):
         Data = Dataset_BTC
         timeenc = 0 if args.embed!='timeF' else 1
 
-        if flag == 'val':
+        if (flag == 'val') or (flag == 'test'):
             eval_mode = True
             shuffle_flag = False
         else:
@@ -359,31 +359,39 @@ class Exp_Informer(Exp_Basic):
             op = val[:,0,1]
 
             spread_4 = (pred_max - pred_min) / 4
-            spread_3 = (pred_max - pred_min) / 3
 
             acc1 = (pred_min > true_min) & (pred_max < true_max) & ((pred_max - pred_min) > 0)
             acc2 = ((pred_min + spread_4) > true_min) & ((pred_max - spread_4) < true_max) & ((pred_max - pred_min) > 0)
 
             acc3 = []
+            acc4 = []
             for p_min, p_max, t_min, t_max, base in zip(pred_min, pred_max, true_min, true_max, op):
                 spread1 = p_max - base
                 spread2 = base - p_min
 
                 if spread1 > spread2:
                     if t_max > p_max:
-                        out = True
+                        out1 = True
+                    elif t_max > p_max - (spread1/4):
+                        out2 = True
                     else:
-                        out = False
+                        out1 = False
+                        out2 = False
                 else:
                     if t_min < p_min:
-                        out = True
+                        out1 = True
+                    elif t_min < p_min + (spread2/4):
+                        out2 = True
                     else:
-                        out = False
-                acc3.append(out)
+                        out1 = False
+                        out2 = False
+                acc3.append(out1)
+                acc4.append(out2)
 
             acc3 = torch.tensor(acc3)
+            acc4 = torch.tensor(acc4)
 
-            return acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0], tmp_out1, tmp_out2
+            return acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0], acc4.sum()/pred.shape[0],tmp_out1, tmp_out2
 
         def execute_back_test(backtest, input_dict):
             trade_data = input_dict['trade_data']
@@ -411,6 +419,7 @@ class Exp_Informer(Exp_Basic):
         total_acc1_ex = []
         total_acc2_ex = []
         total_acc3_ex = []
+        total_acc4_ex = []
         strategy_data1 = pd.DataFrame()
         strategy_data2 = pd.DataFrame()
         for i, (index,batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(vali_loader):
@@ -427,17 +436,18 @@ class Exp_Informer(Exp_Basic):
                     if true_ex.shape[0] > 0:
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
-                        acc1_ex, acc2_ex, acc3_ex, _, _ = _check_strategy(pred_ex, true_ex, val_ex, None, None)
+                        acc1_ex, acc2_ex, acc3_ex,acc4_ex, _, _ = _check_strategy(pred_ex, true_ex, val_ex, None, None)
                         total_acc1_ex.append(acc1_ex)
                         total_acc2_ex.append(acc2_ex)
                         total_acc3_ex.append(acc3_ex)
+                        total_acc4_ex.append(acc4_ex)
 
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
                 total_loss.append(loss)
                 total_loss_local.append(np.average(loss_local))
-                acc1, acc2, acc3, tmp_out1, tmp_out2 = _check_strategy(pred, true, val, eval_masks, index)
+                acc1, acc2, acc3, acc4, tmp_out1, tmp_out2 = _check_strategy(pred, true, val, eval_masks, index)
                 total_acc1.append(acc1)
                 total_acc2.append(acc2)
                 total_acc3.append(acc3)
@@ -452,6 +462,7 @@ class Exp_Informer(Exp_Basic):
         acc1_ex = np.average(total_acc1_ex)
         acc2_ex = np.average(total_acc2_ex)
         acc3_ex = np.average(total_acc3_ex)
+        acc4_ex = np.average(total_acc4_ex)
         strategy_data1 = strategy_data1.reset_index(drop=True)
         strategy_data2 = strategy_data2.groupby('date').mean().reset_index()
 
@@ -475,7 +486,7 @@ class Exp_Informer(Exp_Basic):
             cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = values12 = dict12 = values22 = dict22 = None
 
         self.model.train()
-        return tl, tl_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
+        return tl, tl_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -545,21 +556,28 @@ class Exp_Informer(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(epoch, vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(epoch, vali_data, vali_loader, criterion)
 
             mlflow.log_metric("Cost time", int(time.time()-epoch_time), step=epoch + 1)
             mlflow.log_metric("Train Loss", train_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss", vali_loss, step=epoch + 1)
             mlflow.log_metric("Vali Loss ex", vali_loss_ex, step=epoch + 1)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}  ACC1Ex: {8:.5f} ACC2Ex: {9:.5f} ACC3Ex: {10:.5f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}  ACC1Ex: {8:.5f} ACC2Ex: {9:.5f} ACC3Ex: {10:.5f} ACC4Ex: {11:.5f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
 
             if epoch+1 >= 10:
                 print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                     cnt11, values11, dict11, values12, dict12))
                 print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                     cnt21, values21, dict21, values22, dict22))
+
+                hi_score = np.amax(values11, values21)
+                if hi_score > self.args.best_score:
+                    self.args.best_score = hi_score
+                    model_name = self.args.seq_len + '_' + self.args.label_len + '_' + self.args.pred_len + '_' + self.args.n_heads + str(hi_score) + '.pth'
+                    torch.save(self.model.to('cpu').state_dict(), model_name)
+                    print("Update Best Score !!!")
 
             early_stopping(-acc1, self.model, path)
             self.model.to(self.device)
@@ -572,7 +590,7 @@ class Exp_Informer(Exp_Basic):
         best_model_path = 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
 
-        return self.model
+        return self.args.best_score
 
 
     def predict(self, load=True):
@@ -693,6 +711,9 @@ class Exp_Informer(Exp_Basic):
         elif self.args.padding==1:
             dec_inp = torch.ones([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
         dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+        #custom_dec_inp = (batch_val[:, :, 3] + batch_val[:, :, 3]) / 2
+        #custom_dec_inp = custom_dec_inp.unsqueeze(2)
+        #dec_inp = torch.cat([custom_dec_inp[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
         # encoder - decoder
 
         try:
