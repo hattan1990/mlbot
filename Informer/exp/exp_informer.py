@@ -579,7 +579,7 @@ class Exp_Informer(Exp_Basic):
                 hi_score = np.amax([values11, values21])
                 if hi_score > self.args.best_score:
                     self.args.best_score = hi_score
-                    model_name = self.args.seq_len + '_' + self.args.label_len + '_' + self.args.pred_len + '_' + self.args.n_heads + str(hi_score) + '.pth'
+                    model_name = str(self.args.seq_len) + '_' + str(self.args.label_len) + '_' + str(self.args.pred_len) + '_' + str(self.args.n_heads) + '_' + str(hi_score) + '.pth'
                     torch.save(self.model.to('cpu').state_dict(), model_name)
                     print("Update Best Score !!!")
 
