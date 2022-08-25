@@ -576,7 +576,7 @@ class Exp_Informer(Exp_Basic):
                 print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                     cnt21, values21, dict21, values22, dict22))
 
-                hi_score = np.amax([values11, values21])
+                hi_score = np.amax([values11[0], values21[0]])
                 if hi_score > self.args.best_score:
                     self.args.best_score = hi_score
                     model_name = str(self.args.seq_len) + '_' + str(self.args.label_len) + '_' + str(self.args.pred_len) + '_' + str(self.args.n_heads) + '_' + str(hi_score) + '.pth'
