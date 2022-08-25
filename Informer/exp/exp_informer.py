@@ -596,6 +596,20 @@ class Exp_Informer(Exp_Basic):
 
         return self.args.best_score
 
+    def test(self):
+        epoch = 0
+        test_data, test_loader = self._get_data(flag='test')
+        criterion = self._select_criterion()
+        vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(
+            epoch, test_data, test_loader, criterion)
+        print(
+            "Epoch: {0},Vali Loss: {1:.7f} Vali Loss ex: {2:.7f} ACC1: {3:.5f} ACC2: {4:.5f} ACC3: {5:.5f}  ACC1Ex: {6:.5f} ACC2Ex: {7:.5f} ACC3Ex: {8:.5f} ACC4Ex: {9:.5f}".format(
+                epoch, vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex,acc3_ex, acc4_ex))
+
+        print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
+            cnt11, values11, dict11, values12, dict12))
+        print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
+            cnt21, values21, dict21, values22, dict22))
 
     def predict(self, load=True):
         def _check_mergin(raw):
