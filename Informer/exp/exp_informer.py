@@ -60,11 +60,7 @@ class Exp_Informer(Exp_Basic):
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
 
         if self.args['load_models'] == True:
-            seq_len = str(self.args.seq_len)
-            label_len = str(self.args.label_len)
-            pred_len = str(self.args.pred_len)
-            n_heads = str(self.args.n_heads)
-            best_model_path = 'weights/' + seq_len + '_' + label_len +'_' + pred_len + '_' + n_heads + '.pth'
+            best_model_path = 'best_model.pth'
             model.load_state_dict(torch.load(best_model_path))
             print("load model weights : {}".format(best_model_path))
         return model
@@ -579,7 +575,8 @@ class Exp_Informer(Exp_Basic):
                 hi_score = np.amax([values11[0], values21[0]])
                 if hi_score > self.args.best_score:
                     self.args.best_score = hi_score
-                    model_name = str(self.args.seq_len) + '_' + str(self.args.label_len) + '_' + str(self.args.pred_len) + '_' + str(self.args.n_heads) + '.pth'
+                    model_name = str(self.args.seq_len) + '_' + str(self.args.label_len) + '_' + str(self.args.pred_len) + '_' + str(self.args.n_heads) + '_' + str(hi_score) + '.pth'
+                    torch.save(self.model.state_dict(), 'best_model.pth')
                     torch.save(self.model.to('cpu').state_dict(), model_name)
                     print("Update Best Score !!!")
 
@@ -597,7 +594,7 @@ class Exp_Informer(Exp_Basic):
         return self.args.best_score
 
     def test(self):
-        epoch = 0
+        epoch = 20
         test_data, test_loader = self._get_data(flag='test')
         criterion = self._select_criterion()
         vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(
@@ -610,7 +607,6 @@ class Exp_Informer(Exp_Basic):
             cnt11, values11, dict11, values12, dict12))
         print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
             cnt21, values21, dict21, values22, dict22))
-
 
     def predict(self, load=True):
         def _check_mergin(raw):
