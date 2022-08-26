@@ -173,7 +173,7 @@ class Dataset_BTC(Dataset):
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add-1):]
         elif self.option == 'mean':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add - 1):]
-            num = 6
+            num = 12
             df_raw['hi_mean'] = df_raw['hi'].rolling(num).mean()
             df_raw['lo_mean'] = df_raw['lo'].rolling(num).mean()
             #df_raw['hi_mean'] = np.append(df_raw['hi_mean'].values[num - 1:], np.array([np.nan] * (num - 1)))
