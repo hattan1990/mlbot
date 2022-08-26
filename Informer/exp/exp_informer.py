@@ -594,7 +594,7 @@ class Exp_Informer(Exp_Basic):
         return self.args.best_score
 
     def test(self):
-        epoch = 0
+        epoch = 20
         test_data, test_loader = self._get_data(flag='test')
         criterion = self._select_criterion()
         vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(
