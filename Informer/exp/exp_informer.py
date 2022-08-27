@@ -457,6 +457,9 @@ class Exp_Informer(Exp_Basic):
                 pred, true, masks, val = self._process_one_batch(
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val)
 
+                pred = pred / 10000000
+                true = true / 10000000
+
                 if self.args['extra'] == True:
                     pred_ex = pred[masks]
                     true_ex = true[masks]
