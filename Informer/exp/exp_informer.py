@@ -112,6 +112,20 @@ class Exp_Informer(Exp_Basic):
         return criterion
 
     def vali(self, epoch ,vali_data, vali_loader, criterion):
+        def _fix_predict(true, pred, val):
+            base_hi = val[0 ,3] / (1 + true[0, 0])
+            base_lo = val[0, 4] / (1 + true[0, 1])
+            out_tmp = []
+            for i, value in enumerate(pred):
+                base_hi += value[0] * base_hi
+                base_lo += value[1] * base_lo
+                out_tmp.append([base_hi, base_lo])
+            out_tmp = np.array(out_tmp)
+            out_pred = (out_tmp[:, 0] + out_tmp[:, 1]) / 2
+            out_true = (val[:, 3] + val[:, 4]) / 2
+
+            return out_pred, out_true
+
         def _create_tmp_data(pred_data, true_data, val_data, index, option='mean'):
             output = pd.DataFrame()
             index = index.detach().cpu().numpy()
@@ -119,6 +133,8 @@ class Exp_Informer(Exp_Basic):
                 true = true.detach().cpu().numpy()
                 pred = pred.detach().cpu().numpy()
                 val = val.detach().cpu().numpy()
+
+                pred, true = _fix_predict(true, pred, val)
 
                 if option == 'mean':
                     target_index = i % 6
@@ -128,6 +144,8 @@ class Exp_Informer(Exp_Basic):
                     pred = pred[from_index:to_index]
                     val = val[from_index:to_index]
 
+                true = np.expand_dims(true, 1)
+                pred = np.expand_dims(pred, 1)
                 tmp_values = np.concatenate([val, true, pred], axis=1) * 10000000
                 columns = ['date', 'op', 'cl', 'hi', 'lo', 'true', 'pred']
 
@@ -342,9 +360,16 @@ class Exp_Informer(Exp_Basic):
                 tmp_out1 = []
                 tmp_out2 = []
 
-            pred = pred_data[:,:,0].detach().cpu() * 10000000
-            true = true[:,:,0].detach().cpu() * 10000000
+            pred = pred_data.detach().cpu()
+            true = true.detach().cpu()
             val = val.detach().cpu() * 10000000
+
+            out_pred = []
+            for t, p, v in zip(true, pred, val):
+                pred_o, _ = _fix_predict(t, p, v)
+                out_pred.append(pred_o)
+
+            pred = torch.tensor(out_pred)
 
             pred_min = pred.min(axis=1)[0]
             #true_min = true.min(axis=1)[0]
@@ -553,6 +578,8 @@ class Exp_Informer(Exp_Basic):
                             loss.backward()
 
                         model_optim.step()
+
+                    break
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)

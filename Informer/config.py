@@ -9,7 +9,7 @@ add_feature_num = 12
 args.loss_mode = 'default'
 args.extra = True
 args.load_models = False
-args.data_option = "opt"
+args.data_option = "pct"
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
@@ -20,7 +20,7 @@ args.eval_data = 'GMO_BTC_JPY_ohclv_eval_202205.csv'
 #予測タスク、ターゲット(y)、時間フィーチャーエンコーディングを指定
 args.add_feature_num = add_feature_num
 args.features = 'ALL'
-args.target = ['hi', 'lo']
+args.target = ['hi_1', 'lo_1']
 args.target_num = None
 args.freq = 't' # h:hourly
 args.scaler1 = 10000000 #BTC価格のスケーリング
@@ -40,8 +40,8 @@ if args.data_option == 'feature_engineering':
     args.enc_in = (add_feature_num * 6) - 5 + 2
 else:
     args.enc_in = (add_feature_num * 5) - 5
-args.dec_in = 1 # decoder input size
-args.c_out = 1 # output size
+args.dec_in = 2 # decoder input size
+args.c_out = 2 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
 args.n_heads = 16 # num of heads

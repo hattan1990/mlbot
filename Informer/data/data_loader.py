@@ -101,9 +101,7 @@ class EvalDataset():
         if self.target == None:
             target_val = data_values
         else:
-            target_val = (df_data[self.target[0]] + df_data[self.target[1]]) / 2
-            target_val = target_val.values / 10000000
-            target_val = np.expand_dims(target_val, 1)
+            target_val = df_data[[self.target[0], self.target[1]]].values / 10000000
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
 
@@ -174,8 +172,8 @@ class Dataset_BTC(Dataset):
         elif self.option == 'mean':
             df_raw = add_features(df_raw, self.feature_add)[(self.feature_add - 1):]
             num = 12
-            df_raw['hi_mean'] = df_raw['hi'].rolling(num).mean()
-            df_raw['lo_mean'] = df_raw['lo'].rolling(num).mean()
+            df_raw[self.target[0]+'_mean'] = df_raw[self.target[0]].rolling(num).mean()
+            df_raw[self.target[1]+'_mean'] = df_raw[self.target[1]].rolling(num).mean()
             #df_raw['hi_mean'] = np.append(df_raw['hi_mean'].values[num - 1:], np.array([np.nan] * (num - 1)))
             #df_raw['lo_mean'] = np.append(df_raw['lo_mean'].values[num - 1:], np.array([np.nan] * (num - 1)))
             df_raw = df_raw.dropna(how='any')
@@ -188,8 +186,8 @@ class Dataset_BTC(Dataset):
 
         df_raw = df_raw.reset_index(drop=True)
         range1 = 0
-        range2 = 455500
-        range3 = 600000
+        range2 = 4555
+        range3 = 6000
 
         if self.data_path == 'GMO_BTC_JPY_ohclv5.csv':
             range2 = int(range2 / 5)
@@ -228,14 +226,10 @@ class Dataset_BTC(Dataset):
                 self.data_y = data[border1:border2]
             else:
                 if self.option == 'mean':
-                    hi_lo = (df_data[self.target[0]+'_mean'] + df_data[self.target[1]+'_mean']) / 2
-                    hi_lo = hi_lo.values[border1:border2] / 10000000
-                    self.data_y = np.expand_dims(hi_lo, 1)
+                    self.data_y = df_data[[self.target[0]+'_mean', self.target[1]+'_mean']].values[border1:border2]
                     self.data_x = self.data_x[:, :-2]
                 else:
-                    hi_lo = (df_data[self.target[0]] + df_data[self.target[1]]) / 2
-                    hi_lo = hi_lo.values[border1:border2] / 10000000
-                    self.data_y = np.expand_dims(hi_lo, 1)
+                    self.data_y = df_data[[self.target[0], self.target[1]]].values[border1:border2]
         self.data_stamp = data_stamp
         df_raw['date'] = df_raw['date'].apply(lambda x:int(x[:4]+x[5:7]+x[8:10]+x[11:13]+x[14:16]))
         self.data_val = df_raw[['date', 'op', 'cl', 'hi', 'lo']].values[border1:border2] / 10000000
