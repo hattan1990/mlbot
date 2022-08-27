@@ -366,6 +366,9 @@ class Exp_Informer(Exp_Basic):
 
             out_pred = []
             for t, p, v in zip(true, pred, val):
+                t = t.numpy()
+                p = p.numpy()
+                v = v.numpy()
                 pred_o, _ = _fix_predict(t, p, v)
                 out_pred.append(pred_o)
 
