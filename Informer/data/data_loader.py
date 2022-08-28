@@ -229,7 +229,8 @@ class Dataset_BTC(Dataset):
                     self.data_y = df_data[[self.target[0]+'_mean', self.target[1]+'_mean']].values[border1:border2] * 10000000
                     self.data_x = self.data_x[:, :-2]
                 else:
-                    self.data_y = df_data[[self.target[0], self.target[1]]].values[border1:border2] * 10000000
+                    data_y = df_data[[self.target[0], self.target[1]]].values[border1:border2]
+                    self.data_y = np.round(data_y, 4) * 10000000
         self.data_stamp = data_stamp
         df_raw['date'] = df_raw['date'].apply(lambda x:int(x[:4]+x[5:7]+x[8:10]+x[11:13]+x[14:16]))
         self.data_val = df_raw[['date', 'op', 'cl', 'hi', 'lo']].values[border1:border2] / 10000000

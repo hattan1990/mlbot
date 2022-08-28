@@ -3,6 +3,7 @@ from config import args
 import torch
 import pandas as pd
 import numpy as np
+from dateutil import parser
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -22,8 +23,10 @@ def main(args):
     return pred
 
 def plot_output():
-    df = pd.read_excel('output.xlsx')
+    #df = pd.read_excel('output.xlsx')
+    df = pd.read_csv('output.csv')
     target_col = 'pred'
+    df['date'] = df['date'].apply(lambda x: parser.parse(str(int(x))))
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['date'],
                              y=df[target_col],
@@ -467,4 +470,6 @@ if __name__ == '__main__':
     #print(stocks)
     #output.to_excel('back_test_megin_swing.xlsx')
 
-    output = back_test_spot_swing2(threshold=10000, version='v1', num=12)
+    #output = back_test_spot_swing2(threshold=10000, version='v1', num=12)
+
+    plot_output()
