@@ -111,8 +111,7 @@ class Exp_Informer(Exp_Basic):
         criterion = CustomLoss(self.args.loss_mode)
         return criterion
 
-    def vali(self, epoch ,vali_data, vali_loader, criterion):
-        def _fix_predict(true, pred, val):
+    def fix_predict(self, true, pred, val):
             base_hi = val[0 ,3] / (1 + true[0, 0])
             base_lo = val[0, 4] / (1 + true[0, 1])
             out_tmp = []
@@ -126,6 +125,20 @@ class Exp_Informer(Exp_Basic):
 
             return out_pred, out_true
 
+    def fix_predict_batch(self, true, pred, val):
+            base_hi = val[:, 0 ,3] / (1 + true[:, 0, 0])
+            base_lo = val[:, 0, 4] / (1 + true[:, 0, 1])
+            pred[:, 0, 0] = pred[:, 0, 0].detach() * base_hi + base_hi
+            pred[:, 0, 1] = pred[:, 0, 1].detach() * base_lo + base_lo
+
+            num = pred.shape[1]
+            for i in range(1, num):
+                pred[:, i, 0] = (pred[:, i, 0].detach() * pred[:, i - 1, 0].detach()) + pred[:, i - 1, 0].detach()
+                pred[:, i, 1] = (pred[:, i, 1].detach() * pred[:, i - 1, 1].detach()) + pred[:, i - 1, 1].detach()
+
+            return pred, val[:, :, 3:5]
+
+    def vali(self, epoch ,vali_data, vali_loader, criterion):
         def _create_tmp_data(pred_data, true_data, val_data, index, option='mean'):
             output = pd.DataFrame()
             index = index.detach().cpu().numpy()
@@ -134,7 +147,7 @@ class Exp_Informer(Exp_Basic):
                 pred = pred.detach().cpu().numpy()
                 val = val.detach().cpu().numpy()
 
-                pred, true = _fix_predict(true, pred, val)
+                pred, true = self.fix_predict(true, pred, val)
 
                 if option == 'mean':
                     target_index = i % 6
@@ -369,7 +382,7 @@ class Exp_Informer(Exp_Basic):
                 t = t.numpy()
                 p = p.numpy()
                 v = v.numpy()
-                pred_o, _ = _fix_predict(t, p, v)
+                pred_o, _ = self.fix_predict(t, p, v)
                 out_pred.append(pred_o)
 
             pred = torch.tensor(out_pred)
@@ -457,8 +470,8 @@ class Exp_Informer(Exp_Basic):
                 pred, true, masks, val = self._process_one_batch(
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val)
 
-                pred = pred / 10000000
-                true = true / 10000000
+                pred = pred
+                true = true
 
                 if self.args['extra'] == True:
                     pred_ex = pred[masks]
@@ -550,8 +563,10 @@ class Exp_Informer(Exp_Basic):
                     iter_count += 1
 
                     model_optim.zero_grad()
-                    pred, true, masks, _ = self._process_one_batch(
+                    pred, true, masks, val = self._process_one_batch(
                         train_data, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val)
+
+                    pred, true = self.fix_predict_batch(true, pred, val)
 
                     if self.args['target'] is None:
                         num = self.args['target_num']
@@ -620,8 +635,6 @@ class Exp_Informer(Exp_Basic):
 
             adjust_learning_rate(model_optim, epoch+1, self.args)
 
-        best_model_path = 'checkpoint.pth'
-        self.model.load_state_dict(torch.load(best_model_path))
 
         return self.args.best_score
 
