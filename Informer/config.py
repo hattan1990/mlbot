@@ -9,7 +9,7 @@ add_feature_num = 12
 args.loss_mode = 'default'
 args.extra = True
 args.load_models = False
-args.data_option = "opt"
+args.data_option = "pct"
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
