@@ -188,7 +188,7 @@ class Dataset_BTC(Dataset):
 
         df_raw = df_raw.reset_index(drop=True)
         range1 = 0
-        range2 = 617000
+        range2 = 6170
         range3 = 750000
 
         if self.data_path == 'GMO_BTC_JPY_ohclv5.csv':
@@ -197,7 +197,10 @@ class Dataset_BTC(Dataset):
         else:
             pass
 
-        border1s = [range1, range2 - self.seq_len, range1]
+        if self.set_type == 2:
+            df_raw = df_raw[df_raw['date'] >= '2022-03-01 00:00:00']
+
+        border1s = [range1, range1, range1]
         border2s = [range2, range3, range3]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
