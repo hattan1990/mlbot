@@ -197,7 +197,9 @@ class Dataset_BTC(Dataset):
         else:
             pass
 
-        if self.set_type == 1:
+        if self.set_type == 0:
+            df_raw = df_raw[df_raw['date'] >= '2020-12-02 00:00']
+        elif self.set_type == 1:
             df_raw = df_raw[df_raw['date'] >= '2022-03-01 00:00:00']
 
         border1s = [range1, range1, range1]
