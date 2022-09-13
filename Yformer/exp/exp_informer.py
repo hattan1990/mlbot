@@ -1,4 +1,4 @@
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, Dataset_ECL_hour
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, Dataset_ECL_hour, Dataset_BTC
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, Yformer, Yformer_skipless
 
@@ -62,6 +62,7 @@ class Exp_Informer(Exp_Basic):
         args = self.args
 
         data_dict = {
+            'GMO-BTCJPY':Dataset_BTC,
             'ETTh1':Dataset_ETT_hour,
             'ETTh2':Dataset_ETT_hour,
             'ETTm1':Dataset_ETT_minute,
@@ -79,6 +80,13 @@ class Exp_Informer(Exp_Basic):
             Data = Dataset_Pred
         else:
             shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+
+        if (flag == 'val') or (flag == 'test'):
+            eval_mode = True
+            shuffle_flag = False
+        else:
+            eval_mode = False
+            shuffle_flag = True
         
         data_set = Data(
             root_path=args.root_path,
@@ -87,9 +95,13 @@ class Exp_Informer(Exp_Basic):
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
+            inverse=args.inverse,
             use_decoder_tokens=args.use_decoder_tokens,
             timeenc=timeenc,
-            freq=freq
+            freq=freq,
+            feature_add=args.add_feature_num,
+            option=args.data_option,
+            eval_mode=eval_mode
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -155,7 +167,6 @@ class Exp_Informer(Exp_Basic):
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
         vali_data, vali_loader = self._get_data(flag = 'val')
-        test_data, test_loader = self._get_data(flag = 'test')
 
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
@@ -172,10 +183,6 @@ class Exp_Informer(Exp_Basic):
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
 
-        # for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(train_loader):
-        #     summary(self.model,  [batch_x.shape, batch_x_mark.shape, batch_y.shape, batch_y_mark.shape]) # show the size 
-        #     break
-
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
@@ -183,7 +190,7 @@ class Exp_Informer(Exp_Basic):
             combined_train_loss = []
             self.model.train()
             epoch_time = time.time()
-            for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(train_loader):
+            for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,_) in enumerate(train_loader):
                 iter_count += 1
                 
                 model_optim.zero_grad()
@@ -232,10 +239,9 @@ class Exp_Informer(Exp_Basic):
             auto_loss = np.average(auto_train_loss)
             combined_loss = np.average(combined_train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
-            test_loss = self.vali(test_data, test_loader, criterion)
             
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} | Auto Loss : {3:.7f} | Comb Loss : {4:.7f}, Vali Loss: {5:.7f} Test Loss: {6:.7f}".format(
-                epoch + 1, train_steps, train_loss, auto_loss, combined_loss, vali_loss, test_loss))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} | Auto Loss : {3:.7f} | Comb Loss : {4:.7f}, Vali Loss: {5:.7f} ".format(
+                epoch + 1, train_steps, train_loss, auto_loss, combined_loss, vali_loss))
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
