@@ -65,7 +65,7 @@ args.alpha = 0.7
 args.use_decoder_tokens = 0
 
 #バッチサイズ、学習率、ロースファンクションなどを指定
-args.batch_size = 256
+args.batch_size = 128
 args.learning_rate = 0.005 #0.0001 -> 0.001
 args.loss = 'mae'
 args.lradj = 'type1'

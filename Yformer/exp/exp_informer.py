@@ -732,6 +732,22 @@ class Exp_Informer(Exp_Basic):
 
         return
 
+    def _create_masks(self, batch_y, batch_val, mergin=20000):
+        masks = []
+        for hi_lo, val in zip(batch_y, batch_val):
+            op = val[0, 1]
+            hi_max = hi_lo[: ,0].max()
+            lo_min = hi_lo[: ,0].min()
+            spread1 = (hi_max - op) * 10000000
+            spread2 = (op - lo_min) * 10000000
+            if (spread1 >= mergin) or (spread2 >= mergin):
+                masks.append(True)
+            else:
+                masks.append(False)
+
+        return torch.tensor(masks)
+
+
     def _process_one_batch(self, dataset_object, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val):
         batch_x = batch_x.float().to(self.device)
         batch_y = batch_y.float()
@@ -767,7 +783,7 @@ class Exp_Informer(Exp_Basic):
 
             masks = self._create_masks(outputs, batch_val)
 
-            return outputs, batch_y, masks, batch_val
+            return outputs[:, -self.args.pred_len:,:], batch_y, masks, batch_val
 
         except:
             print("-------------------prediction error-------------------")

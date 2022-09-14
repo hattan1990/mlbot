@@ -99,8 +99,8 @@ class Dataset_BTC(Dataset):
 
         df_raw = df_raw.reset_index(drop=True)
         range1 = 0
-        range2 = 6170
-        range3 = 7500
+        range2 = 617000
+        range3 = 750000
 
         if self.data_path == 'GMO_BTC_JPY_ohclv5.csv':
             range2 = int(range2 / 5)
