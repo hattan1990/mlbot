@@ -1,4 +1,5 @@
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, Dataset_ECL_hour, Dataset_BTC
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, Dataset_ECL_hour, \
+    Dataset_BTC
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, Yformer, Yformer_skipless
 
@@ -16,34 +17,36 @@ import os
 import time
 
 import warnings
+
 warnings.filterwarnings('ignore')
+
 
 class Exp_Informer(Exp_Basic):
     def __init__(self, args):
         super(Exp_Informer, self).__init__(args)
-    
+
     def _build_model(self):
         model_dict = {
-            'informer':Informer,
-            'yformer':Yformer,
+            'informer': Informer,
+            'yformer': Yformer,
             'yformer_skipless': Yformer_skipless
 
         }
-        if self.args.model=='informer'or self.args.model=="yformer" or self.args.model=="yformer_skipless":
+        if self.args.model == 'informer' or self.args.model == "yformer" or self.args.model == "yformer_skipless":
             model = model_dict[self.args.model](
                 self.args.enc_in,
-                self.args.dec_in, 
-                self.args.c_out, 
-                self.args.seq_len, 
+                self.args.dec_in,
+                self.args.c_out,
+                self.args.seq_len,
                 self.args.label_len,
-                self.args.pred_len, 
+                self.args.pred_len,
                 self.args.factor,
-                self.args.d_model, 
-                self.args.n_heads, 
+                self.args.d_model,
+                self.args.n_heads,
                 self.args.e_layers,
-                self.args.d_layers, 
+                self.args.d_layers,
                 self.args.d_ff,
-                self.args.dropout, 
+                self.args.dropout,
                 self.args.attn,
                 self.args.embed,
                 self.args.freq,
@@ -52,7 +55,7 @@ class Exp_Informer(Exp_Basic):
                 self.args.distil,
                 self.device
             ).float()
-        
+
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
@@ -61,24 +64,33 @@ class Exp_Informer(Exp_Basic):
         args = self.args
 
         data_dict = {
-            'GMO-BTCJPY':Dataset_BTC,
-            'ETTh1':Dataset_ETT_hour,
-            'ETTh2':Dataset_ETT_hour,
-            'ETTm1':Dataset_ETT_minute,
-            'ETTm2':Dataset_ETT_minute,
-            'ECL':Dataset_ECL_hour,
-            'custom':Dataset_Custom,
+            'GMO-BTCJPY': Dataset_BTC,
+            'ETTh1': Dataset_ETT_hour,
+            'ETTh2': Dataset_ETT_hour,
+            'ETTm1': Dataset_ETT_minute,
+            'ETTm2': Dataset_ETT_minute,
+            'ECL': Dataset_ECL_hour,
+            'custom': Dataset_Custom,
         }
         Data = data_dict[self.args.data]
-        timeenc = 0 if args.embed!='timeF' else 1
+        timeenc = 0 if args.embed != 'timeF' else 1
 
         if flag == 'test':
-            shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
-        elif flag=='pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
+            shuffle_flag = False;
+            drop_last = True;
+            batch_size = args.batch_size;
+            freq = args.freq
+        elif flag == 'pred':
+            shuffle_flag = False;
+            drop_last = False;
+            batch_size = 1;
+            freq = args.detail_freq
             Data = Dataset_Pred
         else:
-            shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = True;
+            drop_last = True;
+            batch_size = args.batch_size;
+            freq = args.freq
 
         if (flag == 'val') or (flag == 'test'):
             eval_mode = True
@@ -86,7 +98,7 @@ class Exp_Informer(Exp_Basic):
         else:
             eval_mode = False
             shuffle_flag = True
-        
+
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -113,14 +125,15 @@ class Exp_Informer(Exp_Basic):
         return data_set, data_loader
 
     def _select_optimizer(self):
-        model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
+        model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate,
+                                 weight_decay=self.args.weight_decay)
         return model_optim
-    
+
     def _select_criterion(self):
-        criterion =  nn.MSELoss()
+        criterion = nn.MSELoss()
         return criterion
 
-    def vali(self, epoch ,vali_data, vali_loader, criterion):
+    def vali(self, epoch, vali_data, vali_loader, criterion):
         def _create_tmp_data(pred_data, true_data, val_data, index, option='mean'):
             output = pd.DataFrame()
             index = index.detach().cpu().numpy()
@@ -197,6 +210,7 @@ class Exp_Informer(Exp_Basic):
                         stock_count += 1
 
                 return stock_count
+
             output = []
             buy_stocks = []
             sell_stocks = []
@@ -345,23 +359,24 @@ class Exp_Informer(Exp_Basic):
 
         def _check_strategy(pred_data, true, val, eval_masks, index):
             if eval_masks is not None:
-                tmp_out1 = _create_tmp_data(pred_data[eval_masks], true[eval_masks], val[eval_masks], index, option='none')
+                tmp_out1 = _create_tmp_data(pred_data[eval_masks], true[eval_masks], val[eval_masks], index,
+                                            option='none')
                 tmp_out2 = _create_tmp_data(pred_data, true, val, index, option='mean')
             else:
                 tmp_out1 = []
                 tmp_out2 = []
 
-            pred = pred_data[:,:,0].detach().cpu() * 10000000
-            true = true[:,:,0].detach().cpu() * 10000000
+            pred = pred_data[:, :, 0].detach().cpu() * 10000000
+            true = true[:, :, 0].detach().cpu() * 10000000
             val = val.detach().cpu() * 10000000
 
             pred_min = pred.min(axis=1)[0]
-            #true_min = true.min(axis=1)[0]
+            # true_min = true.min(axis=1)[0]
             true_min = val[:, :, 4].min(axis=1)[0]
             pred_max = pred.max(axis=1)[0]
-            #true_max = true.max(axis=1)[0]
+            # true_max = true.max(axis=1)[0]
             true_max = val[:, :, 3].max(axis=1)[0]
-            op = val[:,0,1]
+            op = val[:, 0, 1]
 
             spread_4 = (pred_max - pred_min) / 4
 
@@ -378,7 +393,7 @@ class Exp_Informer(Exp_Basic):
                     if t_max > p_max:
                         out1 = True
                         out2 = True
-                    elif t_max > p_max - (spread1/4):
+                    elif t_max > p_max - (spread1 / 4):
                         out1 = False
                         out2 = True
                     else:
@@ -388,7 +403,7 @@ class Exp_Informer(Exp_Basic):
                     if t_min < p_min:
                         out1 = True
                         out2 = True
-                    elif t_min < p_min + (spread2/4):
+                    elif t_min < p_min + (spread2 / 4):
                         out1 = False
                         out2 = True
                     else:
@@ -400,7 +415,8 @@ class Exp_Informer(Exp_Basic):
             acc3 = torch.tensor(acc3)
             acc4 = torch.tensor(acc4)
 
-            return acc1.sum()/pred.shape[0], acc2.sum()/pred.shape[0], acc3.sum()/pred.shape[0], acc4.sum()/pred.shape[0],tmp_out1, tmp_out2
+            return acc1.sum() / pred.shape[0], acc2.sum() / pred.shape[0], acc3.sum() / pred.shape[0], acc4.sum() / \
+                   pred.shape[0], tmp_out1, tmp_out2
 
         def execute_back_test(backtest, input_dict):
             trade_data = input_dict['trade_data']
@@ -431,9 +447,8 @@ class Exp_Informer(Exp_Basic):
         total_acc4_ex = []
         strategy_data1 = pd.DataFrame()
         strategy_data2 = pd.DataFrame()
-        for i, (index,batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(vali_loader):
-            if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
-                    (batch_x.shape[1] == self.args.seq_len):
+        for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val) in enumerate(vali_loader):
+            if (batch_y.shape[1] == self.args.pred_len) & (batch_x.shape[1] == self.args.seq_len):
                 eval_masks = index % 12 == 0
                 pred, true, masks, val = self._process_one_batch(
                     vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val)
@@ -445,12 +460,11 @@ class Exp_Informer(Exp_Basic):
                     if true_ex.shape[0] > 0:
                         loss_ex = criterion(pred_ex.detach().cpu(), true_ex.detach().cpu())
                         total_loss_ex.append(loss_ex)
-                        acc1_ex, acc2_ex, acc3_ex,acc4_ex, _, _ = _check_strategy(pred_ex, true_ex, val_ex, None, None)
+                        acc1_ex, acc2_ex, acc3_ex, acc4_ex, _, _ = _check_strategy(pred_ex, true_ex, val_ex, None, None)
                         total_acc1_ex.append(acc1_ex)
                         total_acc2_ex.append(acc2_ex)
                         total_acc3_ex.append(acc3_ex)
                         total_acc4_ex.append(acc4_ex)
-
 
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
                 loss_local = abs(pred.detach().cpu().numpy() - true.detach().cpu().numpy())
@@ -484,7 +498,6 @@ class Exp_Informer(Exp_Basic):
             best_output21, values21, dict21 = execute_back_test(_back_test_spot_swing, input_dict2)
             best_output22, values22, dict22 = execute_back_test(_back_test_mm, input_dict2)
 
-
             cnt11 = best_output11.shape[0]
             cnt21 = best_output21.shape[0]
             best_output11.to_csv('best_output11.csv')
@@ -497,10 +510,9 @@ class Exp_Informer(Exp_Basic):
         self.model.train()
         return tl, tl_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
 
-        
     def train(self, setting):
-        train_data, train_loader = self._get_data(flag = 'train')
-        vali_data, vali_loader = self._get_data(flag = 'val')
+        train_data, train_loader = self._get_data(flag='train')
+        vali_data, vali_loader = self._get_data(flag='val')
 
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
@@ -512,7 +524,7 @@ class Exp_Informer(Exp_Basic):
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
 
         model_optim = self._select_optimizer()
-        criterion =  self._select_criterion()
+        criterion = self._select_criterion()
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
@@ -523,9 +535,8 @@ class Exp_Informer(Exp_Basic):
 
             self.model.train()
             epoch_time = time.time()
-            for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_val) in enumerate(train_loader):
-                if (batch_y.shape[1] == (self.args.label_len + self.args.pred_len)) & \
-                        (batch_x.shape[1] == self.args.seq_len):
+            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val) in enumerate(train_loader):
+                if (batch_y.shape[1] == self.args.pred_len) & (batch_x.shape[1] == self.args.seq_len):
                     iter_count += 1
 
                     model_optim.zero_grad()
@@ -534,7 +545,7 @@ class Exp_Informer(Exp_Basic):
 
                     if self.args['target'] is None:
                         num = self.args['target_num']
-                        loss = criterion(pred, true[:,:,num].unsqueeze(2))
+                        loss = criterion(pred, true[:, :, num].unsqueeze(2))
                     else:
                         loss = criterion(pred, true)
                         loss_ex = None
@@ -556,7 +567,7 @@ class Exp_Informer(Exp_Basic):
                         scaler.step(model_optim)
                         scaler.update()
                     else:
-                        if (self.args['extra'] == True)&(loss_ex is not None):
+                        if (self.args['extra'] == True) & (loss_ex is not None):
                             loss += loss_ex
                             loss.backward()
                         else:
@@ -564,23 +575,29 @@ class Exp_Informer(Exp_Basic):
 
                         model_optim.step()
 
-            print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
+            print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(epoch, vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(
+                epoch, vali_data, vali_loader, criterion)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}  ACC1Ex: {8:.5f} ACC2Ex: {9:.5f} ACC3Ex: {10:.5f} ACC4Ex: {11:.5f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
+            print(
+                "Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss ex: {4:.7f} ACC1: {5:.5f} ACC2: {6:.5f} ACC3: {7:.5f}  ACC1Ex: {8:.5f} ACC2Ex: {9:.5f} ACC3Ex: {10:.5f} ACC4Ex: {11:.5f}".format(
+                    epoch + 1, train_steps, train_loss, vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex,
+                    acc3_ex, acc4_ex))
 
-            if epoch+1 >= 10:
-                print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
-                    cnt11, values11, dict11, values12, dict12))
-                print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
-                    cnt21, values21, dict21, values22, dict22))
+            if epoch + 1 >= 10:
+                print(
+                    "Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
+                        cnt11, values11, dict11, values12, dict12))
+                print(
+                    "Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
+                        cnt21, values21, dict21, values22, dict22))
 
                 hi_score = np.amax([values11[0], values21[0]])
                 if hi_score > self.args.best_score:
                     self.args.best_score = hi_score
-                    model_name = str(self.args.seq_len) + '_' + str(self.args.label_len) + '_' + str(self.args.pred_len) + '_' + str(self.args.n_heads) + '_' + str(hi_score) + '.pth'
+                    model_name = str(self.args.seq_len) + '_' + str(self.args.label_len) + '_' + str(
+                        self.args.pred_len) + '_' + str(self.args.n_heads) + '_' + str(hi_score) + '.pth'
                     torch.save(self.model.state_dict(), 'best_model.pth')
                     torch.save(self.model.to('cpu').state_dict(), model_name)
                     print("Update Best Score !!!")
@@ -591,7 +608,7 @@ class Exp_Informer(Exp_Basic):
                 print("Early stopping")
                 break
 
-            adjust_learning_rate(model_optim, epoch+1, self.args)
+            adjust_learning_rate(model_optim, epoch + 1, self.args)
 
         best_model_path = 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
@@ -600,22 +617,22 @@ class Exp_Informer(Exp_Basic):
 
     def test(self, setting):
         test_data, test_loader = self._get_data(flag='test')
-        
+
         self.model.eval()
-        
+
         preds = []
         trues = []
-        
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
+
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
             batch_x = batch_x.float().to(self.device)
             batch_y = batch_y.float()
             batch_x_mark = batch_x_mark.float().to(self.device)
             batch_y_mark = batch_y_mark.float().to(self.device)
 
             # decoder input
-            dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).float()
+            dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
             if self.args.use_decoder_tokens:
-                dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
             else:
                 dec_inp = dec_inp.float().to(self.device)
             # encoder - decoder
@@ -630,11 +647,11 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[:, -self.args.pred_len:, :]
-            f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
-            
-            pred = outputs.detach().cpu().numpy()#.squeeze()
-            true = batch_y.detach().cpu().numpy()#.squeeze()
+            f_dim = -1 if self.args.features == 'MS' else 0
+            batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+
+            pred = outputs.detach().cpu().numpy()  # .squeeze()
+            true = batch_y.detach().cpu().numpy()  # .squeeze()
 
             preds.append(pred)
             trues.append(true)
@@ -647,41 +664,41 @@ class Exp_Informer(Exp_Basic):
         print('test shape:', preds.shape, trues.shape)
 
         # result save
-        folder_path = './results/' + setting +'/'
+        folder_path = './results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
         mae, mse, rmse, mape, mspe = metric(preds, trues)
         print('mse:{}, mae:{}'.format(mse, mae))
 
-        np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        np.save(folder_path+'pred.npy', preds)
-        np.save(folder_path+'true.npy', trues)
+        np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
+        np.save(folder_path + 'pred.npy', preds)
+        np.save(folder_path + 'true.npy', trues)
 
         return
 
     def predict(self, setting, load=False):
         pred_data, pred_loader = self._get_data(flag='pred')
-        
+
         if load:
             path = os.path.join(self.args.checkpoints, setting)
-            best_model_path = path+'/'+'checkpoint.pth'
+            best_model_path = path + '/' + 'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval()
-        
+
         preds = []
-        
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(pred_loader):
+
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(pred_loader):
             batch_x = batch_x.float().to(self.device)
             batch_y = batch_y.float()
             batch_x_mark = batch_x_mark.float().to(self.device)
             batch_y_mark = batch_y_mark.float().to(self.device)
 
             # decoder input
-            dec_inp = torch.zeros_like(batch_y[:,-self.args.pred_len:,:]).float()
+            dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
             if self.args.use_decoder_tokens:
-                dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
             else:
                 dec_inp = dec_inp.float().to(self.device)
             # encoder - decoder
@@ -696,23 +713,23 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
-            
-            pred = outputs.detach().cpu().numpy()#.squeeze()
-            
+            f_dim = -1 if self.args.features == 'MS' else 0
+            batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+
+            pred = outputs.detach().cpu().numpy()  # .squeeze()
+
             preds.append(pred)
 
         preds = np.array(preds)
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-        
+
         # result save
-        folder_path = './results/' + setting +'/'
+        folder_path = './results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-        
-        np.save(folder_path+'real_prediction.npy', preds)
-        
+
+        np.save(folder_path + 'real_prediction.npy', preds)
+
         return
 
     def _process_one_batch(self, dataset_object, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_val):
@@ -723,11 +740,11 @@ class Exp_Informer(Exp_Basic):
         batch_y_mark = batch_y_mark.float().to(self.device)
 
         # decoder input
-        if self.args.padding==0:
-            dec_inp = torch.zeros([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
-        elif self.args.padding==1:
-            dec_inp = torch.ones([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
-        dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+        dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+        if self.args.use_decoder_tokens:
+            dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+        else:
+            dec_inp = dec_inp.float().to(self.device)
         # encoder - decoder
 
         try:
@@ -744,8 +761,8 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
             if self.args.inverse:
                 outputs = dataset_object.inverse_transform(outputs)
-            f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+            f_dim = -1 if self.args.features == 'MS' else 0
+            batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
             batch_val = batch_val[:, -self.args.pred_len:, f_dim:].to(self.device)
 
             masks = self._create_masks(outputs, batch_val)
