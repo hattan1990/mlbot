@@ -5,9 +5,9 @@ import torch
 args = dotdict()
 args.runname = 'Implement Yformer'
 args.model = 'yformer'
-add_feature_num = 12
+add_feature_num = 6
 args.loss_mode = 'default'
-args.extra = True
+args.extra = False
 args.load_models = False
 args.data_option = "pct"
 
@@ -45,10 +45,10 @@ args.c_out = 1 # output size
 args.factor = 3 # probsparse attn factor
 args.d_model = 512 # dimension of model
 args.n_heads = 8 # num of heads
-args.e_layers = 3 # num of encoder layers
-args.d_layers = 3 # num of decoder layers
+args.e_layers = 2 # num of encoder layers
+args.d_layers = 2 # num of decoder layers
 args.d_ff = 2048 # dimension of fcn in model
-args.dropout = 0.005 # dropout 0.005
+args.dropout = 0.05 # dropout 0.005
 args.output_attention = False
 args.do_predict = False
 
@@ -66,7 +66,7 @@ args.use_decoder_tokens = 0
 
 #バッチサイズ、学習率、ロースファンクションなどを指定
 args.batch_size = 128
-args.learning_rate = 0.005 #0.0001 -> 0.001
+args.learning_rate = 0.0001 #0.0001 -> 0.001
 args.loss = 'mae'
 args.lradj = 'type1'
 args.use_amp = False # whether to use automatic mixed precision training
