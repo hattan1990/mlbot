@@ -4,7 +4,7 @@ from exp.exp_basic import Exp_Basic
 from models.model import Informer, Yformer, Yformer_skipless
 
 from utils.tools import EarlyStopping, adjust_learning_rate
-from utils.metrics import metric
+from utils.metrics import metric, CustomLoss
 
 import numpy as np
 import pandas as pd
@@ -130,7 +130,7 @@ class Exp_Informer(Exp_Basic):
         return model_optim
 
     def _select_criterion(self):
-        criterion = nn.MSELoss()
+        criterion = CustomLoss(self.args.loss_mode)
         return criterion
 
     def vali(self, epoch, vali_data, vali_loader, criterion):
