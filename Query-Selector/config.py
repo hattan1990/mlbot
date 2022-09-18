@@ -101,27 +101,28 @@ class Config:
 
 
 def build_parser(deepspeed_flg):
+    #ts_query-selector_m_h1_24.json
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', default='ETTh1' , type=str, choices=['ETTh1', 'ETTh2', 'ETTm1'])
     parser.add_argument('--input_len', default=7,type=int)
     parser.add_argument('--output_len', default=7 ,type=int)
-    parser.add_argument('--seq_len', default=720 ,type=int)
-    parser.add_argument('--dec_seq_len', default=24 ,type=int)
+    parser.add_argument('--seq_len', default=48 ,type=int)
+    parser.add_argument('--dec_seq_len', default=48 ,type=int)
     parser.add_argument('--pred_len', default=24 ,type=int)
     parser.add_argument('--features', default='M',type=str)
     parser.add_argument('--target', default='OT', type=str)
-    parser.add_argument('--iterations', default=10 ,type=int)
+    parser.add_argument('--iterations', default=5 ,type=int)
     parser.add_argument('--exps', default=5 ,type=int)
 
-    parser.add_argument('--hidden_size', default=128 ,type=int)
-    parser.add_argument('--n_heads', default=3 ,type=int)
+    parser.add_argument('--hidden_size', default=96 ,type=int)
+    parser.add_argument('--n_heads', default=2 ,type=int)
     parser.add_argument('--n_encoder_layers', default=3 ,type=int)
-    parser.add_argument('--encoder_attention', default='full' ,type=str)
+    parser.add_argument('--encoder_attention', default='query_selector_0.85' ,type=str)
     parser.add_argument('--n_decoder_layers', default=3 ,type=int)
     parser.add_argument('--decoder_attention', default='full' ,type=str)
-    parser.add_argument('--batch_size', default=100 ,type=int)
-    parser.add_argument('--embedding_size', default=32 ,type=int)
-    parser.add_argument('--dropout', default=0.1 ,type=float)
+    parser.add_argument('--batch_size', default=32 ,type=int)
+    parser.add_argument('--embedding_size', default=24 ,type=int)
+    parser.add_argument('--dropout', default=0 ,type=float)
     parser.add_argument('--fp16', default=False ,action='store_true')
 
     parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)

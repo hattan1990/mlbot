@@ -162,9 +162,7 @@ def preform_experiment(args):
     for iter in range(1, args.iterations + 1):
         preds, trues = run_iteration(deepspeed_engine if args.deepspeed else model , train_loader, args, training=True, message=' Run {:>3}, iteration: {:>3}:  '.format(args.run_num, iter))
         mse, mae = run_metrics("Loss after iteration {}".format(iter), preds, trues)
-        if args.local_rank == 0:
-            ipc.sendPartials(iter, mse, mae)
-        print("Time per iteration {}, memory {}".format((time.time() - start)/iter, torch.cuda.memory_stats()))
+
 
     print(torch.cuda.max_memory_allocated())
 
@@ -173,19 +171,14 @@ def preform_experiment(args):
 
 
     test_data, test_loader = _get_data(args, flag='test')
-    if deepspeed:
+    if args.deepspeed:
         model.inference()
     else:
         model.eval()
     # Model evaluation on validation data
     v_preds, v_trues = run_iteration(deepspeed_engine if args.deepspeed else model, test_loader, args, training=False, message="Validation set")
     mse, mae = run_metrics("Loss for validation set ", v_preds, v_trues)
-
-    # Send results / plot models if debug option is on
-    if args.local_rank == 0:
-        ipc.sendResults(mse, mae)
-        if args.debug:
-            plot_model(args, model)
+    print(mse, mae)
 
 def main(deepspeed_flg, device):
     parser = build_parser(deepspeed_flg)
