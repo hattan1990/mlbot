@@ -134,9 +134,11 @@ def build_parser(deepspeed_flg):
     parser.add_argument("--local_rank", type=int, default=0)
     parser.add_argument("--run_num", type=int, default=0)
     parser.add_argument('--debug', action='store_true',default=False)
-    parser.add_argument('--deepspeed', action='store_true', default=deepspeed_flg)
+
 
     if deepspeed_flg:
         from deepspeed import deepspeed
         parser = deepspeed.add_config_arguments(parser)
+    else:
+        parser.add_argument('--deepspeed', action='store_true', default=deepspeed_flg)
     return parser
