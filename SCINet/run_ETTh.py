@@ -23,7 +23,7 @@ parser.add_argument('--embed', type=str, default='timeF', help='time features en
 
 
 ### -------  device settings --------------
-parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
+parser.add_argument('--use_gpu', type=bool, default=False, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
 parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
 parser.add_argument('--devices', type=str, default='0',help='device ids of multile gpus')

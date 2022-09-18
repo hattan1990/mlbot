@@ -6,7 +6,10 @@ class Exp_Basic(object):
     def __init__(self, args):
         self.args = args
         # self.device = self._acquire_device()
-        self.model = self._build_model().cuda()
+        if self.args.use_gpu:
+            self.model = self._build_model().cuda()
+        else:
+            self.model = self._build_model()
 
     def _build_model(self):
         raise NotImplementedError
