@@ -8,7 +8,7 @@ import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from deepspeed import deepspeed
+
 import torch.nn as nn
 
 import ipc
@@ -94,7 +94,10 @@ def run_iteration(model, loader, args, training=True, message = ''):
     total_loss = 0
     elem_num = 0
     steps = 0
-    target_device = 'cuda:{}'.format(args.local_rank)
+    if args.device != 'cpu':
+        target_device = 'cuda:{}'.format(args.local_rank)
+    else:
+        target_device = args.device
     for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(loader):
         if not args.deepspeed:
             model.optim.zero_grad()
@@ -123,6 +126,7 @@ def run_iteration(model, loader, args, training=True, message = ''):
 
         if training:
             if args.deepspeed:
+                from deepspeed import deepspeed
                 model.backward(loss)
                 model.step()
             else:
@@ -132,7 +136,6 @@ def run_iteration(model, loader, args, training=True, message = ''):
 
 
 def preform_experiment(args):
-
     model = get_model(args)
     params = list(get_params(model))
     print('Number of parameters: {}'.format(len(params)))
@@ -140,11 +143,12 @@ def preform_experiment(args):
         print(p.shape)
 
     if args.deepspeed:
+        from deepspeed import deepspeed
         deepspeed_engine, optimizer, _, _ = deepspeed.initialize(args=args,
                                                               model=model,
                                                               model_parameters=params)
     else:
-        model.to('cuda')
+        model.to(args.device)
         model.optim = Adam(params, lr=0.001)
 
     train_data, train_loader = _get_data(args, flag='train')
@@ -183,13 +187,16 @@ def preform_experiment(args):
         if args.debug:
             plot_model(args, model)
 
-def main():
-    parser = build_parser()
+def main(deepspeed_flg, device):
+    parser = build_parser(deepspeed_flg)
     args = parser.parse_args(None)
+    args.device=device
     preform_experiment(args)
 
 
 if __name__ == '__main__':
-    main()
+    deepspeed_flg = True
+    device = 'cuda:0' #[cuda:0, cpu]
+    main(deepspeed_flg, device)
 
 
