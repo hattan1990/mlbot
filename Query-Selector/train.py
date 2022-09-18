@@ -55,7 +55,7 @@ def _get_data(args, flag):
         # freq = args.freq
 
     data_set = Data(
-        root_path='data',
+        root_path='../dataset/',
         data_path=args.data+'.csv',
         flag=flag,
         size=[args.seq_len, 0, args.pred_len],

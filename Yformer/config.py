@@ -13,7 +13,7 @@ args.data_option = "pct"
 
 #データセットとパスを指定
 args.data = 'GMO-BTCJPY'
-args.root_path = './dataset/'
+args.root_path = '../dataset/'
 args.data_path = 'GMO_BTC_JPY_ohclv.csv'
 args.eval_data = 'GMO_BTC_JPY_ohclv_eval_202205.csv'
 
