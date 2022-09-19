@@ -139,7 +139,7 @@ class Exp_Informer(Exp_Basic):
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[:, -self.args.pred_len:, :]
             f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+            batch_y = torch.tensor(batch_eval[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
 
             pred = outputs.detach().cpu()
             true = batch_y.detach().cpu()
@@ -207,7 +207,7 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
                 f_dim = -1 if self.args.features=='MS' else 0
-                batch_y = batch_eval[:,-self.args.pred_len:,f_dim:].to(self.device)
+                batch_y = torch.tensor(batch_eval[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
 
                 auto_loss = criterion(outputs[:, :-self.args.pred_len,:], batch_x)
                 auto_train_loss.append(auto_loss.item())
@@ -281,7 +281,7 @@ class Exp_Informer(Exp_Basic):
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[:, -self.args.pred_len:, :]
             f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+            batch_y = torch.tensor(batch_eval[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
             
             pred = outputs.detach().cpu().numpy()#.squeeze()
             true = batch_y.detach().cpu().numpy()#.squeeze()
@@ -347,7 +347,7 @@ class Exp_Informer(Exp_Basic):
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
             f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+            batch_y = torch.tensor(batch_eval[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
             
             pred = outputs.detach().cpu().numpy()#.squeeze()
             
