@@ -116,7 +116,7 @@ class Dataset_ETT_hour(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
 
-class Dataset_ETT_minute(Dataset):
+class Dataset_BTC(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
                  features='S', data_path='ETTm1.csv', use_decoder_tokens=False,
                  target='OT', scale=True, timeenc=0, freq='t'):
@@ -150,6 +150,8 @@ class Dataset_ETT_minute(Dataset):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
+        if "Unnamed: 0" in df_raw.columns:
+            df_raw = df_raw.drop(columns="Unnamed: 0")
 
         border1s = [0, 12*30*24*4 - self.seq_len, 12*30*24*4+4*30*24*4 - self.seq_len]
         border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
@@ -186,6 +188,8 @@ class Dataset_ETT_minute(Dataset):
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
+        df_raw['date'] = df_raw['date'].apply(lambda x: int(x[:4] + x[5:7] + x[8:10] + x[11:13] + x[14:16]))
+        self.data_val = df_raw[['date', 'op', 'hi', 'lo', 'cl']].values[border1:border2] / 10000000
     
     def __getitem__(self, index):
         s_begin = index
@@ -205,8 +209,9 @@ class Dataset_ETT_minute(Dataset):
         seq_y = self.data_y[r_begin:r_end]
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
+        seq_val = self.data_val[r_begin:r_end]
 
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
+        return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
     
     def __len__(self):
         return len(self.data_x) - self.seq_len- self.pred_len + 1

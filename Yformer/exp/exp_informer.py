@@ -1,4 +1,4 @@
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, Dataset_ECL_hour
+from data.data_loader import Dataset_ETT_hour, Dataset_BTC, Dataset_Custom, Dataset_Pred, Dataset_ECL_hour
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, Yformer, Yformer_skipless
 
@@ -11,7 +11,6 @@ import torch
 import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader
-from torchinfo import summary
 
 import os
 import time
@@ -64,8 +63,8 @@ class Exp_Informer(Exp_Basic):
         data_dict = {
             'ETTh1':Dataset_ETT_hour,
             'ETTh2':Dataset_ETT_hour,
-            'ETTm1':Dataset_ETT_minute,
-            'ETTm2':Dataset_ETT_minute,
+            'BTC':Dataset_BTC,
+            'ETTm2':Dataset_BTC,
             'ECL':Dataset_ECL_hour,
             'custom':Dataset_Custom,
         }
@@ -112,7 +111,7 @@ class Exp_Informer(Exp_Basic):
     def vali(self, vali_data, vali_loader, criterion):
         self.model.eval()
         total_loss = []
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
+        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_eval) in enumerate(vali_loader):
             batch_x = batch_x.float().to(self.device)
             batch_y = batch_y.float()
             
@@ -183,7 +182,7 @@ class Exp_Informer(Exp_Basic):
             combined_train_loss = []
             self.model.train()
             epoch_time = time.time()
-            for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(train_loader):
+            for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_eval) in enumerate(train_loader):
                 iter_count += 1
                 
                 model_optim.zero_grad()
@@ -208,7 +207,8 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
                 f_dim = -1 if self.args.features=='MS' else 0
-                batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+                batch_y = batch_eval[:,-self.args.pred_len:,f_dim:].to(self.device)
+
                 auto_loss = criterion(outputs[:, :-self.args.pred_len,:], batch_x)
                 auto_train_loss.append(auto_loss.item())
                 loss = criterion(outputs[:, -self.args.pred_len:,:], batch_y)
@@ -256,7 +256,7 @@ class Exp_Informer(Exp_Basic):
         preds = []
         trues = []
         
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
+        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_eval) in enumerate(test_loader):
             batch_x = batch_x.float().to(self.device)
             batch_y = batch_y.float()
             batch_x_mark = batch_x_mark.float().to(self.device)
@@ -322,7 +322,7 @@ class Exp_Informer(Exp_Basic):
         
         preds = []
         
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(pred_loader):
+        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_eval) in enumerate(pred_loader):
             batch_x = batch_x.float().to(self.device)
             batch_y = batch_y.float()
             batch_x_mark = batch_x_mark.float().to(self.device)
