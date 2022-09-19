@@ -153,10 +153,19 @@ class Dataset_BTC(Dataset):
         if "Unnamed: 0" in df_raw.columns:
             df_raw = df_raw.drop(columns="Unnamed: 0")
 
-        border1s = [0, 12*30*24*4 - self.seq_len, 12*30*24*4+4*30*24*4 - self.seq_len]
-        border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
+        range1 = 0
+        range2 = 617000
+        range3 = 750000
+
+        border1s = [range1, range1, range1]
+        border2s = [range2, range3, range3]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
+
+        #border1s = [0, 12*30*24*4 - self.seq_len, 12*30*24*4+4*30*24*4 - self.seq_len]
+        #border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
+        #border1 = border1s[self.set_type]
+        #border2 = border2s[self.set_type]
         
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[1:]
