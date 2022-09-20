@@ -156,7 +156,7 @@ class Exp_Informer(Exp_Basic):
             true_real = self._inverse_transform_batch(true.numpy(), vali_data.scaler_target)
 
             loss = criterion(pred, true)
-            loss_real = criterion(pred_real, true_real)
+            loss_real = np.mean(abs(pred_real - true_real))
 
             total_loss.append(loss)
             total_loss_real.append(loss_real)
