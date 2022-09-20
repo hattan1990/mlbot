@@ -117,8 +117,7 @@ class Dataset_ETT_hour(Dataset):
         return self.scaler.inverse_transform(data)
 
 class Dataset_BTC(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
-                 features='S', data_path='ETTm1.csv', use_decoder_tokens=False,
+    def __init__(self, root_path, flag='train', size=None, features='S', data_path='ETTm1.csv', use_decoder_tokens=False,
                  target='OT', scale=True, timeenc=0, freq='t'):
         # size [seq_len, label_len, pred_len]
         # info
@@ -218,7 +217,7 @@ class Dataset_BTC(Dataset):
 
         else:
             # decoder with tokens
-            r_begin = s_end - self.label_len 
+            r_begin = s_end - self.label_len
             r_end = r_begin + self.label_len + self.pred_len
 
 

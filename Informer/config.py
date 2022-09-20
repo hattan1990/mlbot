@@ -7,7 +7,7 @@ args.runname = 'Add Features'
 args.model = 'informer'
 add_feature_num = 12
 args.loss_mode = 'default'
-args.extra = True
+args.extra = False
 args.load_models = False
 args.data_option = "pct"
 
@@ -20,7 +20,7 @@ args.eval_data = 'GMO_BTC_JPY_ohclv_eval_202205.csv'
 #予測タスク、ターゲット(y)、時間フィーチャーエンコーディングを指定
 args.add_feature_num = add_feature_num
 args.features = 'ALL'
-args.target = ['hi', 'lo']
+args.target = 'cl'
 args.target_num = None
 args.freq = 't' # h:hourly
 args.scaler1 = 10000000 #BTC価格のスケーリング
@@ -36,15 +36,12 @@ args.pred_len = 12
 
 #EncoderとDecoderの入力バッチサイズを指定
 #モデルのレイア層、self-attentionのヘッド数、全結合層のノード数を指定
-if args.data_option == 'feature_engineering':
-    args.enc_in = (add_feature_num * 6) - 5 + 2
-else:
-    args.enc_in = (add_feature_num * 5) - 5
+args.enc_in = 5
 args.dec_in = 1 # decoder input size
 args.c_out = 1 # output size
 args.factor = 5 # probsparse attn factor
 args.d_model = 512 # dimension of model
-args.n_heads = 16 # num of heads
+args.n_heads = 8 # num of heads
 args.e_layers = 2 # num of encoder layers
 args.d_layers = 1 # num of decoder layers
 args.d_ff = 2048 # dimension of fcn in model
