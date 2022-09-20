@@ -165,8 +165,8 @@ class Dataset_BTC(Dataset):
             df_raw = df_raw.drop(columns="Unnamed: 0")
 
         range1 = 0
-        range2 = 6170
-        range3 = 7500
+        range2 = 617000
+        range3 = 750000
 
         if self.set_type == 0:
             df_raw = df_raw[df_raw['date'] >= '2020-12-02 00:00']
