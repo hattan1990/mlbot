@@ -148,6 +148,7 @@ class Dataset_BTC(Dataset):
 
     def __read_data__(self):
         self.scaler = StandardScaler()
+        self.scaler_target = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
         if "Unnamed: 0" in df_raw.columns:
@@ -175,7 +176,9 @@ class Dataset_BTC(Dataset):
 
         if self.scale:
             train_data = df_data[border1s[0]:border2s[0]]
+            target_data = df_data.loc[border1s[0]:border2s[0], [self.target]]
             self.scaler.fit(train_data.values)
+            self.scaler_target.fit(target_data.values)
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
@@ -198,7 +201,7 @@ class Dataset_BTC(Dataset):
         self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
         df_raw['date'] = df_raw['date'].apply(lambda x: int(x[:4] + x[5:7] + x[8:10] + x[11:13] + x[14:16]))
-        self.data_val = df_raw[['date', 'op', 'hi', 'lo', 'cl']].values[border1:border2] / 10000000
+        self.data_val = df_raw[['date', 'op', 'hi', 'lo', 'cl']].values[border1:border2]
     
     def __getitem__(self, index):
         s_begin = index

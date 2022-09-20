@@ -108,9 +108,17 @@ class Exp_Informer(Exp_Basic):
         criterion =  nn.MSELoss()
         return criterion
 
+    def _inverse_transform_batch(self, batch_values, scaler):
+        output = []
+        for values in batch_values:
+            out = scaler.inverse_transform(values)
+            output.append(out)
+        return np.array(output)
+
     def vali(self, vali_data, vali_loader, criterion):
         self.model.eval()
         total_loss = []
+        total_loss_real = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark,batch_eval) in enumerate(vali_loader):
             batch_x = batch_x.float().to(self.device)
             batch_y = batch_y.float()
@@ -139,22 +147,27 @@ class Exp_Informer(Exp_Basic):
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[:, -self.args.pred_len:, :]
             f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = torch.tensor(batch_eval[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
+            batch_y = torch.tensor(batch_y[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
 
             pred = outputs.detach().cpu()
             true = batch_y.detach().cpu()
 
-            loss = criterion(pred, true) 
+            pred_real = self._inverse_transform_batch(pred.numpy(), vali_data.scaler_target)
+            true_real = self._inverse_transform_batch(true.numpy(), vali_data.scaler_target)
+
+            loss = criterion(pred, true)
+            loss_real = criterion(pred_real, true_real)
 
             total_loss.append(loss)
+            total_loss_real.append(loss_real)
         total_loss = np.average(total_loss)
+        total_loss_real =  np.average(total_loss_real)
         self.model.train()
-        return total_loss
+        return total_loss, total_loss_real
         
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
         vali_data, vali_loader = self._get_data(flag = 'val')
-        test_data, test_loader = self._get_data(flag = 'test')
 
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
@@ -207,7 +220,7 @@ class Exp_Informer(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
                 f_dim = -1 if self.args.features=='MS' else 0
-                batch_y = torch.tensor(batch_eval[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
+                batch_y = torch.tensor(batch_y[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
 
                 auto_loss = criterion(outputs[:, :-self.args.pred_len,:], batch_x)
                 auto_train_loss.append(auto_loss.item())
@@ -231,11 +244,10 @@ class Exp_Informer(Exp_Basic):
             train_loss = np.average(train_loss)
             auto_loss = np.average(auto_train_loss)
             combined_loss = np.average(combined_train_loss)
-            vali_loss = self.vali(vali_data, vali_loader, criterion)
-            test_loss = self.vali(test_data, test_loader, criterion)
+            vali_loss, vali_loss_real = self.vali(vali_data, vali_loader, criterion)
             
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} | Auto Loss : {3:.7f} | Comb Loss : {4:.7f}, Vali Loss: {5:.7f} Test Loss: {6:.7f}".format(
-                epoch + 1, train_steps, train_loss, auto_loss, combined_loss, vali_loss, test_loss))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} | Auto Loss : {3:.7f} | Comb Loss : {4:.7f}, Vali Loss: {5:.7f}, Vali Loss Real: {6:.7f}".format(
+                epoch + 1, train_steps, train_loss, auto_loss, combined_loss, vali_loss, vali_loss_real))
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
@@ -281,7 +293,7 @@ class Exp_Informer(Exp_Basic):
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[:, -self.args.pred_len:, :]
             f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = torch.tensor(batch_eval[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
+            batch_y = torch.tensor(batch_y[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
             
             pred = outputs.detach().cpu().numpy()#.squeeze()
             true = batch_y.detach().cpu().numpy()#.squeeze()
@@ -347,7 +359,7 @@ class Exp_Informer(Exp_Basic):
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
             f_dim = -1 if self.args.features=='MS' else 0
-            batch_y = torch.tensor(batch_eval[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
+            batch_y = torch.tensor(batch_y[:,-self.args.pred_len:,f_dim:], dtype=torch.float32).to(self.device)
             
             pred = outputs.detach().cpu().numpy()#.squeeze()
             
