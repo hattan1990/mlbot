@@ -181,7 +181,7 @@ class Dataset_BTC(Dataset):
 
         if self.scale:
             train_data = df_data[border1s[0]:border2s[0]]
-            target_data = df_data.loc[border1s[0]:border2s[0], [self.target]]
+            target_data = df_data[border1s[0]:border2s[0]][[self.target]]
             self.scaler.fit(train_data.values)
             self.scaler_target.fit(target_data.values)
             data = self.scaler.transform(df_data.values)
