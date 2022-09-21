@@ -25,7 +25,7 @@ parser.add_argument('--pred_len', type=int, default=12, help='prediction sequenc
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 
 parser.add_argument('--enc_in', type=int, default=5, help='encoder input size')
-parser.add_argument('--dec_in', type=int, default=5, help='decoder input size')
+parser.add_argument('--dec_in', type=int, default=1, help='decoder input size')
 parser.add_argument('--c_out', type=int, default=1, help='output size')
 parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
 parser.add_argument('--n_heads', type=int, default=16, help='num of heads')
