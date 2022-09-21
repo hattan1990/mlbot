@@ -19,8 +19,8 @@ parser.add_argument('--freq', type=str, default='t',
                     help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
 parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location of model checkpoints')
 
-parser.add_argument('--seq_len', type=int, default=48, help='input sequence length of Informer encoder')
-parser.add_argument('--label_len', type=int, default=48, help='start token length of Informer decoder')
+parser.add_argument('--seq_len', type=int, default=24, help='input sequence length of Informer encoder')
+parser.add_argument('--label_len', type=int, default=24, help='start token length of Informer decoder')
 parser.add_argument('--pred_len', type=int, default=12, help='prediction sequence length')
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 
@@ -28,9 +28,9 @@ parser.add_argument('--enc_in', type=int, default=5, help='encoder input size')
 parser.add_argument('--dec_in', type=int, default=5, help='decoder input size')
 parser.add_argument('--c_out', type=int, default=1, help='output size')
 parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
-parser.add_argument('--n_heads', type=int, default=8, help='num of heads')
-parser.add_argument('--e_layers', type=int, default=3, help='num of encoder layers')
-parser.add_argument('--d_layers', type=int, default=3, help='num of decoder layers')
+parser.add_argument('--n_heads', type=int, default=16, help='num of heads')
+parser.add_argument('--e_layers', type=int, default=2, help='num of encoder layers')
+parser.add_argument('--d_layers', type=int, default=2, help='num of decoder layers')
 parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
 parser.add_argument('--factor', type=int, default=3, help='probsparse attn factor')
 parser.add_argument('--distil', action='store_false',
@@ -55,7 +55,7 @@ parser.add_argument('--itr', type=int, default=2, help='experiments times')
 parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size of train input data')
 parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
-parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
+parser.add_argument('--learning_rate', type=float, default=0.001, help='optimizer learning rate')
 parser.add_argument('--des', type=str, default='test', help='exp description')
 parser.add_argument('--loss', type=str, default='mse', help='loss function')
 parser.add_argument('--lradj', type=str, default='type1', help='adjust learning rate')
@@ -97,8 +97,6 @@ for ii in range(args.itr):
     print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
     exp.train(setting)
 
-    print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-    exp.test(setting)
 
     if args.do_predict:
         print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
