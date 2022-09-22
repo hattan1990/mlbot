@@ -14,7 +14,7 @@ import torch.nn as nn
 import ipc
 from config import build_parser
 from model import Transformer
-from data_loader import Dataset_ETT_hour, Dataset_ETT_minute
+from data_loader import Dataset_BTC
 from metrics import metric
 
 
@@ -31,13 +31,9 @@ def get_params(mdl):
 
 
 def _get_data(args, flag):
-    if not args.data == 'ETTm1':
-        Data = Dataset_ETT_hour
-    else:
-        Data = Dataset_ETT_minute
-    # timeenc = 0 if args.embed != 'timeF' else 1
+    Data = Dataset_BTC
 
-    if flag == 'test':
+    if flag == 'val':
         shuffle_flag = False;
         drop_last = True;
         batch_size = 32
@@ -60,10 +56,7 @@ def _get_data(args, flag):
         flag=flag,
         size=[args.seq_len, 0, args.pred_len],
         features=args.features,
-        target=args.target,
-        inverse=args.inverse,
-        # timeenc=timeenc,
-        # freq=freq
+        target=args.target
     )
     print(flag, len(data_set))
     data_loader = DataLoader(
@@ -98,7 +91,7 @@ def run_iteration(model, loader, args, training=True, message = ''):
         target_device = 'cuda:{}'.format(args.local_rank)
     else:
         target_device = args.device
-    for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(loader):
+    for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(loader):
         if not args.deepspeed:
             model.optim.zero_grad()
 
@@ -170,7 +163,7 @@ def preform_experiment(args):
         model.record()
 
 
-    test_data, test_loader = _get_data(args, flag='test')
+    test_data, test_loader = _get_data(args, flag='val')
     if args.deepspeed:
         model.inference()
     else:

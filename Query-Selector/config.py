@@ -103,14 +103,14 @@ class Config:
 def build_parser(deepspeed_flg):
     #ts_query-selector_m_h1_24.json
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', default='ETTh1' , type=str, choices=['ETTh1', 'ETTh2', 'ETTm1'])
-    parser.add_argument('--input_len', default=7,type=int)
-    parser.add_argument('--output_len', default=7 ,type=int)
+    parser.add_argument('--data', default='GMO_BTC_JPY_ohclv' , type=str, choices=['ETTh1', 'ETTh2', 'ETTm1'])
+    parser.add_argument('--input_len', default=5,type=int)
+    parser.add_argument('--output_len', default=1 ,type=int)
     parser.add_argument('--seq_len', default=48 ,type=int)
     parser.add_argument('--dec_seq_len', default=48 ,type=int)
-    parser.add_argument('--pred_len', default=24 ,type=int)
-    parser.add_argument('--features', default='M',type=str)
-    parser.add_argument('--target', default='OT', type=str)
+    parser.add_argument('--pred_len', default=12 ,type=int)
+    parser.add_argument('--features', default='MS',type=str)
+    parser.add_argument('--target', default='cl', type=str)
     parser.add_argument('--iterations', default=5 ,type=int)
     parser.add_argument('--exps', default=5 ,type=int)
 
