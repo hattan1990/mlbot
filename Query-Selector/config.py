@@ -120,7 +120,7 @@ def build_parser(deepspeed_flg):
     parser.add_argument('--encoder_attention', default='query_selector_0.85' ,type=str)
     parser.add_argument('--n_decoder_layers', default=3 ,type=int)
     parser.add_argument('--decoder_attention', default='full' ,type=str)
-    parser.add_argument('--batch_size', default=32 ,type=int)
+    parser.add_argument('--batch_size', default=256 ,type=int)
     parser.add_argument('--embedding_size', default=24 ,type=int)
     parser.add_argument('--dropout', default=0 ,type=float)
     parser.add_argument('--fp16', default=False ,action='store_true')

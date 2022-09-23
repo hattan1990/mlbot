@@ -136,8 +136,6 @@ def preform_experiment(args):
     model = get_model(args)
     params = list(get_params(model))
     print('Number of parameters: {}'.format(len(params)))
-    for p in params:
-        print(p.shape)
 
     if args.deepspeed:
         from deepspeed import deepspeed
@@ -159,9 +157,8 @@ def preform_experiment(args):
     for iter in range(1, args.iterations + 1):
         preds, trues = run_iteration(deepspeed_engine if args.deepspeed else model , train_loader, args, training=True, message=' Run {:>3}, iteration: {:>3}:  '.format(args.run_num, iter))
         mse, mae = run_metrics("Loss after iteration {}".format(iter), preds, trues)
-        break
 
-    print(torch.cuda.max_memory_allocated())
+    print('cuda max memory allocated : {}'.format(torch.cuda.max_memory_allocated()))
 
     if args.debug:
         model.record()
