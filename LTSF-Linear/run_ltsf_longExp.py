@@ -19,29 +19,29 @@ parser.add_argument('--model', type=str, default='Autoformer',
                     help='model name, options: [Autoformer, Informer, Transformer]')
 
 # data loader
-parser.add_argument('--data', type=str, default='ETTh1', help='dataset type')
+parser.add_argument('--data', type=str, default='BTC', help='dataset type')
 parser.add_argument('--root_path', type=str, default='../dataset/', help='root path of the data file')
-parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
-parser.add_argument('--features', type=str, default='M',
+parser.add_argument('--data_path', type=str, default='GMO_BTC_JPY_ohclv.csv', help='data file')
+parser.add_argument('--features', type=str, default='MS',
                     help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
-parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
-parser.add_argument('--freq', type=str, default='h',
+parser.add_argument('--target', type=str, default='cl', help='target feature in S or MS task')
+parser.add_argument('--freq', type=str, default='t',
                     help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
 parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location of model checkpoints')
 
 # forecasting task
 parser.add_argument('--seq_len', type=int, default=96, help='input sequence length')
 parser.add_argument('--label_len', type=int, default=48, help='start token length')
-parser.add_argument('--pred_len', type=int, default=96, help='prediction sequence length')
+parser.add_argument('--pred_len', type=int, default=12, help='prediction sequence length')
 
 
 # DLinear
 parser.add_argument('--individual', action='store_true', default=False, help='DLinear: a linear layer for each variate(channel) individually')
 # Formers 
 parser.add_argument('--embed_type', type=int, default=0, help='0: default 1: value embedding + temporal embedding + positional embedding 2: value embedding + temporal embedding 3: value embedding + positional embedding 4: value embedding')
-parser.add_argument('--enc_in', type=int, default=7, help='encoder input size') # DLinear with --individual, use this hyperparameter as the number of channels
-parser.add_argument('--dec_in', type=int, default=7, help='decoder input size')
-parser.add_argument('--c_out', type=int, default=7, help='output size')
+parser.add_argument('--enc_in', type=int, default=5, help='encoder input size') # DLinear with --individual, use this hyperparameter as the number of channels
+parser.add_argument('--dec_in', type=int, default=5, help='decoder input size')
+parser.add_argument('--c_out', type=int, default=1, help='output size')
 parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
 parser.add_argument('--n_heads', type=int, default=8, help='num of heads')
 parser.add_argument('--e_layers', type=int, default=2, help='num of encoder layers')
@@ -60,7 +60,7 @@ parser.add_argument('--output_attention', action='store_true', help='whether to 
 parser.add_argument('--do_predict', action='store_true', help='whether to predict unseen future data')
 
 # optimization
-parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
+parser.add_argument('--num_workers', type=int, default=1, help='data loader num workers')
 parser.add_argument('--itr', type=int, default=2, help='experiments times')
 parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
@@ -72,7 +72,7 @@ parser.add_argument('--lradj', type=str, default='type1', help='adjust learning 
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 
 # GPU
-parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
+parser.add_argument('--use_gpu', type=bool, default=False, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
 parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
 parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
@@ -91,9 +91,9 @@ if args.use_gpu and args.use_multi_gpu:
 print('Args in experiment:')
 print(args)
 
-Exp = Exp_Main
+def main(args):
+    Exp = Exp_Main
 
-if args.is_training:
     for ii in range(args.itr):
         # setting record of experiments
         setting = '{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
@@ -114,38 +114,11 @@ if args.is_training:
             args.distil,
             args.des, ii)
 
-        exp = Exp(args)  # set experiments
-        print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+        exp = Exp(args)
         exp.train(setting)
-
-        print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        exp.test(setting)
-
-        if args.do_predict:
-            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            exp.predict(setting, True)
-
         torch.cuda.empty_cache()
-else:
-    ii = 0
-    setting = '{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(args.model_id,
-                                                                                                  args.model,
-                                                                                                  args.data,
-                                                                                                  args.features,
-                                                                                                  args.seq_len,
-                                                                                                  args.label_len,
-                                                                                                  args.pred_len,
-                                                                                                  args.d_model,
-                                                                                                  args.n_heads,
-                                                                                                  args.e_layers,
-                                                                                                  args.d_layers,
-                                                                                                  args.d_ff,
-                                                                                                  args.factor,
-                                                                                                  args.embed,
-                                                                                                  args.distil,
-                                                                                                  args.des, ii)
 
-    exp = Exp(args)  # set experiments
-    print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-    exp.test(setting, test=1)
-    torch.cuda.empty_cache()
+    return
+
+if __name__ == '__main__':
+    main(args)

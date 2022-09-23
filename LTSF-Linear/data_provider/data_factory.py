@@ -1,7 +1,8 @@
-from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
+from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, Dataset_BTC
 from torch.utils.data import DataLoader
 
 data_dict = {
+    'BTC':Dataset_BTC,
     'ETTh1': Dataset_ETT_hour,
     'ETTh2': Dataset_ETT_hour,
     'ETTm1': Dataset_ETT_minute,
@@ -14,7 +15,7 @@ def data_provider(args, flag):
     Data = data_dict[args.data]
     timeenc = 0 if args.embed != 'timeF' else 1
 
-    if flag == 'test':
+    if flag == 'eval':
         shuffle_flag = False
         drop_last = True
         batch_size = args.batch_size

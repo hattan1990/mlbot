@@ -66,7 +66,6 @@ class Exp_ETTh(Exp_Basic):
                 positionalE = self.args.positionalEcoding,
                 modified = True,
                 RIN=self.args.RIN)
-        print(model)
         return model.double()
 
     def _get_data(self, flag):
@@ -146,8 +145,8 @@ class Exp_ETTh(Exp_Basic):
 
                 preds.append(pred.detach().cpu().numpy())
                 trues.append(true.detach().cpu().numpy())
-                pred_scales.append(pred_scale.detach().cpu().numpy())
-                true_scales.append(true_scale.detach().cpu().numpy())
+                pred_scales.append(pred_scale)
+                true_scales.append(true_scale)
 
             elif self.args.stacks == 2:
                 loss = criterion(pred.detach().cpu(), true.detach().cpu()) + criterion(mid.detach().cpu(), true.detach().cpu())
@@ -155,9 +154,9 @@ class Exp_ETTh(Exp_Basic):
                 preds.append(pred.detach().cpu().numpy())
                 trues.append(true.detach().cpu().numpy())
                 mids.append(mid.detach().cpu().numpy())
-                pred_scales.append(pred_scale.detach().cpu().numpy())
+                pred_scales.append(pred_scale)
                 mid_scales.append(mid_scale.detach().cpu().numpy())
-                true_scales.append(true_scale.detach().cpu().numpy())
+                true_scales.append(true_scale)
 
             else:
                 print('Error!')
