@@ -115,8 +115,6 @@ def run_iteration(model, loader, args, training=True, message = ''):
 
         unscaled_loss = loss.item()
         total_loss += unscaled_loss
-        print("{} Loss at step {}: {}, mean for epoch: {}, mem_alloc: {}".format(message, steps, unscaled_loss, total_loss / steps,torch.cuda.max_memory_allocated()))
-
         if training:
             if args.deepspeed:
                 from deepspeed import deepspeed
@@ -127,6 +125,12 @@ def run_iteration(model, loader, args, training=True, message = ''):
                 model.optim.step()
     return preds, trues
 
+def inverse_transform_batch(batch_values, scaler):
+    output = []
+    for values in batch_values:
+        out = scaler.inverse_transform(values)
+        output.append(out)
+    return np.array(output)
 
 def preform_experiment(args):
     model = get_model(args)
@@ -155,13 +159,12 @@ def preform_experiment(args):
     for iter in range(1, args.iterations + 1):
         preds, trues = run_iteration(deepspeed_engine if args.deepspeed else model , train_loader, args, training=True, message=' Run {:>3}, iteration: {:>3}:  '.format(args.run_num, iter))
         mse, mae = run_metrics("Loss after iteration {}".format(iter), preds, trues)
-
+        break
 
     print(torch.cuda.max_memory_allocated())
 
     if args.debug:
         model.record()
-
 
     test_data, test_loader = _get_data(args, flag='val')
     if args.deepspeed:
@@ -171,7 +174,16 @@ def preform_experiment(args):
     # Model evaluation on validation data
     v_preds, v_trues = run_iteration(deepspeed_engine if args.deepspeed else model, test_loader, args, training=False, message="Validation set")
     mse, mae = run_metrics("Loss for validation set ", v_preds, v_trues)
-    print(mse, mae)
+
+    scaler = train_data.scaler_target
+    total_loss_real = []
+    for pred_batch, true_batch in zip(preds, trues):
+        pred_real = inverse_transform_batch(pred_batch, scaler)
+        true_real = inverse_transform_batch(true_batch, scaler)
+        loss_real = np.mean(abs(pred_real - true_real))
+        total_loss_real.append(loss_real)
+    total_loss_real = np.average(total_loss_real)
+    print('MSE: {}, MAE: {}, Real Loss: {}'.format(mse, mae, total_loss_real))
 
 def main(deepspeed_flg, device):
     parser = build_parser(deepspeed_flg)
