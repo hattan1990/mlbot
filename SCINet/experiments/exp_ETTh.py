@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import warnings
 warnings.filterwarnings('ignore')
-from data_process.etth_data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
+from data_process.etth_data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, Dataset_BTC
 from experiments.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, save_model, load_model
 from metrics.ETTh_metrics import metric
@@ -27,6 +27,8 @@ class Exp_ETTh(Exp_Basic):
             in_dim = 1
         elif self.args.features == 'M':
             in_dim = 7
+        elif self.args.features == 'MS':
+            in_dim = 5
         else:
             print('Error!')
 
@@ -71,6 +73,7 @@ class Exp_ETTh(Exp_Basic):
         args = self.args
 
         data_dict = {
+            'BTC':Dataset_BTC,
             'ETTh1':Dataset_ETT_hour,
             'ETTh2':Dataset_ETT_hour,
             'ETTm1':Dataset_ETT_minute,
@@ -83,7 +86,7 @@ class Exp_ETTh(Exp_Basic):
         Data = data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
 
-        if flag == 'test':
+        if flag == 'val':
             shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
         elif flag=='pred':
             shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
@@ -97,10 +100,8 @@ class Exp_ETTh(Exp_Basic):
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
             target=args.target,
-            inverse=args.inverse,
             timeenc=timeenc,
-            freq=freq,
-            cols=args.cols
+            freq=freq
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -136,7 +137,7 @@ class Exp_ETTh(Exp_Basic):
         true_scales = []
         mid_scales = []
 
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(valid_loader):
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(valid_loader):
             pred, pred_scale, mid, mid_scale, true, true_scale = self._process_one_batch_SCINet(
                 valid_data, batch_x, batch_y)
 
@@ -212,7 +213,6 @@ class Exp_ETTh(Exp_Basic):
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
         valid_data, valid_loader = self._get_data(flag = 'val')
-        test_data, test_loader = self._get_data(flag = 'test')
         path = os.path.join(self.args.checkpoints, setting)
         print(path)
         if not os.path.exists(path):
@@ -241,7 +241,7 @@ class Exp_ETTh(Exp_Basic):
             
             self.model.train()
             epoch_time = time.time()
-            for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(train_loader):
+            for i, (batch_x,batch_y,batch_x_mark,batch_y_mark, batch_eval) in enumerate(train_loader):
                 iter_count += 1
                 
                 model_optim.zero_grad()
@@ -257,14 +257,7 @@ class Exp_ETTh(Exp_Basic):
 
                 train_loss.append(loss.item())
                 
-                if (i+1) % 100==0:
-                    print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
-                    speed = (time.time()-time_now)/iter_count
-                    left_time = speed*((self.args.train_epochs - epoch)*train_steps - i)
-                    print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
-                    iter_count = 0
-                    time_now = time.time()
-                
+
                 if self.args.use_amp:
                     print('use amp')    
                     scaler.scale(loss).backward()
@@ -279,14 +272,12 @@ class Exp_ETTh(Exp_Basic):
             print('--------start to validate-----------')
             valid_loss = self.valid(valid_data, valid_loader, criterion)
             print('--------start to test-----------')
-            test_loss = self.valid(test_data, test_loader, criterion)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} valid Loss: {3:.7f} Test Loss: {4:.7f}".format(
-                epoch + 1, train_steps, train_loss, valid_loss, test_loss))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} valid Loss: {3:.7f}".format(
+                epoch + 1, train_steps, train_loss, valid_loss))
 
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
-            writer.add_scalar('test_loss', test_loss, global_step=epoch)
 
             early_stopping(valid_loss, self.model, path)
             if early_stopping.early_stop:
@@ -317,7 +308,7 @@ class Exp_ETTh(Exp_Basic):
             best_model_path = path+'/'+'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
+        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark, batch_eval) in enumerate(test_loader):
             pred, pred_scale, mid, mid_scale, true, true_scale = self._process_one_batch_SCINet(
                 test_data, batch_x, batch_y)
 
@@ -399,6 +390,13 @@ class Exp_ETTh(Exp_Basic):
             
         return mae, maes, mse, mses
 
+    def _inverse_transform_batch(self, batch_values, scaler):
+        output = []
+        for values in batch_values:
+            out = scaler.inverse_transform(values)
+            output.append(out)
+        return np.array(output)
+
     def _process_one_batch_SCINet(self, dataset_object, batch_x, batch_y):
         if self.args.use_gpu:
             batch_x = batch_x.double().cuda()
@@ -414,7 +412,9 @@ class Exp_ETTh(Exp_Basic):
             print('Error!')
 
         #if self.args.inverse:
-        outputs_scaled = dataset_object.inverse_transform(outputs)
+        #outputs_scaled = dataset_object.inverse_transform(outputs)
+        scaler = dataset_object.scaler_target
+        outputs_scaled = self._inverse_transform_batch(outputs.detach().numpy(), scaler)
         if self.args.stacks == 2:
             mid_scaled = dataset_object.inverse_transform(mid)
         f_dim = -1 if self.args.features=='MS' else 0
@@ -422,7 +422,8 @@ class Exp_ETTh(Exp_Basic):
             batch_y = batch_y[:,-self.args.pred_len:,f_dim:].cuda()
         else:
             batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
-        batch_y_scaled = dataset_object.inverse_transform(batch_y)
+        #batch_y_scaled = dataset_object.inverse_transform(batch_y)
+        batch_y_scaled = self._inverse_transform_batch(batch_y.detach().numpy(), scaler)
 
         if self.args.stacks == 1:
             return outputs, outputs_scaled, 0,0, batch_y, batch_y_scaled

@@ -259,6 +259,7 @@ class SCINet(nn.Module):
         self.div_projection = nn.ModuleList()
         self.overlap_len = self.input_len//4
         self.div_len = self.input_len//6
+        self.output = nn.Linear(self.input_dim, 1, bias=True)
 
         if self.num_decoder_layer > 1:
             self.projection1 = nn.Linear(self.input_len, self.output_len)
@@ -349,6 +350,7 @@ class SCINet(nn.Module):
         x += res1
         if self.num_decoder_layer == 1:
             x = self.projection1(x)
+            x = self.output(x)
         else:
             x = x.permute(0,2,1)
             for div_projection in self.div_projection:
