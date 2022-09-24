@@ -92,8 +92,8 @@ class Dataset_BTC(Dataset):
             data_stamp = data_stamp.transpose(1, 0)
 
         self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2]
-        #self.data_y = data[border1:border2, [3]]
+        #self.data_y = data[border1:border2]
+        self.data_y = data[border1:border2, [3]]
         self.data_stamp = data_stamp
         df_raw['date'] = df_raw['date'].apply(lambda x: int(x[:4] + x[5:7] + x[8:10] + x[11:13] + x[14:16]))
         self.data_val = df_raw[['date', 'op', 'hi', 'lo', 'cl']].values[border1:border2]
