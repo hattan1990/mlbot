@@ -199,7 +199,6 @@ class Exp_Informer(Exp_Basic):
                         loss.backward()
                         model_optim.step()
 
-                    break
 
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
