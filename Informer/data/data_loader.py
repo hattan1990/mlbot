@@ -165,8 +165,8 @@ class Dataset_BTC(Dataset):
             df_raw = df_raw.drop(columns="Unnamed: 0")
 
         range1 = 0
-        range2 = 617000
-        range3 = 750000
+        range2 = 6170
+        range3 = 7500
 
         if self.set_type == 0:
             df_raw = df_raw[df_raw['date'] >= '2020-12-02 00:00']
@@ -238,7 +238,10 @@ class Dataset_BTC(Dataset):
         seq_y_mark = self.data_stamp[r_begin:r_end]
         seq_val = self.data_val[r_begin:r_end]
 
-        return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
+        if self.set_type == 1:
+            return index, seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
+        else:
+            return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
 
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1

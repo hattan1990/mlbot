@@ -5,6 +5,8 @@ from models.model import Informer, InformerStack
 from utils.tools import EarlyStopping, adjust_learning_rate
 from utils.metrics import CustomLoss
 
+from strategy import Estimation
+
 import copy
 import numpy as np
 import pandas as pd
@@ -122,7 +124,8 @@ class Exp_Informer(Exp_Basic):
         self.model.eval()
         total_loss = []
         total_loss_real = []
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(vali_loader):
+        estimation = Estimation(self.args)
+        for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(vali_loader):
             pred, true, masks, val = self._process_one_batch(
                 vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval)
 
@@ -138,10 +141,12 @@ class Exp_Informer(Exp_Basic):
 
             total_loss.append(loss)
             total_loss_real.append(loss_real)
+            #Strategyモジュール追加
+            estimation.run_batch(index, pred_real, true_real, masks, val)
         total_loss = np.average(total_loss)
         total_loss_real = np.average(total_loss_real)
         self.model.train()
-        return total_loss, total_loss_real
+        return total_loss, total_loss_real, estimation
 
 
     def train(self, setting):
@@ -193,14 +198,18 @@ class Exp_Informer(Exp_Basic):
                         loss.backward()
                         model_optim.step()
 
+                    break
+
 
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss, vali_loss_real = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_real, estimation = self.vali(vali_data, vali_loader, criterion)
 
             print(
                 "Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} | Vali Loss : {3:.7f} | Vali Loss Real: {4:.7f}".format(
                     epoch + 1, train_steps, train_loss,  vali_loss, vali_loss_real))
+
+            estimation.run(epoch)
 
             early_stopping(vali_loss, self.model, path)
             self.model.to(self.device)
@@ -215,20 +224,6 @@ class Exp_Informer(Exp_Basic):
 
         return self.args.best_score
 
-    def test(self):
-        epoch = 20
-        test_data, test_loader = self._get_data(flag='test')
-        criterion = self._select_criterion()
-        vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22 = self.vali(
-            epoch, test_data, test_loader, criterion)
-        print(
-            "Epoch: {0},Vali Loss: {1:.7f} Vali Loss ex: {2:.7f} ACC1: {3:.5f} ACC2: {4:.5f} ACC3: {5:.5f}  ACC1Ex: {6:.5f} ACC2Ex: {7:.5f} ACC3Ex: {8:.5f} ACC4Ex: {9:.5f}".format(
-                epoch, vali_loss, vali_loss_ex, acc1, acc2, acc3, acc1_ex, acc2_ex,acc3_ex, acc4_ex))
-
-        print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
-            cnt11, values11, dict11, values12, dict12))
-        print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
-            cnt21, values21, dict21, values22, dict22))
 
     def predict(self, load=True):
         def _check_mergin(raw):
@@ -310,8 +305,8 @@ class Exp_Informer(Exp_Basic):
                 pred_hi = pred[0, :, 0].detach().cpu().numpy()
                 pred_lo = pred[0, :, 1].detach().cpu().numpy()
                 raw = pd.DataFrame(raw[-self.args.pred_len:, :6], columns=cols)
-                raw['pred_hi'] = pred_hi * 10000000
-                raw['pred_lo'] = pred_lo * 10000000
+                raw['pred_hi'] = pred_hi
+                raw['pred_lo'] = pred_lo
                 raw['pred'] = (raw['pred_hi'] + raw['pred_lo'])/2
                 output = pd.concat([output, raw])
                 out1, out2 = _check_mergin(raw)
@@ -326,8 +321,8 @@ class Exp_Informer(Exp_Basic):
             op = val[0, 1]
             hi_max = hi_lo[: ,0].max()
             lo_min = hi_lo[: ,0].min()
-            spread1 = (hi_max - op) * 10000000
-            spread2 = (op - lo_min) * 10000000
+            spread1 = (hi_max - op)
+            spread2 = (op - lo_min)
             if (spread1 >= mergin) or (spread2 >= mergin):
                 masks.append(True)
             else:
