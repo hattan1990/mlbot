@@ -26,7 +26,6 @@ class Estimation:
             for i, true, pred, val in zip(index, true_data, pred_data, val_data):
                 true = true
                 pred = pred
-                val = val
 
                 if option == 'mean':
                     pred_len = self.args.pred_len

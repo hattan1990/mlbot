@@ -132,6 +132,7 @@ class Exp_Informer(Exp_Basic):
             batch_y = torch.tensor(batch_y[:, -self.args.pred_len:, :], dtype=torch.float32).to(self.device)
             true = batch_y.detach().cpu()
             pred = pred.detach().cpu()
+            val = val.detach().cpu()
 
             pred_real = self._inverse_transform_batch(pred.numpy(), vali_data.scaler_target)
             true_real = self._inverse_transform_batch(true.numpy(), vali_data.scaler_target)
