@@ -17,6 +17,8 @@ from metrics.ETTh_metrics import metric
 from models.SCINet import SCINet
 from models.SCINet_decompose import SCINet_decompose
 
+from strategy import Estimation
+
 class Exp_ETTh(Exp_Basic):
     def __init__(self, args):
         super(Exp_ETTh, self).__init__(args)
@@ -135,8 +137,9 @@ class Exp_ETTh(Exp_Basic):
         pred_scales = []
         true_scales = []
         mid_scales = []
+        estimation = Estimation(self.args)
 
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(valid_loader):
+        for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(valid_loader):
             pred, pred_scale, mid, mid_scale, true, true_scale = self._process_one_batch_SCINet(
                 valid_data, batch_x, batch_y)
 
@@ -179,6 +182,11 @@ class Exp_ETTh(Exp_Basic):
             maes, mses, rmses, mapes, mspes, corrs = metric(pred_scales, true_scales)
             print('normed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(mse, mae, rmse, mape, mspe, corr))
             print('denormed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(mses, maes, rmses, mapes, mspes, corrs))
+
+            # Strategyモジュール追加
+            batch_eval = batch_eval[:, -self.args.pred_len:, :]
+            masks = self._create_masks(pred_scales, batch_eval)
+            estimation.run_batch(index, pred_scale, true_scale, masks, batch_eval)
         elif self.args.stacks == 2:
             preds = np.array(preds)
             trues = np.array(trues)
@@ -207,7 +215,7 @@ class Exp_ETTh(Exp_Basic):
         else:
             print('Error!')
 
-        return total_loss
+        return total_loss, estimation
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag = 'train')
@@ -269,11 +277,13 @@ class Exp_ETTh(Exp_Basic):
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
             train_loss = np.average(train_loss)
             print('--------start to validate-----------')
-            valid_loss = self.valid(valid_data, valid_loader, criterion)
+            valid_loss, estimation = self.valid(valid_data, valid_loader, criterion)
             print('--------start to test-----------')
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} valid Loss: {3:.7f}".format(
                 epoch + 1, train_steps, train_loss, valid_loss))
+
+            estimation.run(epoch)
 
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
@@ -430,3 +440,18 @@ class Exp_ETTh(Exp_Basic):
             return outputs, outputs_scaled, mid, mid_scaled, batch_y, batch_y_scaled
         else:
             print('Error!')
+
+    def _create_masks(self, batch_y, batch_val, mergin=20000):
+        masks = []
+        for hi_lo, val in zip(batch_y, batch_val):
+            op = val[0, 1]
+            hi_max = hi_lo[: ,0].max()
+            lo_min = hi_lo[: ,0].min()
+            spread1 = (hi_max - op)
+            spread2 = (op - lo_min)
+            if (spread1 >= mergin) or (spread2 >= mergin):
+                masks.append(True)
+            else:
+                masks.append(False)
+
+        return torch.tensor(masks)
