@@ -15,6 +15,8 @@ from torch.utils.data import DataLoader
 import os
 import time
 
+from strategy import Estimation
+
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -131,7 +133,8 @@ class Exp_Informer(Exp_Basic):
         self.model.eval()
         total_loss = []
         total_loss_real = []
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(vali_loader):
+        estimation = Estimation(self.args)
+        for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(vali_loader):
             batch_x = batch_x.float().to(self.device)
             batch_y = batch_y.float()
 
@@ -172,10 +175,15 @@ class Exp_Informer(Exp_Basic):
 
             total_loss.append(loss)
             total_loss_real.append(loss_real)
+            # Strategyモジュール追加
+            batch_eval = batch_eval[:, -self.args.pred_len:, :].to(self.device)
+            masks = self._create_masks(pred_real, batch_eval)
+            estimation.run_batch(index, pred_real, true_real, masks, batch_eval)
+
         total_loss = np.average(total_loss)
         total_loss_real = np.average(total_loss_real)
         self.model.train()
-        return total_loss, total_loss_real
+        return total_loss, total_loss_real, estimation
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -195,10 +203,6 @@ class Exp_Informer(Exp_Basic):
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
-
-        # for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(train_loader):
-        #     summary(self.model,  [batch_x.shape, batch_x_mark.shape, batch_y.shape, batch_y_mark.shape]) # show the size
-        #     break
 
         for epoch in range(self.args.train_epochs):
             iter_count = 0
@@ -246,11 +250,12 @@ class Exp_Informer(Exp_Basic):
             train_loss = np.average(train_loss)
             auto_loss = np.average(auto_train_loss)
             combined_loss = np.average(combined_train_loss)
-            vali_loss, vali_loss_real = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_real, estimation = self.vali(vali_data, vali_loader, criterion)
 
             print(
                 "Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} | Auto Loss : {3:.7f} | Comb Loss : {4:.7f}, Vali Loss: {5:.7f}, Vali Loss Real: {6:.7f}".format(
                     epoch + 1, train_steps, train_loss, auto_loss, combined_loss, vali_loss, vali_loss_real))
+            estimation.run(epoch)
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
@@ -379,3 +384,18 @@ class Exp_Informer(Exp_Basic):
         np.save(folder_path + 'real_prediction.npy', preds)
 
         return
+
+    def _create_masks(self, batch_y, batch_val, mergin=20000):
+        masks = []
+        for hi_lo, val in zip(batch_y, batch_val):
+            op = val[0, 1]
+            hi_max = hi_lo[: ,0].max()
+            lo_min = hi_lo[: ,0].min()
+            spread1 = (hi_max - op)
+            spread2 = (op - lo_min)
+            if (spread1 >= mergin) or (spread2 >= mergin):
+                masks.append(True)
+            else:
+                masks.append(False)
+
+        return torch.tensor(masks)
