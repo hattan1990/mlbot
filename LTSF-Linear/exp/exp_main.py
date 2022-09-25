@@ -108,7 +108,7 @@ class Exp_Main(Exp_Basic):
                 total_loss.append(loss)
                 total_loss_real.append(loss_real)
                 # Strategyモジュール追加
-                batch_eval = batch_eval[:, -self.args.pred_len:, :].to(self.device)
+                batch_eval = batch_eval[:, -self.args.pred_len:, :].cpu()
                 masks = self._create_masks(pred_real, batch_eval)
                 estimation.run_batch(index, pred_real, true_real, masks, batch_eval)
         total_loss = np.average(total_loss)
