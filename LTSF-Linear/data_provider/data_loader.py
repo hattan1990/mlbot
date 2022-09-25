@@ -110,7 +110,10 @@ class Dataset_BTC(Dataset):
         seq_y_mark = self.data_stamp[r_begin:r_end]
         seq_val = self.data_val[r_begin:r_end]
 
-        return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
+        if self.set_type == 1:
+            return index, seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
+        else:
+            return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
 
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1

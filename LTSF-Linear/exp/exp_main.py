@@ -4,6 +4,8 @@ from models import Informer, Autoformer, Transformer, DLinear, Linear, NLinear
 from utils.tools import EarlyStopping, adjust_learning_rate, visual, test_params_flop
 from utils.metrics import metric
 
+from strategy import Estimation
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -58,11 +60,13 @@ class Exp_Main(Exp_Basic):
 
     def vali(self, vali_data, vali_loader, criterion):
         total_loss = []
+        total_loss_real = []
         self.model.eval()
+        estimation = Estimation(self.args)
         with torch.no_grad():
-            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(vali_loader):
+            for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(vali_loader):
                 batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float()
+                batch_y = batch_y.float().to(self.device)
 
                 batch_x_mark = batch_x_mark.float().to(self.device)
                 batch_y_mark = batch_y_mark.float().to(self.device)
@@ -95,12 +99,22 @@ class Exp_Main(Exp_Basic):
                 pred = outputs.detach().cpu()
                 true = batch_y.detach().cpu()
 
+                pred_real = self._inverse_transform_batch(pred.numpy(), vali_data.scaler_target)
+                true_real = self._inverse_transform_batch(true.numpy(), vali_data.scaler_target)
+
                 loss = criterion(pred, true)
+                loss_real = np.mean(abs(pred_real - true_real))
 
                 total_loss.append(loss)
+                total_loss_real.append(loss_real)
+                # Strategyモジュール追加
+                batch_eval = batch_eval[:, -self.args.pred_len:, :].to(self.device)
+                masks = self._create_masks(pred_real, batch_eval)
+                estimation.run_batch(index, pred_real, true_real, masks, batch_eval)
         total_loss = np.average(total_loss)
+        total_loss_real = np.average(total_loss_real)
         self.model.train()
-        return total_loss
+        return total_loss, total_loss_real, estimation
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -185,10 +199,11 @@ class Exp_Main(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss = self.vali(vali_data, vali_loader, criterion)
+            vali_loss, vali_loss_real, estimation = self.vali(vali_data, vali_loader, criterion)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} ".format(
-                epoch + 1, train_steps, train_loss, vali_loss))
+            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Vali Loss Real: {4:.7f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss, vali_loss_real))
+            estimation.run(epoch)
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
@@ -350,3 +365,18 @@ class Exp_Main(Exp_Basic):
         np.save(folder_path + 'real_prediction.npy', preds)
 
         return
+
+    def _create_masks(self, batch_y, batch_val, mergin=20000):
+        masks = []
+        for hi_lo, val in zip(batch_y, batch_val):
+            op = val[0, 1]
+            hi_max = hi_lo[: ,0].max()
+            lo_min = hi_lo[: ,0].min()
+            spread1 = (hi_max - op)
+            spread2 = (op - lo_min)
+            if (spread1 >= mergin) or (spread2 >= mergin):
+                masks.append(True)
+            else:
+                masks.append(False)
+
+        return torch.tensor(masks)
