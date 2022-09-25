@@ -111,8 +111,9 @@ def build_parser(deepspeed_flg):
     parser.add_argument('--pred_len', default=12 ,type=int)
     parser.add_argument('--features', default='MS',type=str)
     parser.add_argument('--target', default='cl', type=str)
-    parser.add_argument('--iterations', default=5 ,type=int)
+    parser.add_argument('--iterations', default=1 ,type=int)
     parser.add_argument('--exps', default=5 ,type=int)
+    parser.add_argument('--extra', type=bool, default=False)
 
     parser.add_argument('--hidden_size', default=96 ,type=int)
     parser.add_argument('--n_heads', default=2 ,type=int)

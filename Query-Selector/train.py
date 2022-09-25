@@ -17,6 +17,8 @@ from model import Transformer
 from data_loader import Dataset_BTC
 from metrics import metric
 
+from strategy import Estimation
+
 
 def get_model(args):
     return Transformer(args.embedding_size, args.hidden_size, args.input_len, args.dec_seq_len, args.pred_len,
@@ -84,6 +86,8 @@ def run_metrics(caption, preds, trues):
 def run_iteration(model, loader, args, training=True, message = ''):
     preds = []
     trues = []
+    inds = []
+    evals = []
     total_loss = 0
     elem_num = 0
     steps = 0
@@ -91,7 +95,7 @@ def run_iteration(model, loader, args, training=True, message = ''):
         target_device = 'cuda:{}'.format(args.local_rank)
     else:
         target_device = args.device
-    for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(loader):
+    for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(loader):
         if not args.deepspeed:
             model.optim.zero_grad()
 
@@ -106,12 +110,16 @@ def run_iteration(model, loader, args, training=True, message = ''):
 
         loss = nn.functional.mse_loss(result.squeeze(2), target.squeeze(2), reduction='mean')
 
-        #pred = result.detach().cpu().unsqueeze(2).numpy()  # .squeeze()
         pred = result.detach().cpu().numpy()  # .squeeze()
         true = target.detach().cpu().numpy()  # .squeeze()
+        ind = index
+        eval = batch_eval
+
 
         preds.append(pred)
         trues.append(true)
+        inds.append(ind)
+        evals.append(eval)
 
         unscaled_loss = loss.item()
         total_loss += unscaled_loss
@@ -123,7 +131,11 @@ def run_iteration(model, loader, args, training=True, message = ''):
             else:
                 loss.backward()
                 model.optim.step()
-    return preds, trues
+
+            return preds, trues
+
+        else:
+            return inds, preds, trues, evals
 
 def inverse_transform_batch(batch_values, scaler):
     output = []
@@ -169,18 +181,41 @@ def preform_experiment(args):
     else:
         model.eval()
     # Model evaluation on validation data
-    v_preds, v_trues = run_iteration(deepspeed_engine if args.deepspeed else model, test_loader, args, training=False, message="Validation set")
+    estimation = Estimation(args)
+    inds, v_preds, v_trues, evals = run_iteration(deepspeed_engine if args.deepspeed else model, test_loader, args, training=False, message="Validation set")
     mse, mae = run_metrics("Loss for validation set ", v_preds, v_trues)
 
     scaler = train_data.scaler_target
     total_loss_real = []
-    for pred_batch, true_batch in zip(preds, trues):
+    for index, pred_batch, true_batch, batch_eval in zip(inds, v_preds, v_trues, evals):
         pred_real = inverse_transform_batch(pred_batch, scaler)
         true_real = inverse_transform_batch(true_batch, scaler)
         loss_real = np.mean(abs(pred_real - true_real))
         total_loss_real.append(loss_real)
+
+        # Strategyモジュール追加
+        batch_eval = batch_eval[:, -args.pred_len:, :].to(device)
+        masks = _create_masks(pred_real, batch_eval)
+        estimation.run_batch(index, pred_real, true_real, masks, batch_eval)
+
     total_loss_real = np.average(total_loss_real)
     print('MSE: {}, MAE: {}, Real Loss: {}'.format(mse, mae, total_loss_real))
+    estimation.run(99)
+
+def _create_masks(batch_y, batch_val, mergin=20000):
+    masks = []
+    for hi_lo, val in zip(batch_y, batch_val):
+        op = val[0, 1]
+        hi_max = hi_lo[: ,0].max()
+        lo_min = hi_lo[: ,0].min()
+        spread1 = (hi_max - op)
+        spread2 = (op - lo_min)
+        if (spread1 >= mergin) or (spread2 >= mergin):
+            masks.append(True)
+        else:
+            masks.append(False)
+
+    return torch.tensor(masks)
 
 def main(deepspeed_flg, device):
     parser = build_parser(deepspeed_flg)
@@ -190,8 +225,8 @@ def main(deepspeed_flg, device):
 
 
 if __name__ == '__main__':
-    deepspeed_flg = True
-    device = 'cuda:0' #[cuda:0, cpu]
+    deepspeed_flg = False
+    device = 'cpu' #[cuda:0, cpu]
     main(deepspeed_flg, device)
 
 
