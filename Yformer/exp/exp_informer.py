@@ -255,7 +255,7 @@ class Exp_Informer(Exp_Basic):
             print(
                 "Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} | Auto Loss : {3:.7f} | Comb Loss : {4:.7f}, Vali Loss: {5:.7f}, Vali Loss Real: {6:.7f}".format(
                     epoch + 1, train_steps, train_loss, auto_loss, combined_loss, vali_loss, vali_loss_real))
-            estimation.run(epoch)
+            estimation.run(100)
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
