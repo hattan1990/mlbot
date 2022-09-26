@@ -23,7 +23,7 @@ parser.add_argument('--embed', type=str, default='timeF', help='time features en
 parser.add_argument('--extra', type=bool, default=False)
 
 ### -------  device settings --------------
-parser.add_argument('--use_gpu', type=bool, default=False, help='use gpu')
+parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
 parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
 parser.add_argument('--devices', type=str, default='0',help='device ids of multile gpus')
@@ -39,12 +39,12 @@ parser.add_argument('--lastWeight', type=float, default=1.0)
                                                               
 ### -------  training settings --------------  
 parser.add_argument('--cols', type=str, nargs='+', help='file list')
-parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
-parser.add_argument('--itr', type=int, default=1, help='experiments times')
+parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
+parser.add_argument('--itr', type=int, default=10, help='experiments times')
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=320, help='batch size of train input data')
 parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
-parser.add_argument('--lr', type=float, default=0.0001, help='optimizer learning rate')
+parser.add_argument('--lr', type=float, default=0.001, help='optimizer learning rate')
 parser.add_argument('--loss', type=str, default='mae',help='loss function')
 parser.add_argument('--lradj', type=int, default=1,help='adjust learning rate')
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
