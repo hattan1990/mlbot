@@ -162,6 +162,10 @@ class Exp_ETTh(Exp_Basic):
                 trues.append(true.detach().cpu().numpy())
                 pred_scales.append(pred_scale)
                 true_scales.append(true_scale)
+                # Strategyモジュール追加
+                batch_eval = batch_eval[:, -self.args.pred_len:, :]
+                masks = self._create_masks(pred_scales, batch_eval)
+                estimation.run_batch(index, pred_scale, true_scale, masks, batch_eval)
 
             elif self.args.stacks == 2:
                 loss = criterion(pred.detach().cpu(), true.detach().cpu()) + criterion(mid.detach().cpu(),
@@ -173,6 +177,10 @@ class Exp_ETTh(Exp_Basic):
                 pred_scales.append(pred_scale)
                 mid_scales.append(mid_scale.detach().cpu().numpy())
                 true_scales.append(true_scale)
+                # Strategyモジュール追加
+                batch_eval = batch_eval[:, -self.args.pred_len:, :]
+                masks = self._create_masks(pred_scales, batch_eval)
+                estimation.run_batch(index, pred_scale, true_scale, masks, batch_eval)
 
             else:
                 print('Error!')
@@ -204,10 +212,7 @@ class Exp_ETTh(Exp_Basic):
                                                                                                              mspes,
                                                                                                              corrs))
 
-            # Strategyモジュール追加
-            batch_eval = batch_eval[:, -self.args.pred_len:, :]
-            masks = self._create_masks(pred_scales, batch_eval)
-            estimation.run_batch(index, pred_scale, true_scale, masks, batch_eval)
+
         elif self.args.stacks == 2:
             preds = np.array(preds)
             trues = np.array(trues)
