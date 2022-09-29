@@ -358,11 +358,11 @@ class Estimation:
                 epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
 
         if epoch + 1 >= 10:
-            input_dict1 = {'trade_data': strategy_data1, 'num': 12, 'thresh_list': [10000, 15000, 20000]}
+            input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [10000, 15000, 20000]}
             best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
             best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
 
-            input_dict2 = {'trade_data': strategy_data2, 'num': 6, 'thresh_list': [10000, 15000, 20000]}
+            input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [10000, 15000, 20000]}
             best_output21, values21, dict21 = self.execute_back_test(self.back_test_spot_swing, input_dict2)
             best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
 
@@ -384,9 +384,8 @@ class Estimation:
         return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
 
 
-def plot_output():
-    df = pd.read_excel('output.xlsx')
-    target_col = 'pred'
+def plot_output(file_name, target_col='pred'):
+    df = pd.read_excel(file_name)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['date'],
                              y=df[target_col],
