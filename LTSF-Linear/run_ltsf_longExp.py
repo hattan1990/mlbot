@@ -31,9 +31,9 @@ parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='l
 parser.add_argument('--extra', type=bool, default=False)
 
 # forecasting task
-parser.add_argument('--seq_len', type=int, default=96, help='input sequence length')
-parser.add_argument('--label_len', type=int, default=48, help='start token length')
-parser.add_argument('--pred_len', type=int, default=20, help='prediction sequence length')
+parser.add_argument('--seq_len', type=int, default=90, help='input sequence length')
+parser.add_argument('--label_len', type=int, default=60, help='start token length')
+parser.add_argument('--pred_len', type=int, default=30, help='prediction sequence length')
 
 
 # DLinear
@@ -49,7 +49,7 @@ parser.add_argument('--e_layers', type=int, default=2, help='num of encoder laye
 parser.add_argument('--d_layers', type=int, default=1, help='num of decoder layers')
 parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
 parser.add_argument('--moving_avg', type=int, default=25, help='window size of moving average')
-parser.add_argument('--factor', type=int, default=1, help='attn factor')
+parser.add_argument('--factor', type=int, default=2, help='attn factor')
 parser.add_argument('--distil', action='store_false',
                     help='whether to use distilling in encoder, using this argument means not using distilling',
                     default=True)
