@@ -225,6 +225,18 @@ class Exp_Informer(Exp_Basic):
         return self.args.best_score
 
 
+    def test(self):
+        epoch = 99
+        test_data, test_loader = self._get_data(flag='test')
+        criterion = self._select_criterion()
+        vali_loss, vali_loss_real, estimation = self.vali(test_data, test_loader, criterion)
+
+        print(
+            "Epoch: {0}, Vali Loss : {1:.7f} | Vali Loss Real: {2:.7f}".format(
+                epoch + 1, vali_loss, vali_loss_real))
+
+        estimation.run(epoch)
+
     def predict(self, load=True):
         def _check_mergin(raw):
             output = [raw['date'].max()]

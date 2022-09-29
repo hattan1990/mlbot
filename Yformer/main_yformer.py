@@ -99,10 +99,10 @@ def run():
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
         exp.train(setting)
 
+        print('>>>>>>>start Test : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+        exp.args.data_path = 'GMO_BTC_JPY_ohclv_eval.csv'
+        exp.test()
 
-        if args.do_predict:
-            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            exp.predict(setting, True)
 
         torch.cuda.empty_cache()
 

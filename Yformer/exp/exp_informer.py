@@ -268,67 +268,18 @@ class Exp_Informer(Exp_Basic):
 
         return self.model
 
-    def test(self, setting):
+
+    def test(self):
+        epoch = 99
         test_data, test_loader = self._get_data(flag='test')
+        criterion = self._select_criterion()
+        vali_loss, vali_loss_real, estimation = self.vali(test_data, test_loader, criterion)
 
-        self.model.eval()
+        print(
+            "Epoch: {0}, Vali Loss : {1:.7f} | Vali Loss Real: {2:.7f}".format(
+                epoch + 1, vali_loss, vali_loss_real))
 
-        preds = []
-        trues = []
-
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(test_loader):
-            batch_x = batch_x.float().to(self.device)
-            batch_y = batch_y.float()
-            batch_x_mark = batch_x_mark.float().to(self.device)
-            batch_y_mark = batch_y_mark.float().to(self.device)
-
-            # decoder input
-            dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-            if self.args.use_decoder_tokens:
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-            else:
-                dec_inp = dec_inp.float().to(self.device)
-            # encoder - decoder
-            if self.args.use_amp:
-                with torch.cuda.amp.autocast():
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[:, -self.args.pred_len:, :]
-            else:
-                if self.args.output_attention:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[:, -self.args.pred_len:, :]
-            f_dim = -1 if self.args.features == 'MS' else 0
-            batch_y = torch.tensor(batch_y[:, -self.args.pred_len:, f_dim:], dtype=torch.float32).to(self.device)
-
-            pred = outputs.detach().cpu().numpy()  # .squeeze()
-            true = batch_y.detach().cpu().numpy()  # .squeeze()
-
-            preds.append(pred)
-            trues.append(true)
-
-        preds = np.array(preds)
-        trues = np.array(trues)
-        print('test shape:', preds.shape, trues.shape)
-        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-        trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        print('test shape:', preds.shape, trues.shape)
-
-        # result save
-        folder_path = './results/' + setting + '/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-
-        mae, mse, rmse, mape, mspe = metric(preds, trues)
-        print('mse:{}, mae:{}'.format(mse, mae))
-
-        np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        np.save(folder_path + 'pred.npy', preds)
-        np.save(folder_path + 'true.npy', trues)
-
-        return
+        estimation.run(epoch)
 
     def predict(self, setting, load=False):
         pred_data, pred_loader = self._get_data(flag='pred')

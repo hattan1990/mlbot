@@ -42,8 +42,7 @@ def main(args):
 
             exp = Exp(args) # set experiments
             best_score = exp.train(setting)
-            args.load_models = True
-            args.data_path = 'GMO_BTC_JPY_ohclv_eval.csv'
+            exp.args.data_path = 'GMO_BTC_JPY_ohclv_eval.csv'
             exp.test()
 
             torch.cuda.empty_cache()
