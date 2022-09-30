@@ -354,8 +354,9 @@ class Estimation:
         acc2_ex = np.average(self.total_acc2_ex)
         acc3_ex = np.average(self.total_acc3_ex)
         acc4_ex = np.average(self.total_acc4_ex)
-        strategy_data1 = self.strategy_data1.reset_index(drop=True)
+        strategy_data1 = self.strategy_data1.sort_values(by='date').reset_index(drop=True)
         strategy_data2 = self.strategy_data2.groupby('date').mean().reset_index()
+        strategy_data2 = strategy_data2.sort_values(by='date').reset_index(drop=True)
 
         print(
             "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
