@@ -1,6 +1,7 @@
 import torch
 import pandas as pd
 import numpy as np
+from dateutil import parser as ps
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -334,12 +335,15 @@ class Estimation:
         term = (output['buy'] == True) & (output['sell'] == True)
         profit_win = output.loc[term, 'profit'].sum()
         profit_loss = output.loc[~term, 'profit'].sum()
+        win = output[output['profit'] > 0].shape[0]
 
         total = np.round(total / 1000000, 2)
         profit_win = np.round(profit_win / 1000000, 2)
         profit_loss = np.round(profit_loss / 1000000, 2)
+        acc_rate = np.round(sum(term) / output.shape[0], 2)
+        win_rate = np.round(win / output.shape[0], 2)
 
-        return output, (total, profit_win, profit_loss)
+        return output, (total, profit_win, profit_loss, acc_rate, win_rate)
 
 
     def run(self, epoch):
@@ -385,8 +389,10 @@ class Estimation:
 
 
 def plot_output(file_name, target_col='pred'):
-    df = pd.read_excel(file_name)
+    df = pd.read_csv(file_name)[:10000]
     fig = go.Figure()
+    df = df.sort_values(by='date')
+    df['date'] = df.date.apply(lambda x:ps.parse(str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     fig.add_trace(go.Scatter(x=df['date'],
                              y=df[target_col],
                              line=dict(color='rgba(17, 1, 1, 1)'),
@@ -425,3 +431,14 @@ def plot_output(file_name, target_col='pred'):
     fig.show()
 
     return
+
+if __name__ == '__main__':
+    from main_yformer import *
+
+    est = Estimation(args)
+    file_name = 'strategy_data1.csv'
+    data = pd.read_csv(file_name)
+    data = data.drop(columns='Unnamed: 0')
+    data = data.sort_values(by='date').reset_index(drop=True)
+    est.back_test_spot_swing(data)
+    plot_output(file_name, target_col='pred')
