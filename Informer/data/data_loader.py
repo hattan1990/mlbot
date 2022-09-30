@@ -233,7 +233,7 @@ class Dataset_BTC(Dataset):
         seq_y_mark = self.data_stamp[r_begin:r_end]
         seq_val = self.data_val[r_begin:r_end]
 
-        if self.set_type == 1:
+        if (self.set_type == 1) or (self.set_type == 2):
             return index, seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
         else:
             return seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
