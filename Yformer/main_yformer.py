@@ -1,5 +1,6 @@
 import argparse
 import os
+import numpy as np
 import torch
 
 from exp.exp_informer import Exp_Informer
@@ -52,7 +53,7 @@ parser.add_argument('--use_decoder_tokens', type=int, default=0,
                     help='if the decoder should use previous time steps token 1- True 0-False')
 
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
-parser.add_argument('--itr', type=int, default=2, help='experiments times')
+parser.add_argument('--itr', type=int, default=20, help='experiments times')
 parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size of train input data')
 parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
@@ -95,8 +96,11 @@ def run():
             args.distil,
             args.use_decoder_tokens, args.weight_decay, args.learning_rate, args.alpha, args.des, ii)
 
+        pred_lens = [12, 24, 30 ,60]
+        args.pred_len = np.random.choice(pred_lens)
         exp = Exp(args)  # set experiments
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+        exp.args.data_path = 'GMO_BTC_JPY_ohclv.csv'
         exp.train(setting)
 
         print('>>>>>>>start Test : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
