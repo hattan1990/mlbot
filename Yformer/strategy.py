@@ -389,11 +389,21 @@ class Estimation:
         return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
 
 
-def plot_output(file_name, target_col='pred'):
-    df = pd.read_csv(file_name)[:10000]
+def plot_output(file_name, args):
+    target_col = 'pred'
+    if file_name == 'strategy_data1.csv':
+        target = args.pred_len
+    else:
+        target = (args.pred_len / 2)
+    df = pd.read_csv(file_name)[100000:110000]
     fig = go.Figure()
-    df = df.sort_values(by='date')
+    target_index_list = []
+    for i, values in enumerate(df.values):
+        target_index = i % target
+        target_index_list.append(target_index)
+    df['target_index'] = target_index_list
     df['date'] = df.date.apply(lambda x:ps.parse(str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
+    df = df.sort_values(by='date')
     fig.add_trace(go.Scatter(x=df['date'],
                              y=df[target_col],
                              line=dict(color='rgba(17, 1, 1, 1)'),
@@ -415,6 +425,11 @@ def plot_output(file_name, target_col='pred'):
                              fill='tonexty',
                              name='lo'))
 
+    index_df = df[df['target_index'] == (target-1)]
+    fig.add_trace(go.Scatter(x=index_df['date'],
+                             y=index_df['pred'],
+                             mode='markers',
+                             name='index'))
 
     fig.update_layout(title='推論結果の可視化',
                       plot_bgcolor='white',
@@ -442,4 +457,4 @@ if __name__ == '__main__':
     data = data.drop(columns='Unnamed: 0')
     data = data.sort_values(by='date').reset_index(drop=True)
     est.back_test_spot_swing(data)
-    plot_output(file_name, target_col='pred')
+    plot_output(file_name, args)
