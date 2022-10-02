@@ -373,10 +373,13 @@ class Estimation:
 
             cnt11 = best_output11.shape[0]
             cnt21 = best_output21.shape[0]
-            best_output11.to_csv('best_output11.csv')
-            best_output21.to_csv('best_output21.csv')
-            strategy_data1.to_csv('strategy_data1.csv')
-            strategy_data2.to_csv('strategy_data2.csv')
+
+            if self.args.data_path == 'GMO_BTC_JPY_ohclv_eval.csv':
+                os.mkdir(str(acc1))
+                best_output11.to_csv(str(acc1)+'/best_output11.csv')
+                best_output21.to_csv(str(acc1)+'/best_output21.csv')
+                strategy_data1.to_csv(str(acc1)+'/strategy_data1.csv')
+                strategy_data2.to_csv(str(acc1)+'/strategy_data2.csv')
 
             print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                 cnt11, values11, dict11, values12, dict12))
