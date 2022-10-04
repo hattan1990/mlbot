@@ -75,7 +75,7 @@ class Exp_Informer(Exp_Basic):
         Data = data_dict[self.args.data]
         timeenc = 0 if args.embed != 'timeF' else 1
 
-        if flag == 'test':
+        if flag == 'val':
             shuffle_flag = False;
             drop_last = True;
             batch_size = args.batch_size;
