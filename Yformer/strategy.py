@@ -381,6 +381,11 @@ class Estimation:
                 best_output21.to_csv(str(acc1)+'/best_output21.csv')
                 strategy_data1.to_csv(str(acc1)+'/strategy_data1.csv')
                 strategy_data2.to_csv(str(acc1)+'/strategy_data2.csv')
+            else:
+                best_output11.to_csv('best_output11.csv')
+                best_output21.to_csv('best_output21.csv')
+                strategy_data1.to_csv('strategy_data1.csv')
+                strategy_data2.to_csv('strategy_data2.csv')
 
             print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                 cnt11, values11, dict11, values12, dict12))
@@ -459,6 +464,10 @@ if __name__ == '__main__':
     file_name = 'strategy_data1.csv'
     data = pd.read_csv(file_name)
     data = data.drop(columns='Unnamed: 0')
+    data['date'] = data.date.apply(lambda x: ps.parse(
+        str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    est.back_test_spot_swing(data)
-    plot_output(file_name, args)
+    output = est.back_test_spot_swing(data)
+    print(output[1])
+    output[0].to_excel('output.xlsx')
+    #plot_output(file_name, args)
