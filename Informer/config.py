@@ -66,8 +66,8 @@ args.use_amp = False # whether to use automatic mixed precision training
 #並列計算するかどうか、トレーニングepoch数を指定
 args.num_workers = 0
 args.itr = 1
-args.train_epochs = 20
-args.patience = 15 # 10 -> 15
+args.train_epochs = 10
+args.patience = 5 # 10 -> 15
 args.des = 'exp'
 
 #GPUを使用するかどうかを指定
