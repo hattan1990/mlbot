@@ -281,6 +281,7 @@ class Exp_Informer(Exp_Basic):
                     epoch + 1, train_steps, train_loss, auto_loss, combined_loss, vali_loss, vali_loss_real))
             estimation.run(100)
             early_stopping(vali_loss, self.model, path)
+            self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
