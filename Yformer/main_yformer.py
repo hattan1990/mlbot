@@ -156,6 +156,7 @@ def run_various_periods():
 
             exp = Exp(args)  # set experiments
             print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+            print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
             exp.train(setting)
 
             torch.cuda.empty_cache()
