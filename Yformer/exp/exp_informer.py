@@ -1,4 +1,4 @@
-from data.data_loader import Dataset_ETT_hour, Dataset_BTC, Dataset_Custom, Dataset_Pred, Dataset_ECL_hour
+from data.data_loader import Dataset_ETT_hour, Dataset_BTC, Dataset_BTC2, Dataset_Custom, Dataset_Pred, Dataset_ECL_hour
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, Yformer, Yformer_skipless
 
@@ -68,6 +68,7 @@ class Exp_Informer(Exp_Basic):
             'ETTh1': Dataset_ETT_hour,
             'ETTh2': Dataset_ETT_hour,
             'BTC': Dataset_BTC,
+            'BTC2':Dataset_BTC2,
             'ETTm2': Dataset_BTC,
             'ECL': Dataset_ECL_hour,
             'custom': Dataset_Custom,
@@ -92,24 +93,47 @@ class Exp_Informer(Exp_Basic):
             batch_size = args.batch_size;
             freq = args.freq
 
-        data_set = Data(
-            root_path=args.root_path,
-            data_path=args.data_path,
-            flag=flag,
-            size=[args.seq_len, args.label_len, args.pred_len],
-            features=args.features,
-            target=args.target,
-            use_decoder_tokens=args.use_decoder_tokens,
-            timeenc=timeenc,
-            freq=freq
-        )
-        print(flag, len(data_set))
-        data_loader = DataLoader(
-            data_set,
-            batch_size=batch_size,
-            shuffle=shuffle_flag,
-            num_workers=args.num_workers,
-            drop_last=drop_last)
+        if self.args.data == 'BTC2':
+            data_set = Data(
+                root_path=args.root_path,
+                data_path=args.data_path,
+                flag=flag,
+                size=[args.seq_len, args.label_len, args.pred_len],
+                features=args.features,
+                target=args.target,
+                use_decoder_tokens=args.use_decoder_tokens,
+                timeenc=timeenc,
+                freq=freq,
+                date_period1=args.date_period1,
+                date_period2=args.date_period2,
+                date_period3=args.date_period3
+            )
+            print(flag, len(data_set))
+            data_loader = DataLoader(
+                data_set,
+                batch_size=batch_size,
+                shuffle=shuffle_flag,
+                num_workers=args.num_workers,
+                drop_last=drop_last)
+        else:
+            data_set = Data(
+                root_path=args.root_path,
+                data_path=args.data_path,
+                flag=flag,
+                size=[args.seq_len, args.label_len, args.pred_len],
+                features=args.features,
+                target=args.target,
+                use_decoder_tokens=args.use_decoder_tokens,
+                timeenc=timeenc,
+                freq=freq
+            )
+            print(flag, len(data_set))
+            data_loader = DataLoader(
+                data_set,
+                batch_size=batch_size,
+                shuffle=shuffle_flag,
+                num_workers=args.num_workers,
+                drop_last=drop_last)
 
         return data_set, data_loader
 

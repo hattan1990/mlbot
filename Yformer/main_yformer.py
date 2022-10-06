@@ -92,13 +92,11 @@ def run():
         args.seq_len = np.random.choice(seq_lens)
         label_lens = [24, 36, 48]
         args.label_len = np.random.choice(label_lens)
-        pred_lens = [12, 24, 30]
-        args.pred_len = np.random.choice(pred_lens)
 
         n_heads = [8, 12, 16]
         args.n_heads = np.random.choice(n_heads)
 
-        layers = [1,2,3]
+        layers = [1,2]
         args.e_layers = np.random.choice(layers)
         args.d_layers = np.random.choice(layers)
 
@@ -122,5 +120,45 @@ def run():
 
         torch.cuda.empty_cache()
 
+def run_various_periods():
+    for ii in range(args.itr):
+        seq_lens = [24, 36, 48]
+        args.seq_len = np.random.choice(seq_lens)
+        label_lens = [24, 36, 48]
+        args.label_len = np.random.choice(label_lens)
+
+        n_heads = [8, 12, 16]
+        args.n_heads = np.random.choice(n_heads)
+
+        layers = [1,2,3]
+        args.e_layers = np.random.choice(layers)
+        args.d_layers = np.random.choice(layers)
+
+        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00', '2021-07-01 00:00',
+                      '2021-08-01 00:00']
+        date_range2 = ['2022-04-01 00:00', '2022-05-01 00:00', '2022-06-01 00:00', '2022-07-01 00:00',
+                      '2022-08-01 00:00', '2022-09-01 00:00', '2022-10-01 00:00']
+
+        args.data = 'BTC2'
+
+        for i in range(len(date_range1)):
+            # setting record of experiments
+            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_tk{}_wd{}_lr{}_al{}_{}_{}'.format(
+                args.model, args.data, args.features,
+                args.seq_len, args.label_len, args.pred_len,
+                args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.attn, args.factor, args.embed,
+                args.distil,
+                args.use_decoder_tokens, args.weight_decay, args.learning_rate, args.alpha, args.des, ii)
+
+            args.date_period1 = date_range1[i]
+            args.date_period2 = date_range2[i]
+            args.date_period3 = date_range2[i+2]
+
+            exp = Exp(args)  # set experiments
+            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+            exp.train(setting)
+
+            torch.cuda.empty_cache()
+
 if __name__ == '__main__':
-    run()
+    run_various_periods()
