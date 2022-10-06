@@ -12,7 +12,7 @@ parser.add_argument('--model', type=str, default='yformer',
 
 parser.add_argument('--data', type=str, default='BTC', help='data')
 parser.add_argument('--root_path', type=str, default='../dataset/', help='root path of the data file')
-parser.add_argument('--data_path', type=str, default='GMO_BTC_JPY_ohclv.csv', help='data file')
+parser.add_argument('--data_path', type=str, default='GMO_BTC_JPY_ohclv_eval.csv', help='data file')
 parser.add_argument('--features', type=str, default='MS',
                     help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 parser.add_argument('--target', type=str, default='cl', help='target feature in S or MS task')
@@ -21,18 +21,18 @@ parser.add_argument('--freq', type=str, default='t',
 parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location of model checkpoints')
 parser.add_argument('--extra', type=bool, default=False)
 
-parser.add_argument('--seq_len', type=int, default=24, help='input sequence length of Informer encoder')
-parser.add_argument('--label_len', type=int, default=24, help='start token length of Informer decoder')
-parser.add_argument('--pred_len', type=int, default=12, help='prediction sequence length')
+parser.add_argument('--seq_len', type=int, default=48, help='input sequence length of Informer encoder')
+parser.add_argument('--label_len', type=int, default=48, help='start token length of Informer decoder')
+parser.add_argument('--pred_len', type=int, default=24, help='prediction sequence length')
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 
 parser.add_argument('--enc_in', type=int, default=5, help='encoder input size')
 parser.add_argument('--dec_in', type=int, default=1, help='decoder input size')
 parser.add_argument('--c_out', type=int, default=1, help='output size')
 parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
-parser.add_argument('--n_heads', type=int, default=16, help='num of heads')
+parser.add_argument('--n_heads', type=int, default=12, help='num of heads')
 parser.add_argument('--e_layers', type=int, default=2, help='num of encoder layers')
-parser.add_argument('--d_layers', type=int, default=2, help='num of decoder layers')
+parser.add_argument('--d_layers', type=int, default=3, help='num of decoder layers')
 parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
 parser.add_argument('--factor', type=int, default=3, help='probsparse attn factor')
 parser.add_argument('--distil', action='store_false',
@@ -52,11 +52,11 @@ parser.add_argument('--alpha', type=float, default=0.7, help='adjust learning ra
 parser.add_argument('--use_decoder_tokens', type=int, default=0,
                     help='if the decoder should use previous time steps token 1- True 0-False')
 
-parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
-parser.add_argument('--itr', type=int, default=100, help='experiments times')
-parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
-parser.add_argument('--batch_size', type=int, default=128, help='batch size of train input data')
-parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
+parser.add_argument('--num_workers', type=int, default=1, help='data loader num workers')
+parser.add_argument('--itr', type=int, default=1, help='experiments times')
+parser.add_argument('--train_epochs', type=int, default=1, help='train epochs')
+parser.add_argument('--batch_size', type=int, default=1, help='batch size of train input data')
+parser.add_argument('--patience', type=int, default=1, help='early stopping patience')
 parser.add_argument('--learning_rate', type=float, default=0.001, help='optimizer learning rate')
 parser.add_argument('--des', type=str, default='test', help='exp description')
 parser.add_argument('--loss', type=str, default='mse', help='loss function')
@@ -88,20 +88,6 @@ Exp = Exp_Informer
 
 def run():
     for ii in range(args.itr):
-        seq_lens = [24, 36, 48]
-        args.seq_len = np.random.choice(seq_lens)
-        label_lens = [24, 36, 48]
-        args.label_len = np.random.choice(label_lens)
-        pred_lens = [12, 24, 30]
-        args.pred_len = np.random.choice(pred_lens)
-
-        n_heads = [8, 12, 16]
-        args.n_heads = np.random.choice(n_heads)
-
-        layers = [1,2,3]
-        args.e_layers = np.random.choice(layers)
-        args.d_layers = np.random.choice(layers)
-
         # setting record of experiments
         setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_at{}_fc{}_eb{}_dt{}_tk{}_wd{}_lr{}_al{}_{}_{}'.format(
             args.model, args.data, args.features,
@@ -110,14 +96,12 @@ def run():
             args.distil,
             args.use_decoder_tokens, args.weight_decay, args.learning_rate, args.alpha, args.des, ii)
 
-        exp = Exp(args)  # set experiments
-        print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-        exp.args.data_path = 'GMO_BTC_JPY_ohclv.csv'
-        exp.train(setting)
 
+        exp = Exp(args)  # set experiments
         print('>>>>>>>start Test : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
         exp.args.data_path = 'GMO_BTC_JPY_ohclv_eval.csv'
-        exp.test()
+        output = exp.predict(setting, load=False)
+        output.to_csv('predict_local.csv')
 
 
         torch.cuda.empty_cache()

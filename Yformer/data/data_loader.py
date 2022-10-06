@@ -462,9 +462,8 @@ class Dataset_Custom(Dataset):
 
 
 class Dataset_Pred(Dataset):
-    def __init__(self, root_path, flag='pred', size=None,
-                 features='S', data_path='ETTh1.csv',
-                 target='OT', scale=True, timeenc=0, freq='15min'):
+    def __init__(self, root_path, flag='pred', size=None, features='MS', data_path='ETTm1.csv',
+                 target='cl', scale=True, timeenc=1, freq='t', use_decoder_tokens=None):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -490,17 +489,18 @@ class Dataset_Pred(Dataset):
 
     def __read_data__(self):
         self.scaler = StandardScaler()
+        self.scaler_target = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
-        '''
-        df_raw.columns: ['date', ...(other features), target feature]
-        '''
+                                          self.data_path))[:1000]
+        if "Unnamed: 0" in df_raw.columns:
+            df_raw = df_raw.drop(columns="Unnamed: 0")
+
         cols = list(df_raw.columns);
         cols.remove(self.target);
         cols.remove('date')
         df_raw = df_raw[['date'] + cols + [self.target]]
 
-        border1 = len(df_raw) - self.seq_len
+        border1 = 0
         border2 = len(df_raw)
 
         if self.features == 'M' or self.features == 'MS':
@@ -511,16 +511,13 @@ class Dataset_Pred(Dataset):
 
         if self.scale:
             self.scaler.fit(df_data.values)
+            self.scaler_target.fit(df_data[[self.target]].values)
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
 
-        tmp_stamp = df_raw[['date']][border1:border2]
-        tmp_stamp['date'] = pd.to_datetime(tmp_stamp.date)
-        pred_dates = pd.date_range(tmp_stamp.date.values[-1], periods=self.pred_len + 1, freq=self.freq)
-
-        df_stamp = pd.DataFrame(columns=['date'])
-        df_stamp.date = list(tmp_stamp.date.values) + list(pred_dates[1:])
+        df_stamp = df_raw[['date']][border1:border2]
+        df_stamp['date'] = pd.to_datetime(df_stamp.date)
 
         if self.timeenc == 0:
             df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
@@ -533,21 +530,24 @@ class Dataset_Pred(Dataset):
             data_stamp = data_stamp.transpose(1, 0)
 
         self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2]
+        self.data_y = data[border1:border2, [-1]]
         self.data_stamp = data_stamp
+        df_raw['date'] = df_raw['date'].apply(lambda x: int(x[:4] + x[5:7] + x[8:10] + x[11:13] + x[14:16]))
+        self.data_val = df_raw[['date', 'op', 'hi', 'lo', 'cl']].values[border1:border2]
 
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
+        r_begin = s_end
+        r_end = r_begin + self.pred_len
 
         seq_x = self.data_x[s_begin:s_end]
-        seq_y = self.data_y[r_begin:r_begin + self.label_len]
+        seq_y = self.data_y[r_begin:r_end]
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
+        seq_val = self.data_val[r_begin:r_end]
 
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
+        return index, seq_x, seq_y, seq_x_mark, seq_y_mark, seq_val
 
     def __len__(self):
         return len(self.data_x) - self.seq_len + 1

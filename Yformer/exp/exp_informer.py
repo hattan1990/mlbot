@@ -281,7 +281,8 @@ class Exp_Informer(Exp_Basic):
 
         estimation.run(epoch)
 
-    def predict(self, setting, load=False):
+    def predict(self, setting, load=True):
+        import pandas as pd
         pred_data, pred_loader = self._get_data(flag='pred')
 
         if load:
@@ -290,51 +291,45 @@ class Exp_Informer(Exp_Basic):
             self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval()
+        output = pd.DataFrame()
+        columns = ['date', 'op', 'hi', 'lo', 'cl']
+        for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(pred_loader):
+            if (index[0] % self.args.pred_len == 0)&(batch_eval.shape[1] == self.args.pred_len):
+                batch_x = batch_x.float().to(self.device)
+                batch_y = batch_y.float()
+                batch_x_mark = batch_x_mark.float().to(self.device)
+                batch_y_mark = batch_y_mark.float().to(self.device)
 
-        preds = []
-
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(pred_loader):
-            batch_x = batch_x.float().to(self.device)
-            batch_y = batch_y.float()
-            batch_x_mark = batch_x_mark.float().to(self.device)
-            batch_y_mark = batch_y_mark.float().to(self.device)
-
-            # decoder input
-            dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-            if self.args.use_decoder_tokens:
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-            else:
-                dec_inp = dec_inp.float().to(self.device)
-            # encoder - decoder
-            if self.args.use_amp:
-                with torch.cuda.amp.autocast():
+                # decoder input
+                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+                if self.args.use_decoder_tokens:
+                    dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+                else:
+                    dec_inp = dec_inp.float().to(self.device)
+                # encoder - decoder
+                if self.args.use_amp:
+                    with torch.cuda.amp.autocast():
+                        if self.args.output_attention:
+                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                        else:
+                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                else:
                     if self.args.output_attention:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                     else:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            else:
-                if self.args.output_attention:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            f_dim = -1 if self.args.features == 'MS' else 0
-            batch_y = torch.tensor(batch_y[:, -self.args.pred_len:, f_dim:], dtype=torch.float32).to(self.device)
+                f_dim = -1 if self.args.features == 'MS' else 0
+                batch_y = torch.tensor(batch_y[:, -self.args.pred_len:, f_dim:], dtype=torch.float32).to(self.device)
 
-            pred = outputs.detach().cpu().numpy()  # .squeeze()
+                pred = outputs[:, -self.args.pred_len:, f_dim:].detach().cpu().numpy()  # .squeeze()
+                pred_real = pred_data.scaler_target.inverse_transform(pred[0])
 
-            preds.append(pred)
+                tmp_out = pd.DataFrame(batch_eval[0], columns=columns)
+                tmp_out['pred'] = pred_real
+                output = pd.concat([output, tmp_out])
 
-        preds = np.array(preds)
-        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
 
-        # result save
-        folder_path = './results/' + setting + '/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-
-        np.save(folder_path + 'real_prediction.npy', preds)
-
-        return
+        return output.reset_index(drop=True)
 
     def _create_masks(self, batch_y, batch_val, mergin=20000):
         masks = []
