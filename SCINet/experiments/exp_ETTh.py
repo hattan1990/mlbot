@@ -25,6 +25,18 @@ from strategy import Estimation
 class Exp_ETTh(Exp_Basic):
     def __init__(self, args):
         super(Exp_ETTh, self).__init__(args)
+        self.device = self._acquire_device()
+
+
+    def _acquire_device(self):
+        if self.args.use_gpu:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(self.args.gpu) if not self.args.use_multi_gpu else self.args.devices
+            device = torch.device('cuda:{}'.format(self.args.gpu))
+            print('Use GPU: cuda:{}'.format(self.args.gpu))
+        else:
+            device = torch.device('cpu')
+            print('Use CPU')
+        return device
 
     def _build_model(self):
 
@@ -116,7 +128,6 @@ class Exp_ETTh(Exp_Basic):
                 size=[args.seq_len, args.label_len, args.pred_len],
                 features=args.features,
                 target=args.target,
-                use_decoder_tokens=args.use_decoder_tokens,
                 timeenc=timeenc,
                 freq=freq,
                 date_period1=args.date_period1,
