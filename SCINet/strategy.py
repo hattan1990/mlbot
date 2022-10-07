@@ -1,3 +1,4 @@
+import os
 import torch
 import pandas as pd
 import numpy as np
@@ -373,10 +374,18 @@ class Estimation:
 
             cnt11 = best_output11.shape[0]
             cnt21 = best_output21.shape[0]
-            best_output11.to_csv('best_output11.csv')
-            best_output21.to_csv('best_output21.csv')
-            strategy_data1.to_csv('strategy_data1.csv')
-            strategy_data2.to_csv('strategy_data2.csv')
+
+            if self.args.data_path == 'GMO_BTC_JPY_ohclv_eval.csv':
+                os.mkdir(str(acc1))
+                best_output11.to_csv(str(acc1)+'/best_output11.csv')
+                best_output21.to_csv(str(acc1)+'/best_output21.csv')
+                strategy_data1.to_csv(str(acc1)+'/strategy_data1.csv')
+                strategy_data2.to_csv(str(acc1)+'/strategy_data2.csv')
+            else:
+                best_output11.to_csv('best_output11.csv')
+                best_output21.to_csv('best_output21.csv')
+                strategy_data1.to_csv('strategy_data1.csv')
+                strategy_data2.to_csv('strategy_data2.csv')
 
             print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
                 cnt11, values11, dict11, values12, dict12))
@@ -389,11 +398,21 @@ class Estimation:
         return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
 
 
-def plot_output(file_name, target_col='pred'):
-    df = pd.read_csv(file_name)[:10000]
+def plot_output(file_name, args):
+    target_col = 'pred'
+    if file_name == 'strategy_data1.csv':
+        target = args.pred_len
+    else:
+        target = (args.pred_len / 2)
+    df = pd.read_csv(file_name)[100000:110000]
     fig = go.Figure()
-    df = df.sort_values(by='date')
+    target_index_list = []
+    for i, values in enumerate(df.values):
+        target_index = i % target
+        target_index_list.append(target_index)
+    df['target_index'] = target_index_list
     df['date'] = df.date.apply(lambda x:ps.parse(str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
+    df = df.sort_values(by='date')
     fig.add_trace(go.Scatter(x=df['date'],
                              y=df[target_col],
                              line=dict(color='rgba(17, 1, 1, 1)'),
@@ -415,6 +434,11 @@ def plot_output(file_name, target_col='pred'):
                              fill='tonexty',
                              name='lo'))
 
+    index_df = df[df['target_index'] == (target-1)]
+    fig.add_trace(go.Scatter(x=index_df['date'],
+                             y=index_df['pred'],
+                             mode='markers',
+                             name='index'))
 
     fig.update_layout(title='推論結果の可視化',
                       plot_bgcolor='white',
@@ -440,6 +464,10 @@ if __name__ == '__main__':
     file_name = 'strategy_data1.csv'
     data = pd.read_csv(file_name)
     data = data.drop(columns='Unnamed: 0')
+    data['date'] = data.date.apply(lambda x: ps.parse(
+        str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    est.back_test_spot_swing(data)
-    plot_output(file_name, target_col='pred')
+    output = est.back_test_spot_swing(data)
+    print(output[1])
+    output[0].to_excel('output.xlsx')
+    #plot_output(file_name, args)

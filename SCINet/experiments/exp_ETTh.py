@@ -12,7 +12,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 from data_process.etth_data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, \
-    Dataset_BTC
+    Dataset_BTC, Dataset_BTC2
 from experiments.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, save_model, load_model
 from metrics.ETTh_metrics import metric
@@ -78,6 +78,7 @@ class Exp_ETTh(Exp_Basic):
 
         data_dict = {
             'BTC': Dataset_BTC,
+            'BTC2': Dataset_BTC2,
             'ETTh1': Dataset_ETT_hour,
             'ETTh2': Dataset_ETT_hour,
             'ETTm1': Dataset_ETT_minute,
@@ -106,23 +107,47 @@ class Exp_ETTh(Exp_Basic):
             drop_last = True;
             batch_size = args.batch_size;
             freq = args.freq
-        data_set = Data(
-            root_path=args.root_path,
-            data_path=args.data_path,
-            flag=flag,
-            size=[args.seq_len, args.label_len, args.pred_len],
-            features=args.features,
-            target=args.target,
-            timeenc=timeenc,
-            freq=freq
-        )
-        print(flag, len(data_set))
-        data_loader = DataLoader(
-            data_set,
-            batch_size=batch_size,
-            shuffle=shuffle_flag,
-            num_workers=args.num_workers,
-            drop_last=drop_last)
+
+        if self.args.data == 'BTC2':
+            data_set = Data(
+                root_path=args.root_path,
+                data_path=args.data_path,
+                flag=flag,
+                size=[args.seq_len, args.label_len, args.pred_len],
+                features=args.features,
+                target=args.target,
+                use_decoder_tokens=args.use_decoder_tokens,
+                timeenc=timeenc,
+                freq=freq,
+                date_period1=args.date_period1,
+                date_period2=args.date_period2,
+                date_period3=args.date_period3
+            )
+            print(flag, len(data_set))
+            data_loader = DataLoader(
+                data_set,
+                batch_size=batch_size,
+                shuffle=shuffle_flag,
+                num_workers=args.num_workers,
+                drop_last=drop_last)
+        else:
+            data_set = Data(
+                root_path=args.root_path,
+                data_path=args.data_path,
+                flag=flag,
+                size=[args.seq_len, args.label_len, args.pred_len],
+                features=args.features,
+                target=args.target,
+                timeenc=timeenc,
+                freq=freq
+            )
+            print(flag, len(data_set))
+            data_loader = DataLoader(
+                data_set,
+                batch_size=batch_size,
+                shuffle=shuffle_flag,
+                num_workers=args.num_workers,
+                drop_last=drop_last)
 
         return data_set, data_loader
 
@@ -325,6 +350,7 @@ class Exp_ETTh(Exp_Basic):
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
 
             early_stopping(valid_loss, self.model, path)
+            self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
