@@ -138,6 +138,21 @@ def run():
 
 def run_various_periods():
     for ii in range(args.itr):
+        seq_lens = [96, 72, 48]
+        args.seq_len = np.random.choice(seq_lens)
+        label_lens = [48, 36, 24]
+        args.label_len = np.random.choice(label_lens)
+
+        n_heads = [8, 12, 16]
+        args.n_heads = np.random.choice(n_heads)
+
+        layers = [1, 2, 3]
+        args.e_layers = np.random.choice(layers)
+        args.d_layers = np.random.choice(layers)
+
+        pred_lens = [30, 40, 60]
+        args.pred_len = np.random.choice(pred_lens)
+
         date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00', '2021-07-01 00:00',
                       '2021-08-01 00:00']
         date_range2 = ['2022-04-01 00:00', '2022-05-01 00:00', '2022-06-01 00:00', '2022-07-01 00:00',
