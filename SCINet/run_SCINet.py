@@ -170,9 +170,9 @@ def run_various_periods():
             print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
             exp.train(setting)
 
-            print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            mae, maes, mse, mses = exp.test(setting, evaluate=True)
-            print('Final mean normed mse:{:.4f},mae:{:.4f},denormed mse:{:.4f},mae:{:.4f}'.format(mse, mae, mses, maes))
+            #print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+            #mae, maes, mse, mses = exp.test(setting, evaluate=True)
+            #print('Final mean normed mse:{:.4f},mae:{:.4f},denormed mse:{:.4f},mae:{:.4f}'.format(mse, mae, mses, maes))
 
             torch.cuda.empty_cache()
 
