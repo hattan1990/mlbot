@@ -341,8 +341,8 @@ class Estimation:
         total = np.round(total / 1000000, 2)
         profit_win = np.round(profit_win / 1000000, 2)
         profit_loss = np.round(profit_loss / 1000000, 2)
-        acc_rate = np.round(sum(term) / output.shape[0], 2)
-        win_rate = np.round(win / output.shape[0], 2)
+        acc_rate = np.round(sum(term) / (output.shape[0]+1), 2)
+        win_rate = np.round(win / (output.shape[0]+1), 2)
 
         return output, (total, profit_win, profit_loss, acc_rate, win_rate)
 
@@ -364,13 +364,13 @@ class Estimation:
                 epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
 
         if epoch + 1 >= 10:
-            input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [10000, 15000, 20000]}
+            input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [10000, 15000]}
             best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
-            best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
+            #best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
 
-            input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [10000, 15000, 20000]}
+            input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [10000, 15000]}
             best_output21, values21, dict21 = self.execute_back_test(self.back_test_spot_swing, input_dict2)
-            best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
+            #best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
 
             cnt11 = best_output11.shape[0]
             cnt21 = best_output21.shape[0]
@@ -387,15 +387,15 @@ class Estimation:
                 strategy_data1.to_csv('strategy_data1.csv')
                 strategy_data2.to_csv('strategy_data2.csv')
 
-            print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
-                cnt11, values11, dict11, values12, dict12))
-            print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}  MM bot - best profit: {3} config: {4}".format(
-                cnt21, values21, dict21, values22, dict22))
+            print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}".format(
+                cnt11, values11, dict11))
+            print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}".format(
+                cnt21, values21, dict21))
 
         else:
-            cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = values12 = dict12 = values22 = dict22 = None
+            cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = None
 
-        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21, values12, dict12, values22, dict22
+        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21
 
 
 def plot_output(file_name, args):
