@@ -385,12 +385,14 @@ class Exp_ETTh(Exp_Basic):
         true_scales = []
         mid_scales = []
 
+        estimation = Estimation(self.args)
+
         if evaluate:
             path = os.path.join(self.args.checkpoints, setting)
             best_model_path = path + '/' + 'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(test_loader):
+        for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(test_loader):
             pred, pred_scale, mid, mid_scale, true, true_scale = self._process_one_batch_SCINet(
                 test_data, batch_x, batch_y)
 
@@ -399,6 +401,10 @@ class Exp_ETTh(Exp_Basic):
                 trues.append(true.detach().cpu().numpy())
                 pred_scales.append(pred_scale.detach().cpu().numpy())
                 true_scales.append(true_scale.detach().cpu().numpy())
+                # Strategyモジュール追加
+                batch_eval = batch_eval[:, -self.args.pred_len:, :]
+                masks = self._create_masks(pred_scales, batch_eval)
+                estimation.run_batch(index, pred_scale, true_scale, masks, batch_eval)
             elif self.args.stacks == 2:
                 preds.append(pred.detach().cpu().numpy())
                 trues.append(true.detach().cpu().numpy())
@@ -406,6 +412,10 @@ class Exp_ETTh(Exp_Basic):
                 pred_scales.append(pred_scale.detach().cpu().numpy())
                 mid_scales.append(mid_scale.detach().cpu().numpy())
                 true_scales.append(true_scale.detach().cpu().numpy())
+                # Strategyモジュール追加
+                batch_eval = batch_eval[:, -self.args.pred_len:, :]
+                masks = self._create_masks(pred_scales, batch_eval)
+                estimation.run_batch(index, pred_scale, true_scale, masks, batch_eval)
 
             else:
                 print('Error!')
@@ -472,23 +482,7 @@ class Exp_ETTh(Exp_Basic):
         else:
             print('Error!')
 
-        # result save
-        if self.args.save:
-            folder_path = 'exp/ett_results/' + setting + '/'
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
-
-            mae, mse, rmse, mape, mspe, corr = metric(preds, trues)
-            print(
-                'Test:mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(mse, mae, rmse,
-                                                                                                         mape, mspe,
-                                                                                                         corr))
-
-            np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-            np.save(folder_path + 'pred.npy', preds)
-            np.save(folder_path + 'true.npy', trues)
-            np.save(folder_path + 'pred_scales.npy', pred_scales)
-            np.save(folder_path + 'true_scales.npy', true_scales)
+        estimation.run(100)
 
         return mae, maes, mse, mses
 

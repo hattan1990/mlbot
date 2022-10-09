@@ -375,8 +375,6 @@ class Estimation:
             best_output11['month'] = best_output11['date'].apply(lambda x: str(x)[:6])
             best_output21['month'] = best_output21['date'].apply(lambda x: str(x)[:6])
 
-            print(best_output11[['month', 'profit']].groupby('month').sum() / 1000000)
-            print(best_output21[['month', 'profit']].groupby('month').sum() / 1000000)
 
             cnt11 = best_output11.shape[0]
             cnt21 = best_output21.shape[0]

@@ -40,7 +40,7 @@ parser.add_argument('--lastWeight', type=float, default=1.0)
 ### -------  training settings --------------  
 parser.add_argument('--cols', type=str, nargs='+', help='file list')
 parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
-parser.add_argument('--itr', type=int, default=10, help='experiments times')
+parser.add_argument('--itr', type=int, default=100, help='experiments times')
 parser.add_argument('--train_epochs', type=int, default=20, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=320, help='batch size of train input data')
 parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
@@ -138,58 +138,60 @@ def run():
 
 def run_various_periods():
     for ii in range(args.itr):
-        seq_lens = [96, 72, 48]
-        args.seq_len = np.random.choice(seq_lens)
-        label_lens = [48, 36, 24]
-        args.label_len = np.random.choice(label_lens)
-
-        n_heads = [8, 12, 16]
-        args.n_heads = np.random.choice(n_heads)
-
-        layers = [1, 2, 3]
-        args.e_layers = np.random.choice(layers)
-        args.d_layers = np.random.choice(layers)
-
-        pred_lens = [30, 40, 60]
-        args.pred_len = np.random.choice(pred_lens)
-
-        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00', '2021-07-01 00:00',
-                      '2021-08-01 00:00']
+        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00', '2021-07-01 00:00']
         date_range2 = ['2022-04-01 00:00', '2022-05-01 00:00', '2022-06-01 00:00', '2022-07-01 00:00',
                       '2022-08-01 00:00', '2022-09-01 00:00', '2022-10-01 00:00']
 
         args.data = 'BTC2'
 
+        # Time Range × パラメータ変更（10回）の学習
         for i in range(len(date_range1)):
-            # setting record of experiments
-            # setting record of experiments
-            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_inv{}_itr{}'.format(args.model, args.data,
-                                                                                                  args.features,
-                                                                                                  args.seq_len,
-                                                                                                  args.label_len,
-                                                                                                  args.pred_len,
-                                                                                                  args.lr,
-                                                                                                  args.batch_size,
-                                                                                                  args.hidden_size,
-                                                                                                  args.stacks,
-                                                                                                  args.levels,
-                                                                                                  args.dropout,
-                                                                                                  args.inverse, ii)
+            for j in range(10):
+                seq_lens = [96, 72, 48]
+                args.seq_len = np.random.choice(seq_lens)
+                label_lens = [48, 36, 24]
+                args.label_len = np.random.choice(label_lens)
 
-            args.date_period1 = date_range1[i]
-            args.date_period2 = date_range2[i]
-            args.date_period3 = date_range2[i+2]
+                n_heads = [8, 12, 16]
+                args.n_heads = np.random.choice(n_heads)
 
-            exp = Exp(args)  # set experiments
-            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-            print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
-            exp.train(setting)
+                layers = [1, 2, 3]
+                args.e_layers = np.random.choice(layers)
+                args.d_layers = np.random.choice(layers)
 
-            #print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            #mae, maes, mse, mses = exp.test(setting, evaluate=True)
-            #print('Final mean normed mse:{:.4f},mae:{:.4f},denormed mse:{:.4f},mae:{:.4f}'.format(mse, mae, mses, maes))
+                pred_lens = [30, 40, 60]
+                args.pred_len = np.random.choice(pred_lens)
 
-            torch.cuda.empty_cache()
+                # setting record of experiments
+                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_inv{}_itr{}'.format(args.model, args.data,
+                                                                                                      args.features,
+                                                                                                      args.seq_len,
+                                                                                                      args.label_len,
+                                                                                                      args.pred_len,
+                                                                                                      args.lr,
+                                                                                                      args.batch_size,
+                                                                                                      args.hidden_size,
+                                                                                                      args.stacks,
+                                                                                                      args.levels,
+                                                                                                      args.dropout,
+                                                                                                      args.inverse, ii)
+
+                args.date_period1 = date_range1[i]
+                args.date_period2 = date_range2[i]
+                args.date_period3 = date_range2[i+2]
+
+                exp = Exp(args)  # set experiments
+                print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+                print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
+                exp.train(setting)
+
+                print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                args.date_period2 = date_range2[i + 2]
+                args.date_period3 = date_range2[i + 3]
+                mae, maes, mse, mses = exp.test(setting, evaluate=True)
+                print('Final mean normed mse:{:.4f},mae:{:.4f},denormed mse:{:.4f},mae:{:.4f}'.format(mse, mae, mses, maes))
+
+                torch.cuda.empty_cache()
 
 
 if __name__ == '__main__':

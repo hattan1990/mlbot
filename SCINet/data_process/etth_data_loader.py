@@ -173,7 +173,7 @@ class Dataset_BTC2(Dataset):
 
         if self.set_type == 0:
             df_raw = df_raw[(df_raw['date'] >= self.date_period1)&(df_raw['date'] < self.date_period2)]
-        elif self.set_type == 1:
+        else:
             df_raw = df_raw[(df_raw['date'] >= self.date_period2) & (df_raw['date'] < self.date_period3)]
 
         border1s = [range1, range1, range1]
