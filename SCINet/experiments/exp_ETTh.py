@@ -375,116 +375,20 @@ class Exp_ETTh(Exp_Basic):
 
     def test(self, setting, evaluate=False):
         test_data, test_loader = self._get_data(flag='test')
+        criterion = self._select_criterion(self.args.loss)
 
         self.model.eval()
-
-        preds = []
-        trues = []
-        mids = []
-        pred_scales = []
-        true_scales = []
-        mid_scales = []
-
-        estimation = Estimation(self.args)
 
         if evaluate:
             path = os.path.join(self.args.checkpoints, setting)
             best_model_path = path + '/' + 'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
-        for i, (index, batch_x, batch_y, batch_x_mark, batch_y_mark, batch_eval) in enumerate(test_loader):
-            pred, pred_scale, mid, mid_scale, true, true_scale = self._process_one_batch_SCINet(
-                test_data, batch_x, batch_y)
-
-            if self.args.stacks == 1:
-                preds.append(pred.detach().cpu().numpy())
-                trues.append(true.detach().cpu().numpy())
-                pred_scales.append(pred_scale.detach().cpu().numpy())
-                true_scales.append(true_scale.detach().cpu().numpy())
-                # Strategyモジュール追加
-                batch_eval = batch_eval[:, -self.args.pred_len:, :]
-                masks = self._create_masks(pred_scales, batch_eval)
-                estimation.run_batch(index, pred_scale, true_scale, masks, batch_eval)
-            elif self.args.stacks == 2:
-                preds.append(pred.detach().cpu().numpy())
-                trues.append(true.detach().cpu().numpy())
-                mids.append(mid.detach().cpu().numpy())
-                pred_scales.append(pred_scale.detach().cpu().numpy())
-                mid_scales.append(mid_scale.detach().cpu().numpy())
-                true_scales.append(true_scale.detach().cpu().numpy())
-                # Strategyモジュール追加
-                batch_eval = batch_eval[:, -self.args.pred_len:, :]
-                masks = self._create_masks(pred_scales, batch_eval)
-                estimation.run_batch(index, pred_scale, true_scale, masks, batch_eval)
-
-            else:
-                print('Error!')
-
-        if self.args.stacks == 1:
-            preds = np.array(preds)
-            trues = np.array(trues)
-
-            pred_scales = np.array(pred_scales)
-            true_scales = np.array(true_scales)
-
-            preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-            trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-            true_scales = true_scales.reshape(-1, true_scales.shape[-2], true_scales.shape[-1])
-            pred_scales = pred_scales.reshape(-1, pred_scales.shape[-2], pred_scales.shape[-1])
-
-            mae, mse, rmse, mape, mspe, corr = metric(preds, trues)
-            maes, mses, rmses, mapes, mspes, corrs = metric(pred_scales, true_scales)
-            print('normed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(mse, mae,
-                                                                                                             rmse, mape,
-                                                                                                             mspe,
-                                                                                                             corr))
-            print(
-                'TTTT denormed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(mses,
-                                                                                                                  maes,
-                                                                                                                  rmses,
-                                                                                                                  mapes,
-                                                                                                                  mspes,
-                                                                                                                  corrs))
-
-        elif self.args.stacks == 2:
-            preds = np.array(preds)
-            trues = np.array(trues)
-            mids = np.array(mids)
-
-            pred_scales = np.array(pred_scales)
-            true_scales = np.array(true_scales)
-            mid_scales = np.array(mid_scales)
-
-            preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-            trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-            mids = mids.reshape(-1, mids.shape[-2], mids.shape[-1])
-            true_scales = true_scales.reshape(-1, true_scales.shape[-2], true_scales.shape[-1])
-            pred_scales = pred_scales.reshape(-1, pred_scales.shape[-2], pred_scales.shape[-1])
-            mid_scales = mid_scales.reshape(-1, mid_scales.shape[-2], mid_scales.shape[-1])
-            # print('test shape:', preds.shape, mids.shape, trues.shape)
-
-            mae, mse, rmse, mape, mspe, corr = metric(mids, trues)
-            maes, mses, rmses, mapes, mspes, corrs = metric(mid_scales, true_scales)
-            print(
-                'Mid --> normed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(mse,
-                                                                                                                   mae,
-                                                                                                                   rmse,
-                                                                                                                   mape,
-                                                                                                                   mspe,
-                                                                                                                   corr))
-
-            mae, mse, rmse, mape, mspe, corr = metric(preds, trues)
-            maes, mses, rmses, mapes, mspes, corrs = metric(pred_scales, true_scales)
-            print(
-                'TTTT Final --> denormed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(
-                    mse, mae, rmse, mape, mspe, corr))
-
-        else:
-            print('Error!')
+        loss, estimation = self.valid(test_data, test_loader, criterion)
 
         estimation.run(100)
 
-        return mae, maes, mse, mses
+        return loss
 
     def _inverse_transform_batch(self, batch_values, scaler):
         output = []

@@ -188,8 +188,8 @@ def run_various_periods():
                 print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
                 args.date_period2 = date_range2[i + 2]
                 args.date_period3 = date_range2[i + 3]
-                mae, maes, mse, mses = exp.test(setting, evaluate=True)
-                print('Final mean normed mse:{:.4f},mae:{:.4f},denormed mse:{:.4f},mae:{:.4f}'.format(mse, mae, mses, maes))
+                loss = exp.test(setting, evaluate=True)
+                print('Final total Loss :{}'.format(loss))
 
                 torch.cuda.empty_cache()
 
