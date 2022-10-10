@@ -350,17 +350,16 @@ class Exp_ETTh(Exp_Basic):
             train_loss = np.average(train_loss)
             print('--------start to validate-----------')
             valid_loss, estimation = self.valid(valid_data, valid_loader, criterion)
-            print('--------start to test-----------')
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} valid Loss: {3:.7f}".format(
                 epoch + 1, train_steps, train_loss, valid_loss))
 
-            estimation.run(epoch)
+            acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21 = estimation.run(epoch)
 
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
 
-            early_stopping(valid_loss, self.model, path)
+            early_stopping(-acc1, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
