@@ -188,8 +188,8 @@ def run_various_periods():
                 print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
                 args.date_period2 = date_range2[i + 2]
                 args.date_period3 = date_range2[i + 3]
-                loss = exp.test(setting, evaluate=True)
-                print('Final total Loss :{}'.format(loss))
+                _ = exp.test(setting, evaluate=True)
+                print('Try count :{}'.format(j+1))
 
                 torch.cuda.empty_cache()
 
