@@ -408,7 +408,7 @@ def plot_output(file_name, args):
         target = args.pred_len
     else:
         target = (args.pred_len / 2)
-    df = pd.read_csv(file_name)[100000:110000]
+    df = pd.read_csv(file_name)
     fig = go.Figure()
     target_index_list = []
     for i, values in enumerate(df.values):
@@ -462,7 +462,7 @@ def plot_output(file_name, args):
     return
 
 if __name__ == '__main__':
-    from main_yformer import *
+    from run_SCINet import *
 
     est = Estimation(args)
     file_name = 'strategy_data1.csv'
@@ -471,7 +471,7 @@ if __name__ == '__main__':
     data['date'] = data.date.apply(lambda x: ps.parse(
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    output = est.back_test_spot_swing(data)
+    output = est.back_test_spot_swing(data, threshold=0, num=30)
     print(output[1])
     output[0].to_excel('output.xlsx')
-    #plot_output(file_name, args)
+    plot_output(file_name, args)

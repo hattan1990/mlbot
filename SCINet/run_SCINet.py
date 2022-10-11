@@ -138,7 +138,7 @@ def run():
 
 def run_various_periods():
     for ii in range(args.itr):
-        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00', '2021-07-01 00:00']
+        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00']
         date_range2 = ['2022-04-01 00:00', '2022-05-01 00:00', '2022-06-01 00:00', '2022-07-01 00:00',
                       '2022-08-01 00:00', '2022-09-01 00:00', '2022-10-01 00:00']
 
@@ -159,7 +159,7 @@ def run_various_periods():
                 args.e_layers = np.random.choice(layers)
                 args.d_layers = np.random.choice(layers)
 
-                pred_lens = [12, 30, 40]
+                pred_lens = [12, 20, 30]
                 args.pred_len = np.random.choice(pred_lens)
 
                 # setting record of experiments
@@ -178,7 +178,7 @@ def run_various_periods():
 
                 args.date_period1 = date_range1[i]
                 args.date_period2 = date_range2[i]
-                args.date_period3 = date_range2[i+2]
+                args.date_period3 = date_range2[i+3]
 
                 exp = Exp(args)  # set experiments
                 print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
@@ -186,8 +186,8 @@ def run_various_periods():
                 exp.train(setting)
 
                 print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-                args.date_period2 = date_range2[i + 2]
-                args.date_period3 = date_range2[i + 3]
+                args.date_period2 = date_range2[i + 3]
+                args.date_period3 = date_range2[i + 4]
                 _ = exp.test(setting, evaluate=True)
                 print('Try count :{}'.format(j+1))
 
