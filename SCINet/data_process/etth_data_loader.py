@@ -184,12 +184,15 @@ class Dataset_BTC2(Dataset):
         if self.features == 'M' or self.features == 'MS':
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
+            df_target = (df_data['hi'] + df_data['lo']) / 2
         elif self.features == 'S':
             df_data = df_raw[[self.target]]
+            df_target = (df_raw['hi'] + df_raw['lo']) / 2
 
         if self.scale:
             train_data = df_data[border1s[0]:border2s[0]]
-            target_data = df_data[border1s[0]:border2s[0]][[self.target]]
+            #target_data = df_data[border1s[0]:border2s[0]][[self.target]]
+            target_data = df_target[border1s[0]:border2s[0]]
             if self.set_type == 0:
                 self.scaler = StandardScaler()
                 self.scaler_target = StandardScaler()
@@ -202,6 +205,7 @@ class Dataset_BTC2(Dataset):
                 self.scaler = pickle.load(open('scaler.pkl', 'rb'))
                 self.scaler_target = pickle.load(open('scaler_target.pkl', 'rb'))
             data = self.scaler.transform(df_data.values)
+            data_y = self.scaler_target.transform(df_target.values)
         else:
             data = df_data.values
 
@@ -219,7 +223,7 @@ class Dataset_BTC2(Dataset):
             data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
 
         self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2, [3]]
+        self.data_y = data_y[border1:border2]
         self.data_stamp = data_stamp
         df_raw['date'] = df_raw['date'].apply(lambda x: int(x[:4] + x[5:7] + x[8:10] + x[11:13] + x[14:16]))
         self.data_val = df_raw[['date', 'op', 'hi', 'lo', 'cl']].values[border1:border2]
