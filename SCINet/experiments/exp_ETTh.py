@@ -359,8 +359,11 @@ class Exp_ETTh(Exp_Basic):
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
 
-            score = values11[4] + values21[4]
-            early_stopping(-score, self.model, path)
+            if epoch > 10:
+                score = values11[4] + values21[4]
+                early_stopping(-score, self.model, path)
+            else:
+                early_stopping(-acc1, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
