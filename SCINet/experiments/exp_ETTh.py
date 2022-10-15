@@ -1,6 +1,6 @@
 import os
 import time
-
+from tqdm import tqdm
 import numpy as np
 
 import torch
@@ -12,7 +12,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 from data_process.etth_data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, \
-    Dataset_BTC, Dataset_BTC2
+    Dataset_BTC, Dataset_BTC2, Dataset_BTC_pred
 from experiments.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, save_model, load_model
 from metrics.ETTh_metrics import metric
@@ -91,6 +91,7 @@ class Exp_ETTh(Exp_Basic):
         data_dict = {
             'BTC': Dataset_BTC,
             'BTC2': Dataset_BTC2,
+            'BTC_pred': Dataset_BTC_pred,
             'ETTh1': Dataset_ETT_hour,
             'ETTh2': Dataset_ETT_hour,
             'ETTm1': Dataset_ETT_minute,
@@ -104,20 +105,20 @@ class Exp_ETTh(Exp_Basic):
         timeenc = 0 if args.embed != 'timeF' else 1
 
         if flag == 'val':
-            shuffle_flag = False;
-            drop_last = True;
-            batch_size = args.batch_size;
+            shuffle_flag = False
+            drop_last = True
+            batch_size = args.batch_size
             freq = args.freq
         elif flag == 'pred':
-            shuffle_flag = False;
-            drop_last = False;
-            batch_size = 1;
-            freq = args.detail_freq
-            Data = Dataset_Pred
+            shuffle_flag = False
+            drop_last = False
+            batch_size = 1
+            freq = args.freq
+            Data = Dataset_BTC_pred
         else:
-            shuffle_flag = True;
-            drop_last = True;
-            batch_size = args.batch_size;
+            shuffle_flag = True
+            drop_last = True
+            batch_size = args.batch_size
             freq = args.freq
 
         if self.args.data == 'BTC2':
@@ -393,6 +394,43 @@ class Exp_ETTh(Exp_Basic):
 
         return loss
 
+    def predict(self, mode, load=True):
+        import pandas as pd
+        timeenc = 0 if self.args.embed != 'timeF' else 1
+        pred_data = Dataset_BTC_pred(
+                    root_path=self.args.root_path,
+                    data_path=self.args.data_path,
+                    size=[self.args.seq_len, self.args.label_len, self.args.pred_len],
+                    features=self.args.features,
+                    target=self.args.target,
+                    timeenc=timeenc,
+                    freq=self.args.freq,
+                    date_period1=self.args.date_period1,
+                    date_period2=self.args.date_period2
+            )
+
+        data_values, target_val, data_stamp, df_raw = pred_data.read_data()
+        road_data = pred_data.extract_data(data_values, target_val, data_stamp, df_raw)
+
+        if load:
+            best_model_path = self.args.model_path + '/' + 'checkpoint_cpu.pth'
+            self.model.load_state_dict(torch.load(best_model_path))
+
+        self.model.eval()
+        cols = ['date', 'op', 'hi', 'lo', 'cl']
+        output = pd.DataFrame()
+        for seq_x, seq_y, raw in tqdm(road_data):
+            input_x = np.expand_dims(seq_x, 0)
+            input_y = np.expand_dims(seq_y, 0)
+            pred, true = self._pred_one_batch_SCINet(pred_data, input_x, input_y)
+            raw_data = raw[-self.args.pred_len:, :]
+            tmp_out = pd.DataFrame(raw_data, columns=cols)
+            tmp_out['pred'] = pred[0]
+            output = pd.concat([output, tmp_out])
+
+        return output.reset_index(drop=True)
+
+
     def _inverse_transform_batch(self, batch_values, scaler):
         output = []
         for values in batch_values:
@@ -432,6 +470,35 @@ class Exp_ETTh(Exp_Basic):
             return outputs, outputs_scaled, 0, 0, batch_y, batch_y_scaled
         elif self.args.stacks == 2:
             return outputs, outputs_scaled, mid, mid_scaled, batch_y, batch_y_scaled
+        else:
+            print('Error!')
+
+
+    def _pred_one_batch_SCINet(self, dataset_object, batch_x, batch_y):
+        batch_x = torch.tensor(batch_x).double()
+        batch_y = torch.tensor(batch_y).double()
+
+        if self.args.stacks == 1:
+            outputs = self.model(batch_x)
+        elif self.args.stacks == 2:
+            outputs, mid = self.model(batch_x)
+        else:
+            print('Error!')
+
+
+        scaler = dataset_object.scaler_target
+        outputs_scaled = self._inverse_transform_batch(outputs.detach().cpu().numpy(), scaler)
+        if self.args.stacks == 2:
+            mid_scaled = dataset_object.inverse_transform(mid)
+        f_dim = -1 if self.args.features == 'MS' else 0
+        batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
+        batch_y_scaled = self._inverse_transform_batch(batch_y.detach().cpu().numpy(), scaler)
+
+        if self.args.stacks == 1:
+            return outputs_scaled, batch_y_scaled
+        elif self.args.stacks == 2:
+            #return outputs_scaled, mid_scaled, batch_y_scaled
+            return outputs_scaled, batch_y_scaled
         else:
             print('Error!')
 

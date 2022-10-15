@@ -258,6 +258,80 @@ class Dataset_BTC2(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
 
+
+class Dataset_BTC_pred(Dataset):
+    def __init__(self, root_path, flag='train', size=None, features='MS', data_path='ETTm1.csv',
+                 use_decoder_tokens=False, date_period1=None, date_period2=None,
+                 target='cl', scale=True, timeenc=0, freq='t'):
+
+        # info
+        self.seq_len = size[0]
+        self.label_len = size[1]
+        self.pred_len = size[2]
+
+        self.features = features
+        self.target = target
+        self.scale = scale
+        self.timeenc = timeenc
+        self.freq = freq
+        self.use_decoder_tokens = use_decoder_tokens
+
+        self.root_path = root_path
+        self.data_path = data_path
+        self.date_period1 = date_period1
+        self.date_period2 = date_period2
+
+        self.scaler = pickle.load(open('scaler.pkl', 'rb'))
+        self.scaler_target = pickle.load(open('scaler_target.pkl', 'rb'))
+
+    def read_data(self):
+        df_raw = pd.read_csv(os.path.join(self.root_path,
+                                          self.data_path))
+        if "Unnamed: 0" in df_raw.columns:
+            df_raw = df_raw.drop(columns="Unnamed: 0")
+
+        df_raw = df_raw[(df_raw['date'] >= self.date_period1) & (df_raw['date'] < self.date_period2)]
+        df_raw = df_raw[:10000]
+        cols_data = df_raw.columns[1:]
+        df_data = df_raw[cols_data]
+        df_target = (df_data['hi'] + df_data['lo']) / 2
+
+        data = self.scaler.transform(df_data.values)
+        data_y = self.scaler_target.transform(df_target.values)
+
+        df_stamp = df_raw[['date']]
+        df_stamp['date'] = pd.to_datetime(df_stamp.date)
+        if self.timeenc == 0:
+            df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
+            df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
+            df_stamp['weekday'] = df_stamp.date.apply(lambda row: row.weekday(), 1)
+            df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
+            df_stamp['minute'] = df_stamp.date.apply(lambda row: row.minute, 1)
+            df_stamp['minute'] = df_stamp.minute.map(lambda x: x // 15)
+            data_stamp = df_stamp.drop(['date'], 1).values
+        elif self.timeenc == 1:
+            data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
+
+        data_x = data
+        data_y = np.expand_dims(data_y, 1)
+        df_raw['date'] = df_raw['date'].apply(lambda x: int(x[:4] + x[5:7] + x[8:10] + x[11:13] + x[14:16]))
+        data_val = df_raw[['date', 'op', 'hi', 'lo', 'cl']].values
+        return data_x, data_y, data_stamp, data_val
+
+    def extract_data(self, data_values, target_val, data_stamp, df_raw):
+        data_len = len(data_values) - self.seq_len
+        for index in range(0, data_len, self.pred_len):
+            s_begin = index
+            s_end = s_begin + self.seq_len
+            r_begin = s_end - self.label_len
+            r_end = r_begin + self.label_len + self.pred_len
+
+            seq_x = data_values[s_begin:s_end]
+            seq_y = target_val[r_begin:r_end]
+            seq_raw = df_raw[r_begin:r_end]
+            yield seq_x, seq_y, seq_raw
+
+
 class Dataset_ETT_hour(Dataset):
     def __init__(self, root_path, flag='train', size=None, 
                  features='S', data_path='ETTh1.csv', 
