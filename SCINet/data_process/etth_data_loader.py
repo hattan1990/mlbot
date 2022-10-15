@@ -134,7 +134,7 @@ class Dataset_BTC(Dataset):
 class Dataset_BTC2(Dataset):
     def __init__(self, root_path, flag='train', size=None, features='MS', data_path='ETTm1.csv',
                  use_decoder_tokens=False, date_period1=None, date_period2=None,date_period3=None,
-                 target='cl', scale=True, timeenc=0, freq='t'):
+                 target='cl', scale=True, timeenc=0, freq='t', option=0):
 
         # info
         self.seq_len = size[0]
@@ -158,6 +158,7 @@ class Dataset_BTC2(Dataset):
         self.date_period1 = date_period1
         self.date_period2 = date_period2
         self.date_period3 = date_period3
+        self.option = option
         self.__read_data__()
 
     def __read_data__(self):
@@ -176,6 +177,7 @@ class Dataset_BTC2(Dataset):
         else:
             df_raw = df_raw[(df_raw['date'] >= self.date_period2) & (df_raw['date'] < self.date_period3)]
 
+        df_raw = df_raw.reset_index(drop=True)
         border1s = [range1, range1, range1]
         border2s = [range2, range2, range2]
         border1 = border1s[self.set_type]
@@ -189,9 +191,14 @@ class Dataset_BTC2(Dataset):
             df_data = df_raw[[self.target]]
             df_target = (df_raw['hi'] + df_raw['lo']) / 2
 
+        if self.option != 0:
+            df_target = df_target.rolling(self.option).mean().reset_index(drop=True)
+            df_target = df_target[self.option-1:]
+            df_data = df_data[self.option-1:]
+            df_raw = df_raw[self.option-1:]
+
         if self.scale:
             train_data = df_data[border1s[0]:border2s[0]]
-            #target_data = df_data[border1s[0]:border2s[0]][[self.target]]
             target_data = df_target[border1s[0]:border2s[0]]
             if self.set_type == 0:
                 self.scaler = StandardScaler()

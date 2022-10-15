@@ -159,6 +159,9 @@ def run_various_periods():
                 #args.e_layers = np.random.choice(layers)
                 #args.d_layers = np.random.choice(layers)
 
+                options = [6, 12, 18, 24]
+                args.option = np.random.choice(options)
+
                 pred_lens = [12, 20, 30]
                 args.pred_len = np.random.choice(pred_lens)
 
