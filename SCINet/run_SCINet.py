@@ -162,7 +162,7 @@ def run_various_periods():
                 pred_lens = [12, 20, 30]
                 args.pred_len = np.random.choice(pred_lens)
 
-                options = [0, args.pred_len, args.pred_len/2]
+                options = [0, int(args.pred_len), int(args.pred_len/2)]
                 args.option = np.random.choice(options)
 
                 # setting record of experiments
