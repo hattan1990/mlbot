@@ -142,6 +142,10 @@ def run_various_periods():
         date_range2 = ['2022-04-01 00:00', '2022-05-01 00:00', '2022-06-01 00:00', '2022-07-01 00:00',
                       '2022-08-01 00:00', '2022-09-01 00:00', '2022-10-01 00:00']
 
+        date_range1 = ['2021-05-01 00:00', '2021-06-01 00:00']
+        date_range2 = ['2022-06-01 00:00', '2022-07-01 00:00', '2022-08-01 00:00', '2022-09-01 00:00',
+                       '2022-10-01 00:00']
+
         args.data = 'BTC2'
 
         # Time Range × パラメータ変更（10回）の学習
@@ -189,11 +193,12 @@ def run_various_periods():
                 print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
                 exp.train(setting)
 
-                print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-                args.date_period2 = date_range2[i + 3]
-                args.date_period3 = date_range2[i + 4]
-                _ = exp.test(setting, evaluate=True)
-                print('Try count :{}'.format(j+1))
+                if args.date_period3 != '2022-10-01 00:00':
+                    print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                    args.date_period2 = date_range2[i + 3]
+                    args.date_period3 = date_range2[i + 4]
+                    _ = exp.test(setting, evaluate=True)
+                    print('Try count :{}'.format(j+1))
 
                 torch.cuda.empty_cache()
 
