@@ -359,11 +359,12 @@ class Estimation:
         strategy_data2 = self.strategy_data2.groupby('date').mean().reset_index()
         strategy_data2 = strategy_data2.sort_values(by='date').reset_index(drop=True)
 
-        print(
-            "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
-                epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
+
 
         if epoch + 1 >= 10:
+            print(
+                "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
+                    epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
             input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [10000, 15000]}
             best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
             #best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)

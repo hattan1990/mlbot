@@ -269,7 +269,7 @@ class Dataset_BTC2(Dataset):
 class Dataset_BTC_pred(Dataset):
     def __init__(self, root_path, flag='train', size=None, features='MS', data_path='ETTm1.csv',
                  use_decoder_tokens=False, date_period1=None, date_period2=None,
-                 target='cl', scale=True, timeenc=0, freq='t'):
+                 target='cl', scale=True, timeenc=0, freq='t', mode=1):
 
         # info
         self.seq_len = size[0]
@@ -291,6 +291,8 @@ class Dataset_BTC_pred(Dataset):
         self.scaler = pickle.load(open('scaler.pkl', 'rb'))
         self.scaler_target = pickle.load(open('scaler_target.pkl', 'rb'))
 
+        self.mode = mode
+
     def read_data(self):
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
@@ -298,7 +300,7 @@ class Dataset_BTC_pred(Dataset):
             df_raw = df_raw.drop(columns="Unnamed: 0")
 
         df_raw = df_raw[(df_raw['date'] >= self.date_period1) & (df_raw['date'] < self.date_period2)]
-        df_raw = df_raw[:10000]
+        df_raw = df_raw[:1000]
         cols_data = df_raw.columns[1:]
         df_data = df_raw[cols_data]
         df_target = (df_data['hi'] + df_data['lo']) / 2
@@ -327,16 +329,28 @@ class Dataset_BTC_pred(Dataset):
 
     def extract_data(self, data_values, target_val, data_stamp, df_raw):
         data_len = len(data_values) - self.seq_len
-        for index in range(0, data_len, self.pred_len):
-            s_begin = index
-            s_end = s_begin + self.seq_len
-            r_begin = s_end - self.label_len
-            r_end = r_begin + self.label_len + self.pred_len
+        if self.mode == 1:
+            for index in range(0, data_len, self.pred_len):
+                s_begin = index
+                s_end = s_begin + self.seq_len
+                r_begin = s_end - self.label_len
+                r_end = r_begin + self.label_len + self.pred_len
 
-            seq_x = data_values[s_begin:s_end]
-            seq_y = target_val[r_begin:r_end]
-            seq_raw = df_raw[r_begin:r_end]
-            yield seq_x, seq_y, seq_raw
+                seq_x = data_values[s_begin:s_end]
+                seq_y = target_val[r_begin:r_end]
+                seq_raw = df_raw[r_begin:r_end]
+                yield index, seq_x, seq_y, seq_raw
+        else:
+            for index in range(0, data_len):
+                s_begin = index
+                s_end = s_begin + self.seq_len
+                r_begin = s_end - self.label_len
+                r_end = r_begin + self.label_len + self.pred_len
+
+                seq_x = data_values[s_begin:s_end]
+                seq_y = target_val[r_begin:r_end]
+                seq_raw = df_raw[r_begin:r_end]
+                yield index, seq_x, seq_y, seq_raw
 
 
 class Dataset_ETT_hour(Dataset):

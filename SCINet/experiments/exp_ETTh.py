@@ -407,7 +407,8 @@ class Exp_ETTh(Exp_Basic):
                     timeenc=timeenc,
                     freq=self.args.freq,
                     date_period1=self.args.date_period1,
-                    date_period2=self.args.date_period2
+                    date_period2=self.args.date_period2,
+                    mode = mode
             )
 
         data_values, target_val, data_stamp, df_raw = pred_data.read_data()
@@ -420,14 +421,29 @@ class Exp_ETTh(Exp_Basic):
         self.model.eval()
         cols = ['date', 'op', 'hi', 'lo', 'cl']
         output = pd.DataFrame()
-        for seq_x, seq_y, raw in tqdm(road_data):
+        preds = []
+        for index, seq_x, seq_y, raw in tqdm(road_data):
             input_x = np.expand_dims(seq_x, 0)
             input_y = np.expand_dims(seq_y, 0)
             pred, true = self._pred_one_batch_SCINet(pred_data, input_x, input_y)
             raw_data = raw[-self.args.pred_len:, :]
             tmp_out = pd.DataFrame(raw_data, columns=cols)
-            tmp_out['pred'] = pred[0]
-            output = pd.concat([output, tmp_out])
+            if mode == 1:
+                tmp_out['pred'] = pred[0]
+                output = pd.concat([output, tmp_out])
+            else:
+                pre = pred[0]
+                target_index = index % (self.args.pred_len/2)
+                from_index = int((self.args.pred_len / 2) - target_index-1)
+                to_index = int(self.args.pred_len - target_index-1)
+                preds.append(pre[from_index:to_index])
+                if len(preds) == self.args.pred_len / 2:
+                    preds = np.array(preds)
+                    tmp_out = tmp_out[:int(self.args.pred_len / 2)]
+                    tmp_out['pred'] = preds.mean(axis=0)[:, 0]
+                    output = pd.concat([output, tmp_out])
+                    preds = []
+
 
         return output.reset_index(drop=True)
 

@@ -159,14 +159,14 @@ def run_various_periods():
                 #args.e_layers = np.random.choice(layers)
                 #args.d_layers = np.random.choice(layers)
 
-                options = [6, 12, 18, 24]
-                args.option = np.random.choice(options)
-
                 pred_lens = [12, 20, 30]
                 args.pred_len = np.random.choice(pred_lens)
 
+                options = [0, args.pred_len, args.pred_len/2]
+                args.option = np.random.choice(options)
+
                 # setting record of experiments
-                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_inv{}_itr{}'.format(args.model, args.data,
+                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_inv{}_op{}_itr{}'.format(args.model, args.data,
                                                                                                       args.features,
                                                                                                       args.seq_len,
                                                                                                       args.label_len,
@@ -177,6 +177,7 @@ def run_various_periods():
                                                                                                       args.stacks,
                                                                                                       args.levels,
                                                                                                       args.dropout,
+                                                                                                      args.option,
                                                                                                       args.inverse, ii)
 
                 args.date_period1 = date_range1[0]
