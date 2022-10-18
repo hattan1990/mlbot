@@ -171,7 +171,7 @@ def run_various_periods():
                 args.option = np.random.choice(options)
 
                 # setting record of experiments
-                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_inv{}_op{}_itr{}'.format(args.model, args.data,
+                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_op{}'.format(args.model, args.data,
                                                                                                       args.features,
                                                                                                       args.seq_len,
                                                                                                       args.label_len,
@@ -182,8 +182,7 @@ def run_various_periods():
                                                                                                       args.stacks,
                                                                                                       args.levels,
                                                                                                       args.dropout,
-                                                                                                      args.option,
-                                                                                                      args.inverse, ii)
+                                                                                                      args.option)
 
                 args.date_period1 = date_range1[0]
                 args.date_period2 = date_range2[i]

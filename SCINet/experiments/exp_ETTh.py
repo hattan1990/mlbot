@@ -366,10 +366,10 @@ class Exp_ETTh(Exp_Basic):
                 if not os.path.exists(best_model_path):
                     save_path = self.args.save_path
                     os.makedirs(best_model_path)
-                    torch.save(self.model.to('cpu').state_dict(), best_model_path + '/checkpoint_cpu.pth')
-                    pickle.dump(train_data.scaler, open(best_model_path + '/scaler.pkl', 'wb'))
-                    pickle.dump(train_data.scaler_target, open(best_model_path + '/scaler_target.pkl', 'wb'))
-                    new_path = shutil.move(best_model_path, 'temp/dir2/')
+                    torch.save(self.model.to('cpu').state_dict(), best_model_path + 'checkpoint_cpu.pth')
+                    pickle.dump(train_data.scaler, open(best_model_path + 'scaler.pkl', 'wb'))
+                    pickle.dump(train_data.scaler_target, open(best_model_path + 'scaler_target.pkl', 'wb'))
+                    new_path = shutil.move(best_model_path, save_path)
                     print(new_path)
 
             else:
