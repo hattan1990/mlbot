@@ -14,6 +14,7 @@ parser.add_argument('--model', type=str, required=False, default='SCINet', help=
 parser.add_argument('--data', type=str, required=False, default='BTC', choices=['BTC','ETTh1', 'ETTh2', 'ETTm1'], help='name of dataset')
 parser.add_argument('--root_path', type=str, default='../dataset/', help='root path of the data file')
 parser.add_argument('--data_path', type=str, default='GMO_BTC_JPY_ohclv.csv', help='location of the data file')
+parser.add_argument('--save_path', type=str, default='', help='location of the save file')
 parser.add_argument('--features', type=str, default='MS', choices=['S', 'M'], help='features S is univariate, M is multivariate')
 parser.add_argument('--target', type=str, default='cl', help='target feature')
 parser.add_argument('--freq', type=str, default='t', help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')

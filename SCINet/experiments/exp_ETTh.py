@@ -1,7 +1,9 @@
 import os
+import shutil
 import time
 from tqdm import tqdm
 import numpy as np
+import pickle
 
 import torch
 import torch.nn as nn
@@ -239,10 +241,6 @@ class Exp_ETTh(Exp_Basic):
 
             mae, mse, rmse, mape, mspe, corr = metric(preds, trues)
             maes, mses, rmses, mapes, mspes, corrs = metric(pred_scales, true_scales)
-            print('normed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(mse, mae,
-                                                                                                             rmse, mape,
-                                                                                                             mspe,
-                                                                                                             corr))
             print(
                 'denormed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}, mape:{:.4f}, mspe:{:.4f}, corr:{:.4f}'.format(mses, maes,
                                                                                                              rmses,
@@ -353,9 +351,6 @@ class Exp_ETTh(Exp_Basic):
             print('--------start to validate-----------')
             valid_loss, estimation = self.valid(valid_data, valid_loader, criterion)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} valid Loss: {3:.7f}".format(
-                epoch + 1, train_steps, train_loss, valid_loss))
-
             acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21 = estimation.run(epoch)
 
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
@@ -364,6 +359,19 @@ class Exp_ETTh(Exp_Basic):
             if epoch > 10:
                 score = values11[4] + values21[4]
                 early_stopping(-score, self.model, path)
+                best_model_path = '/'+setting+'_best/'
+                term_cnt = (cnt11 >= 3000)&(cnt21 >= 3000)
+                term_acc = (values11[4] >= 0.58)&(values21[4] >= 0.58)
+                term_profit = (values11[0] >= 3.0)&(values21[0] >= 3.0)
+                if not os.path.exists(best_model_path):
+                    save_path = self.args.save_path
+                    os.makedirs(best_model_path)
+                    torch.save(self.model.to('cpu').state_dict(), best_model_path + '/checkpoint_cpu.pth')
+                    pickle.dump(train_data.scaler, open(best_model_path + '/scaler.pkl', 'wb'))
+                    pickle.dump(train_data.scaler_target, open(best_model_path + '/scaler_target.pkl', 'wb'))
+                    new_path = shutil.move(best_model_path, 'temp/dir2/')
+                    print(new_path)
+
             else:
                 early_stopping(-acc1, self.model, path)
             self.model.to(self.device)
