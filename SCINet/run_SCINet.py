@@ -202,6 +202,62 @@ def run_various_periods():
 
                 torch.cuda.empty_cache()
 
+def run_various_periods2():
+    for ii in range(args.itr):
+        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00']
+        date_range2 = ['2022-04-01 00:00', '2022-05-01 00:00', '2022-06-01 00:00', '2022-07-01 00:00',
+                      '2022-08-01 00:00', '2022-09-01 00:00', '2022-10-01 00:00']
+
+        date_range1 = ['2021-05-01 00:00', '2021-06-01 00:00']
+        date_range2 = ['2022-06-01 00:00', '2022-07-01 00:00', '2022-08-01 00:00', '2022-09-01 00:00',
+                       '2022-10-01 00:00']
+
+        args.data = 'BTC2'
+
+        seq_lens = [96, 72, 48]
+        # args.seq_len = np.random.choice(seq_lens)
+        label_lens = [48, 36, 24]
+        # args.label_len = np.random.choice(label_lens)
+
+        n_heads = [8, 12, 16]
+        # args.n_heads = np.random.choice(n_heads)
+
+        layers = [1, 2, 3]
+        # args.e_layers = np.random.choice(layers)
+        # args.d_layers = np.random.choice(layers)
+
+        pred_lens = [12, 20, 30]
+        args.pred_len = np.random.choice(pred_lens)
+
+        options = [0, int(args.pred_len), int(args.pred_len / 2)]
+        args.option = np.random.choice(options)
+
+        # setting record of experiments
+        setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_op{}'.format(args.model, args.data,
+                                                                                       args.features,
+                                                                                       args.seq_len,
+                                                                                       args.label_len,
+                                                                                       args.pred_len,
+                                                                                       args.lr,
+                                                                                       args.batch_size,
+                                                                                       args.hidden_size,
+                                                                                       args.stacks,
+                                                                                       args.levels,
+                                                                                       args.dropout,
+                                                                                       args.option)
+
+        args.date_period1 = date_range1[0]
+        args.date_period2 = date_range2[1]
+        args.date_period3 = date_range2[4]
+
+        exp = Exp(args)  # set experiments
+        print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+        print('Train Range from:{} to:{}'.format(args.date_period1, args.date_period2))
+        print('Eval Range from:{} to:{}'.format(args.date_period2, args.date_period3))
+        exp.train(setting)
+
+        torch.cuda.empty_cache()
+
 
 if __name__ == '__main__':
-    run_various_periods()
+    run_various_periods2()

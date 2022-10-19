@@ -359,7 +359,7 @@ class Exp_ETTh(Exp_Basic):
             if epoch > 10:
                 score = values11[4] + values21[4]
                 early_stopping(-score, self.model, path)
-                best_model_path = '/'+setting+'_'+str(score)+'_'+str(epoch)+'_best/'
+                best_model_path = '/'+setting+'_'+str(score)+'_'+str(epoch+1)+'_best/'
                 term_cnt = (cnt11 >= 3000)&(cnt21 >= 3000)
                 term_acc = (values11[4] >= 0.58)&(values21[4] >= 0.58)
                 term_profit = (values11[0] >= 3.0)&(values21[0] >= 3.0)

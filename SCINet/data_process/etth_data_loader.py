@@ -266,7 +266,7 @@ class Dataset_BTC2(Dataset):
         return self.scaler.inverse_transform(data)
 
 
-class Dataset_BTC_pred(Dataset):
+class Dataset_BTC_pred:
     def __init__(self, root_path, flag='train', size=None, features='MS', data_path='ETTm1.csv',
                  use_decoder_tokens=False, date_period1=None, date_period2=None,
                  target='cl', scale=True, timeenc=0, freq='t', mode=1):
