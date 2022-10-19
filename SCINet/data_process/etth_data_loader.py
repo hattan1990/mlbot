@@ -300,7 +300,6 @@ class Dataset_BTC_pred:
             df_raw = df_raw.drop(columns="Unnamed: 0")
 
         df_raw = df_raw[(df_raw['date'] >= self.date_period1) & (df_raw['date'] < self.date_period2)]
-        df_raw = df_raw[:1000]
         cols_data = df_raw.columns[1:]
         df_data = df_raw[cols_data]
         df_target = (df_data['hi'] + df_data['lo']) / 2

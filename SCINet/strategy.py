@@ -39,7 +39,7 @@ class Estimation:
                     val = val[from_index:to_index]
 
                 tmp_values = np.concatenate([val, true, pred], axis=1)
-                columns = ['date', 'op', 'cl', 'hi', 'lo', 'true', 'pred']
+                columns = ['date', 'op', 'hi', 'lo', 'cl', 'true', 'pred']
 
                 tmp_data = pd.DataFrame(tmp_values, columns=columns)
                 output = pd.concat([output, tmp_data])
@@ -542,7 +542,7 @@ def plot_output(file_name, args):
 if __name__ == '__main__':
     from run_SCINet import *
 
-    args.pred_len = 12
+    args.pred_len = 10
     est = Estimation(args)
     file_name = 'strategy_data1.csv'
     data = pd.read_csv(file_name)
@@ -550,7 +550,7 @@ if __name__ == '__main__':
     data['date'] = data.date.apply(lambda x: ps.parse(
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    output = est.back_test_spot_swing(data, threshold=15000, num=args.pred_len)
+    output = est.back_test_spot_swing(data, threshold=10000, num=args.pred_len)
     print(output[1])
     output[0].to_excel('output.xlsx')
-    plot_mergin(file_name, args)
+    #plot_mergin(file_name, args)
