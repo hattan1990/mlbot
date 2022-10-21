@@ -39,7 +39,7 @@ class Estimation:
                     val = val[from_index:to_index]
 
                 tmp_values = np.concatenate([val, true, pred], axis=1)
-                columns = ['date', 'op', 'cl', 'hi', 'lo', 'true', 'pred']
+                columns = ['date', 'op', 'hi', 'lo', 'cl', 'true', 'pred']
 
                 tmp_data = pd.DataFrame(tmp_values, columns=columns)
                 output = pd.concat([output, tmp_data])
@@ -359,11 +359,12 @@ class Estimation:
         strategy_data2 = self.strategy_data2.groupby('date').mean().reset_index()
         strategy_data2 = strategy_data2.sort_values(by='date').reset_index(drop=True)
 
-        print(
-            "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
-                epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
+
 
         if epoch + 1 >= 10:
+            print(
+                "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
+                    epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
             input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [10000, 15000]}
             best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
             #best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
@@ -371,6 +372,10 @@ class Estimation:
             input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [10000, 15000]}
             best_output21, values21, dict21 = self.execute_back_test(self.back_test_spot_swing, input_dict2)
             #best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
+
+            best_output11['month'] = best_output11['date'].apply(lambda x: str(x)[:6])
+            best_output21['month'] = best_output21['date'].apply(lambda x: str(x)[:6])
+
 
             cnt11 = best_output11.shape[0]
             cnt21 = best_output21.shape[0]
@@ -397,6 +402,82 @@ class Estimation:
 
         return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21
 
+def calc_mergin_pred(df, args):
+    output = pd.DataFrame()
+    for i in range(0, df.shape[0], args.pred_len - 1):
+        if i == 0:
+            from_num = 0
+            to_num = args.pred_len - 1
+            tmp_df = df.loc[from_num:to_num, :]
+            from_num = to_num + 1
+        else:
+            to_num = from_num + args.pred_len - 1
+            tmp_df = df.loc[from_num:to_num, :]
+            from_num = to_num + 1
+
+        if tmp_df.shape[0] > 0:
+            lo = tmp_df['lo'].min()
+            hi = tmp_df['hi'].max()
+            date = tmp_df['date'].max()
+            pred_min = tmp_df['pred'].min()
+            pred_max = tmp_df['pred'].max()
+            tmp_dic = {'date':date, 'lo':lo, 'hi':hi, 'pred_min':pred_min, 'pred_max':pred_max}
+            tmp_out = pd.DataFrame([tmp_dic])
+            output = pd.concat([output, tmp_out])
+
+    return output.reset_index(drop=True)
+
+def plot_mergin(file_name, args):
+    df = pd.read_csv(file_name)
+    df['date'] = df.date.apply(lambda x: ps.parse(
+        str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
+    df = df.sort_values(by='date')
+    plot_df = calc_mergin_pred(df, args)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=plot_df['date'],
+                             y=plot_df['hi'],
+                             line=dict(color='rgba(17, 250, 244, 0.5)'),
+                             fillcolor='rgba(17, 250, 244, 0.5)',
+                             fill=None,
+                             name='hi'))
+
+    fig.add_trace(go.Scatter(x=plot_df['date'],
+                             y=plot_df['lo'],
+                             line=dict(color='rgba(17, 250, 244, 0.5)'),
+                             fillcolor='rgba(17, 250, 244, 0.5)',
+                             fill='tonexty',
+                             name='lo'))
+
+    fig.add_trace(go.Scatter(x=plot_df['date'],
+                             y=plot_df['pred_max'],
+                             line=dict(color='rgba(17, 1, 1, 0.5)'),
+                             fillcolor='rgba(17, 1, 1, 0.5)',
+                             fill=None,
+                             name='pred_hi'))
+
+    fig.add_trace(go.Scatter(x=plot_df['date'],
+                             y=plot_df['pred_min'],
+                             line=dict(color='rgba(17, 1, 1, 0.5)'),
+                             fillcolor='rgba(17, 1, 1, 0.5)',
+                             fill='tonexty',
+                             name='pred_lo'))
+
+    fig.update_layout(title='推論結果の可視化',
+                      plot_bgcolor='white',
+                      xaxis=dict(showline=True,
+                                 linewidth=1,
+                                 linecolor='lightgrey',
+                                 tickfont_color='grey',
+                                 ticks='inside'),
+                      yaxis=dict(title='BTC価格',
+                                 showline=True,
+                                 linewidth=1,
+                                 linecolor='lightgrey',
+                                 tickfont_color='grey',
+                                 ticks='inside'))
+    fig.show()
+
+    return
 
 def plot_output(file_name, args):
     target_col = 'pred'
@@ -404,15 +485,16 @@ def plot_output(file_name, args):
         target = args.pred_len
     else:
         target = (args.pred_len / 2)
-    df = pd.read_csv(file_name)[100000:110000]
+    df = pd.read_csv(file_name)
+    df['date'] = df.date.apply(lambda x:ps.parse(str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
+    df = df.sort_values(by='date')
     fig = go.Figure()
     target_index_list = []
     for i, values in enumerate(df.values):
         target_index = i % target
         target_index_list.append(target_index)
     df['target_index'] = target_index_list
-    df['date'] = df.date.apply(lambda x:ps.parse(str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
-    df = df.sort_values(by='date')
+
     fig.add_trace(go.Scatter(x=df['date'],
                              y=df[target_col],
                              line=dict(color='rgba(17, 1, 1, 1)'),
@@ -458,8 +540,9 @@ def plot_output(file_name, args):
     return
 
 if __name__ == '__main__':
-    from main_yformer import *
+    from run_SCINet import *
 
+    args.pred_len = 10
     est = Estimation(args)
     file_name = 'strategy_data1.csv'
     data = pd.read_csv(file_name)
@@ -467,7 +550,7 @@ if __name__ == '__main__':
     data['date'] = data.date.apply(lambda x: ps.parse(
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    output = est.back_test_spot_swing(data)
+    output = est.back_test_spot_swing(data, threshold=10000, num=args.pred_len)
     print(output[1])
     output[0].to_excel('output.xlsx')
-    #plot_output(file_name, args)
+    #plot_mergin(file_name, args)
