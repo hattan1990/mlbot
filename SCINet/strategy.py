@@ -133,18 +133,17 @@ class Estimation:
         thresh_list = input_dict['thresh_list']
         best_score = 0
         for i, thresh in enumerate(thresh_list):
-            threshold = thresh
-            output, scores = backtest(trade_data, threshold=threshold, num=num)
+            output, scores = backtest(trade_data, rate=thresh, num=num)
             if (scores[0] > best_score) or (i == 0):
                 best_score = scores[0]
                 best_output = output
                 best_score_values = scores
-                out_dict = {'vesion': num, 'thresh': threshold}
+                out_dict = {'vesion': num, 'thresh': thresh}
 
         return best_output, best_score_values, out_dict
 
 
-    def back_test_mm(self, trade_data, threshold=10000, num=12):
+    def back_test_mm(self, trade_data, rate=0.003, num=12):
         def drop_off_sell_stocks(stocks, lo):
             output = []
             for i, stock in enumerate(stocks):
@@ -220,6 +219,7 @@ class Estimation:
             buy = False
             sell = False
             trade = False
+            threshold = int(tmp_data['pred'].mean()) * rate
 
             for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
                 buy_stocks = drop_off_buy_stocks(buy_stocks, hi)
@@ -276,7 +276,7 @@ class Estimation:
 
         return output, (total, profit_win, stock_mean, max_stocks)
 
-    def back_test_spot_swing(self, trade_data, threshold=15000, num=12):
+    def back_test_spot_swing(self, trade_data, rate=0.003, num=12):
         output = []
         total = 0
         trade_cnt = 0
@@ -294,6 +294,7 @@ class Estimation:
             spread_to_max = (pred_spread_max - base_price)
             spread_to_min = (base_price - pred_spread_min)
 
+            threshold = int(tmp_data['pred'].mean()) * rate
             buy = False
             sell = False
 
@@ -365,11 +366,11 @@ class Estimation:
             print(
                 "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
                     epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
-            input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [10000, 15000]}
+            input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [0.003, 0.004, 0.005]}
             best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
             #best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
 
-            input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [10000, 15000]}
+            input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [0.003, 0.004, 0.005]}
             best_output21, values21, dict21 = self.execute_back_test(self.back_test_spot_swing, input_dict2)
             #best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
 
@@ -550,7 +551,7 @@ if __name__ == '__main__':
     data['date'] = data.date.apply(lambda x: ps.parse(
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    output = est.back_test_spot_swing(data, threshold=10000, num=args.pred_len)
+    output = est.back_test_spot_swing(data, threshold=0.003, num=args.pred_len)
     print(output[1])
     output[0].to_excel('output.xlsx')
     #plot_mergin(file_name, args)
