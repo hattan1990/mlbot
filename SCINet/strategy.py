@@ -289,10 +289,11 @@ class Estimation:
 
             tmp_data = trade_data.loc[start:end]
             base_price = tmp_data['op'].values[0]
-            pred_spread_min = int(tmp_data['pred'].min())
-            pred_spread_max = int(tmp_data['pred'].max())
-            spread_to_max = (pred_spread_max - base_price)
-            spread_to_min = (base_price - pred_spread_min)
+            #pred_spread_min = int(tmp_data['pred'].min())
+            #pred_spread_max = int(tmp_data['pred'].max())
+            pred_spread_mean = int(tmp_data['pred'].mean())
+            spread_to_max = (pred_spread_mean - base_price)
+            spread_to_min = (base_price - pred_spread_mean)
 
             threshold = int(tmp_data['pred'].mean()) * rate
             buy = False
@@ -303,18 +304,18 @@ class Estimation:
                 buy = True
                 buy_price = base_price
                 for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
-                    if hi > pred_spread_max:
+                    if hi > pred_spread_mean:
                         sell = True
-                        sell_price = pred_spread_max
+                        sell_price = pred_spread_mean
 
             elif (spread_to_min >= threshold) & (spread_to_max < spread_to_min):
                 trade_cnt += 1
                 sell = True
                 sell_price = base_price
                 for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
-                    if lo < pred_spread_min:
+                    if lo < pred_spread_mean:
                         buy = True
-                        buy_price = pred_spread_min
+                        buy_price = pred_spread_mean
 
             close_price = tmp_data['cl'].values[-1]
             close_date = tmp_data['date'].values[-1]
