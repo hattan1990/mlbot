@@ -369,11 +369,11 @@ class Estimation:
                     epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
             input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [0.003, 0.004, 0.005]}
             best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
-            #best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
+            best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
 
             input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [0.003, 0.004, 0.005]}
             best_output21, values21, dict21 = self.execute_back_test(self.back_test_spot_swing, input_dict2)
-            #best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
+            best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
 
             best_output11['month'] = best_output11['date'].apply(lambda x: str(x)[:6])
             best_output21['month'] = best_output21['date'].apply(lambda x: str(x)[:6])
@@ -381,6 +381,8 @@ class Estimation:
 
             cnt11 = best_output11.shape[0]
             cnt21 = best_output21.shape[0]
+            cnt12 = best_output12.shape[0]
+            cnt22 = best_output22.shape[0]
 
             if self.args.data_path == 'GMO_BTC_JPY_ohclv_eval.csv':
                 os.mkdir(str(acc1))
@@ -394,10 +396,10 @@ class Estimation:
                 strategy_data1.to_csv('strategy_data1.csv')
                 strategy_data2.to_csv('strategy_data2.csv')
 
-            print("Test1 | Swing - cnt: {0} best profit: {1} config: {2}".format(
-                cnt11, values11, dict11))
-            print("Test2 | Swing - cnt: {0} best profit: {1} config: {2}".format(
-                cnt21, values21, dict21))
+            print("Test1 | Swing - cnt: {0} best profit: {1} config: {2} | MM - cnt: {3} best profit: {4} config: {5} ".format(
+                cnt11, values11, dict11, cnt12, values12, dict12))
+            print("Test2 | Swing - cnt: {0} best profit: {1} config: {2} | MM - cnt: {3} best profit: {4} config: {5} ".format(
+                cnt21, values21, dict21, cnt22, values22, dict22))
 
         else:
             cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = None
@@ -552,7 +554,7 @@ if __name__ == '__main__':
     data['date'] = data.date.apply(lambda x: ps.parse(
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    output = est.back_test_spot_swing(data, threshold=0.003, num=args.pred_len)
+    output = est.back_test_spot_swing(data, rate=0.003, num=args.pred_len)
     print(output[1])
     output[0].to_excel('output.xlsx')
     #plot_mergin(file_name, args)
