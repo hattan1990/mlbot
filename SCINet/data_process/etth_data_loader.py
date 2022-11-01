@@ -67,7 +67,8 @@ class Dataset_BTC(Dataset):
         border2 = border2s[self.set_type]
         df_raw['spread'] = df_raw['hi'] - df_raw['lo']
         df_raw['transition'] = df_raw['cl'] - df_raw['op']
-        df_raw['tran_rate'] = abs(df_raw['cl'] - df_raw['op']) / df_raw['spread']
+        df_raw['tran_rate'] = abs(df_raw['cl'] - df_raw['op']) * 100 / df_raw['spread']
+        df_raw['tran_rate'] = df_raw['tran_rate'].fillna(0)
 
         if self.features == 'M' or self.features == 'MS':
             cols_data = df_raw.columns[1:]
@@ -187,7 +188,8 @@ class Dataset_BTC2(Dataset):
         border2 = border2s[self.set_type]
         df_raw['spread'] = df_raw['hi'] - df_raw['lo']
         df_raw['transition'] = df_raw['cl'] - df_raw['op']
-        df_raw['tran_rate'] = abs(df_raw['cl'] - df_raw['op']) / df_raw['spread']
+        df_raw['tran_rate'] = abs(df_raw['cl'] - df_raw['op'])*100 / df_raw['spread']
+        df_raw['tran_rate'] = df_raw['tran_rate'].fillna(0)
 
         if self.features == 'M' or self.features == 'MS':
             cols_data = df_raw.columns[1:]
@@ -310,7 +312,8 @@ class Dataset_BTC_pred:
         df_data = df_raw[cols_data]
         df_data['spread'] = df_data['hi'] - df_data['lo']
         df_data['transition'] = df_data['cl'] - df_data['op']
-        df_raw['tran_rate'] = abs(df_raw['cl'] - df_raw['op']) / df_raw['spread']
+        df_raw['tran_rate'] = abs(df_raw['cl'] - df_raw['op']) * 100 / df_raw['spread']
+        df_raw['tran_rate'] = df_raw['tran_rate'].fillna(0)
 
         df_target = (df_data['hi'] + df_data['lo']) / 2
 
