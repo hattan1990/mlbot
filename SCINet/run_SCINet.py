@@ -153,18 +153,18 @@ def run_various_periods():
         for i in range(len(date_range1)):
             for j in range(3):
                 seq_lens = [96, 72]
-                #args.seq_len = np.random.choice(seq_lens)
+                args.seq_len = np.random.choice(seq_lens)
                 label_lens = [48, 36]
-                #args.label_len = np.random.choice(label_lens)
+                args.label_len = np.random.choice(label_lens)
 
                 n_heads = [8, 16]
-                #args.n_heads = np.random.choice(n_heads)
+                args.n_heads = np.random.choice(n_heads)
 
                 layers = [1, 2, 3]
-                #args.e_layers = np.random.choice(layers)
-                #args.d_layers = np.random.choice(layers)
+                args.e_layers = np.random.choice(layers)
+                args.d_layers = np.random.choice(layers)
 
-                pred_lens = [12, 20]
+                pred_lens = [12, 20, 30]
                 args.pred_len = np.random.choice(pred_lens)
 
                 options = [0, int(args.pred_len), int(args.pred_len/2)]
