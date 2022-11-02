@@ -91,7 +91,6 @@ data_parser = {
 }
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
-    args.data_path = data_info['data']
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.c_out = data_info[args.features]
 
