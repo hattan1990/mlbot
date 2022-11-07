@@ -202,6 +202,7 @@ class Estimation:
         stock_counts = []
         total = 0
         trade_cnt = 0
+        stocks_count = 0
         max_stocks = 0
         for i in range(0, trade_data.shape[0], num):
             if i == 0:
@@ -225,7 +226,7 @@ class Estimation:
                 buy_stocks = drop_off_buy_stocks(buy_stocks, hi)
                 sell_stocks = drop_off_sell_stocks(sell_stocks, lo)
 
-                if spread_mergin >= threshold:
+                if (stocks_count < 3):
                     trade = True
                     if hi > pred_spread_max:
                         sell = True
@@ -259,11 +260,11 @@ class Estimation:
             else:
                 pass
 
-            output.append([close_date, total, profit, buy, sell])
+            output.append([close_date, total, profit, buy, sell, stocks_count])
             start = end + 1
 
-        output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
-        output = output[output['profit'] != 0]
+        output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell', 'stocks_count'])
+        #output = output[output['profit'] != 0]
         term = (output['buy'] == True) & (output['sell'] == True)
         profit_win = output.loc[term, 'profit'].sum()
 
@@ -546,7 +547,7 @@ def plot_output(file_name, args):
 if __name__ == '__main__':
     from run_SCINet import *
 
-    args.pred_len = 10
+    args.pred_len = 12
     est = Estimation(args)
     file_name = 'strategy_data1.csv'
     data = pd.read_csv(file_name)
@@ -554,7 +555,8 @@ if __name__ == '__main__':
     data['date'] = data.date.apply(lambda x: ps.parse(
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    output = est.back_test_spot_swing(data, rate=0.003, num=args.pred_len)
+    #output = est.back_test_spot_swing(data, rate=0.002, num=args.pred_len)
+    output = est.back_test_mm(data, rate=0.03, num=args.pred_len)
     print(output[1])
     output[0].to_excel('output.xlsx')
     #plot_mergin(file_name, args)

@@ -139,12 +139,8 @@ def run():
 def run_various_periods():
     for ii in range(args.itr):
         date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00']
-        date_range2 = ['2022-05-01 00:00', '2022-06-01 00:00', '2022-07-01 00:00',
-                      '2022-08-01 00:00', '2022-09-01 00:00', '2022-10-01 00:00']
-
-        #date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00']
-        #date_range2 = ['2022-06-01 00:00', '2022-07-01 00:00', '2022-08-01 00:00', '2022-09-01 00:00',
-        #               '2022-10-01 00:00']
+        date_range2 = ['2022-06-01 00:00', '2022-07-01 00:00','2022-08-01 00:00',
+                       '2022-09-01 00:00', '2022-10-01 00:00', '2022-11-01 00:00']
 
         args.data = 'BTC2'
 
@@ -192,7 +188,7 @@ def run_various_periods():
                 print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
                 exp.train(setting)
 
-                if args.date_period3 != '2022-10-01 00:00':
+                if args.date_period3 != '2022-11-01 00:00':
                     print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
                     args.date_period2 = date_range2[i + 3]
                     args.date_period3 = date_range2[i + 4]
@@ -203,13 +199,10 @@ def run_various_periods():
 
 def run_various_periods2():
     for ii in range(args.itr):
-        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00']
-        date_range2 = ['2022-04-01 00:00', '2022-05-01 00:00', '2022-06-01 00:00', '2022-07-01 00:00',
-                      '2022-08-01 00:00', '2022-09-01 00:00', '2022-10-01 00:00']
 
         date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00']
-        date_range2 = ['2022-06-01 00:00', '2022-07-01 00:00', '2022-08-01 00:00', '2022-09-01 00:00',
-                       '2022-10-01 00:00']
+        date_range2 = ['2022-07-01 00:00', '2022-08-01 00:00', '2022-09-01 00:00',
+                       '2022-10-01 00:00', '2022-11-01 00:00']
 
         args.data = 'BTC2'
 
@@ -225,7 +218,7 @@ def run_various_periods2():
         # args.e_layers = np.random.choice(layers)
         # args.d_layers = np.random.choice(layers)
 
-        pred_lens = [12, 20]
+        pred_lens = [30, 20]
         args.pred_len = np.random.choice(pred_lens)
 
         options = [0, int(args.pred_len), int(args.pred_len / 2)]
