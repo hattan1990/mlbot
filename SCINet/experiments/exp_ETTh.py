@@ -351,7 +351,7 @@ class Exp_ETTh(Exp_Basic):
             print('--------start to validate-----------')
             valid_loss, estimation = self.valid(valid_data, valid_loader, criterion)
 
-            acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21 = estimation.run(epoch)
+            acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12 = estimation.run(epoch)
 
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
@@ -359,12 +359,9 @@ class Exp_ETTh(Exp_Basic):
 
             if epoch > 10:
                 #score = values11[4] + values21[4]
-                score = values11[0] + values21[0]
+                score = values12[0]
                 best_model_path = '/'+setting+'_'+str(score)+'_'+str(epoch+1)+'_best/'
-                term_cnt = (cnt11 >= 3000)&(cnt21 >= 3000)
-                term_acc = (values11[4] >= 0.58)&(values21[4] >= 0.58)
-                term_profit = (values11[0] >= 3.0)&(values21[0] >= 3.0)
-                if term_cnt&term_acc&term_profit:
+                if (score > 0.6):
                     if not os.path.exists(best_model_path):
                         save_path = self.args.save_path
                         os.makedirs(best_model_path)

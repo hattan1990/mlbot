@@ -143,7 +143,7 @@ class Estimation:
         return best_output, best_score_values, out_dict
 
 
-    def back_test_mm(self, trade_data, rate=0.003, num=12):
+    def back_test_mm(self, trade_data, threshold=3, num=12):
         def drop_off_sell_stocks(stocks, lo):
             output = []
             for i, stock in enumerate(stocks):
@@ -220,13 +220,12 @@ class Estimation:
             buy = False
             sell = False
             trade = False
-            threshold = int(tmp_data['pred'].mean()) * rate
 
             for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
                 buy_stocks = drop_off_buy_stocks(buy_stocks, hi)
                 sell_stocks = drop_off_sell_stocks(sell_stocks, lo)
 
-                if (stocks_count < 3):
+                if (stocks_count < threshold):
                     trade = True
                     if hi > pred_spread_max:
                         sell = True
@@ -264,7 +263,7 @@ class Estimation:
             start = end + 1
 
         output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell', 'stocks_count'])
-        #output = output[output['profit'] != 0]
+        output = output[output['profit'] != 0]
         term = (output['buy'] == True) & (output['sell'] == True)
         profit_win = output.loc[term, 'profit'].sum()
 
@@ -368,44 +367,44 @@ class Estimation:
             print(
                 "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
                     epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
-            input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [0.003, 0.004, 0.005]}
-            best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
+            input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [3, 5, 7]}
+            #best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
             best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
 
-            input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [0.003, 0.004, 0.005]}
-            best_output21, values21, dict21 = self.execute_back_test(self.back_test_spot_swing, input_dict2)
-            best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
+            #input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [3, 5, 7]}
+            #best_output21, values21, dict21 = self.execute_back_test(self.back_test_spot_swing, input_dict2)
+            #best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
 
-            best_output11['month'] = best_output11['date'].apply(lambda x: str(x)[:6])
-            best_output21['month'] = best_output21['date'].apply(lambda x: str(x)[:6])
+            best_output12['month'] = best_output12['date'].apply(lambda x: str(x)[:6])
+            #best_output21['month'] = best_output21['date'].apply(lambda x: str(x)[:6])
 
 
-            cnt11 = best_output11.shape[0]
-            cnt21 = best_output21.shape[0]
+            #cnt12 = best_output11.shape[0]
+            #cnt21 = best_output21.shape[0]
             cnt12 = best_output12.shape[0]
-            cnt22 = best_output22.shape[0]
+            #cnt22 = best_output22.shape[0]
 
             if self.args.data_path == 'GMO_BTC_JPY_ohclv_eval.csv':
                 os.mkdir(str(acc1))
-                best_output11.to_csv(str(acc1)+'/best_output11.csv')
-                best_output21.to_csv(str(acc1)+'/best_output21.csv')
+                best_output12.to_csv(str(acc1)+'/best_output12.csv')
+                #best_output21.to_csv(str(acc1)+'/best_output21.csv')
                 strategy_data1.to_csv(str(acc1)+'/strategy_data1.csv')
                 strategy_data2.to_csv(str(acc1)+'/strategy_data2.csv')
             else:
-                best_output11.to_csv('best_output11.csv')
-                best_output21.to_csv('best_output21.csv')
+                best_output12.to_csv('best_output12.csv')
+                #best_output21.to_csv('best_output21.csv')
                 strategy_data1.to_csv('strategy_data1.csv')
                 strategy_data2.to_csv('strategy_data2.csv')
 
-            print("Test1 | Swing - cnt: {0} best profit: {1} config: {2} | MM - cnt: {3} best profit: {4} config: {5} ".format(
-                cnt11, values11, dict11, cnt12, values12, dict12))
-            print("Test2 | Swing - cnt: {0} best profit: {1} config: {2} | MM - cnt: {3} best profit: {4} config: {5} ".format(
-                cnt21, values21, dict21, cnt22, values22, dict22))
+            print("Test1 | MM - cnt: {0} best profit: {1} config: {2} ".format(
+                cnt12, values12, dict12))
+            #print("Test2 | Swing - cnt: {0} best profit: {1} config: {2} | MM - cnt: {3} best profit: {4} config: {5} ".format(
+            #    cnt21, values21, dict21, cnt22, values22, dict22))
 
         else:
             cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = None
 
-        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, cnt21, values21, dict21
+        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12
 
 def calc_mergin_pred(df, args):
     output = pd.DataFrame()
