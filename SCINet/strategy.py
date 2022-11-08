@@ -143,7 +143,7 @@ class Estimation:
         return best_output, best_score_values, out_dict
 
 
-    def back_test_mm(self, trade_data, threshold=3, num=12):
+    def back_test_mm(self, trade_data, rate=3, num=12):
         def drop_off_sell_stocks(stocks, lo):
             output = []
             for i, stock in enumerate(stocks):
@@ -216,6 +216,7 @@ class Estimation:
             pred_spread_max = int(tmp_data['pred'].max())
 
             spread_mergin = (pred_spread_max - pred_spread_min)
+            threshold = rate
 
             buy = False
             sell = False
