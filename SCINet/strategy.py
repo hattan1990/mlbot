@@ -402,7 +402,7 @@ class Estimation:
             #    cnt21, values21, dict21, cnt22, values22, dict22))
 
         else:
-            cnt11 = values11 = dict11 = cnt21 = values21 = dict21 = None
+            cnt12 = values12 = dict12 = cnt21 = values21 = dict21 = None
 
         return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12
 
