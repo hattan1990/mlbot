@@ -351,7 +351,7 @@ class Exp_ETTh(Exp_Basic):
             print('--------start to validate-----------')
             valid_loss, estimation = self.valid(valid_data, valid_loader, criterion)
 
-            acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12 = estimation.run(epoch)
+            acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12, strategy_data = estimation.run(epoch)
 
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
@@ -361,10 +361,11 @@ class Exp_ETTh(Exp_Basic):
                 #score = values11[4] + values21[4]
                 score = values12[0]
                 best_model_path = '/'+setting+'_'+str(score)+'_'+str(epoch+1)+'_best/'
-                if (score > 0.6):
+                if (score > 0.8):
                     if not os.path.exists(best_model_path):
                         save_path = self.args.save_path
                         os.makedirs(best_model_path)
+                        strategy_data.to_csv(best_model_path + 'strategy_data.csv')
                         torch.save(self.model.to('cpu').state_dict(), best_model_path + 'checkpoint_cpu.pth')
                         pickle.dump(train_data.scaler, open(best_model_path + 'scaler.pkl', 'wb'))
                         pickle.dump(train_data.scaler_target, open(best_model_path + 'scaler_target.pkl', 'wb'))

@@ -409,7 +409,7 @@ class Estimation:
         else:
             cnt12 = values12 = dict12 = cnt21 = values21 = dict21 = None
 
-        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12
+        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12, strategy_data1
 
 def calc_mergin_pred(df, args):
     output = pd.DataFrame()
