@@ -212,8 +212,12 @@ class Estimation:
                 end = i + num - 1
 
             tmp_data = trade_data.loc[start:end]
-            pred_spread_min = int(tmp_data['pred'].min())
-            pred_spread_max = int(tmp_data['pred'].max())
+            #pred_spread_min = int(tmp_data['pred'].min())
+            #pred_spread_max = int(tmp_data['pred'].max())
+
+            preds = tmp_data['pred'].values
+            pred_spread_min = int(np.percentile(preds, 25))
+            pred_spread_max = int(np.percentile(preds, 75))
 
             spread_mergin = (pred_spread_max - pred_spread_min)
             threshold = rate
@@ -556,7 +560,7 @@ if __name__ == '__main__':
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
     #output = est.back_test_spot_swing(data, rate=0.002, num=args.pred_len)
-    output = est.back_test_mm(data, rate=0.03, num=args.pred_len)
-    print(output[1])
+    output = est.back_test_mm(data, rate=2, num=args.pred_len)
+    print(output[0].shape[0], output[1])
     output[0].to_excel('output.xlsx')
     #plot_mergin(file_name, args)
