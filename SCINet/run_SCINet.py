@@ -147,9 +147,9 @@ def run_various_periods():
         # Time Range × パラメータ変更（10回）の学習
         for i in range(len(date_range1)):
             for j in range(3):
-                seq_lens = [96, 72]
+                seq_lens = [144, 120]
                 args.seq_len = np.random.choice(seq_lens)
-                label_lens = [48, 36]
+                label_lens = [72, 60]
                 args.label_len = np.random.choice(label_lens)
 
                 n_heads = [8, 16]
@@ -159,7 +159,7 @@ def run_various_periods():
                 args.e_layers = np.random.choice(layers)
                 args.d_layers = np.random.choice(layers)
 
-                pred_lens = [30, 40, 60]
+                pred_lens = [60, 90, 120]
                 args.pred_len = np.random.choice(pred_lens)
 
                 options = [0, int(args.pred_len), int(args.pred_len/2)]

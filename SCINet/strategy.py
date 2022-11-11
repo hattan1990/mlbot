@@ -216,8 +216,8 @@ class Estimation:
             #pred_spread_max = int(tmp_data['pred'].max())
 
             preds = tmp_data['pred'].values
-            pred_spread_min = int(np.percentile(preds, 25))
-            pred_spread_max = int(np.percentile(preds, 75))
+            pred_spread_min = int(np.percentile(preds, 20))
+            pred_spread_max = int(np.percentile(preds, 80))
 
             spread_mergin = (pred_spread_max - pred_spread_min)
             threshold = rate

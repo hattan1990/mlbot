@@ -202,8 +202,8 @@ class Dataset_BTC2(Dataset):
         if self.option != 0:
             df_target = df_target.rolling(self.option).mean().reset_index(drop=True)
             df_target = df_target[self.option-1:]
-            df_data = df_data[self.option-1:]
-            df_raw = df_raw[self.option-1:]
+            df_data = df_data[:-(self.option-1)]
+            df_raw = df_raw[:-(self.option-1)]
 
         if self.scale:
             train_data = df_data[border1s[0]:border2s[0]]
