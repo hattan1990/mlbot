@@ -147,23 +147,24 @@ def run_various_periods():
         # Time Range × パラメータ変更（10回）の学習
         for i in range(len(date_range1)):
             for j in range(3):
-                seq_lens = [144, 120]
-                args.seq_len = np.random.choice(seq_lens)
-                label_lens = [72, 60]
-                args.label_len = np.random.choice(label_lens)
+                choice = np.random.randint(2)
+                model_lens = [[240, 120, 60], [360, 180, 90], [480, 240, 120]]
+                model_len = model_lens[choice]
+
+                args.seq_len = model_len[0]
+                args.label_len = model_len[1]
+                args.pred_len = model_len[2]
 
                 n_heads = [8, 16]
                 args.n_heads = np.random.choice(n_heads)
 
-                layers = [1, 2, 3]
-                args.e_layers = np.random.choice(layers)
-                args.d_layers = np.random.choice(layers)
+                #layers = [1, 2, 3]
+                #args.e_layers = np.random.choice(layers)
+                #args.d_layers = np.random.choice(layers)
 
-                pred_lens = [60, 90, 120]
-                args.pred_len = np.random.choice(pred_lens)
-
-                options = [0, int(args.pred_len), int(args.pred_len/2)]
-                args.option = np.random.choice(options)
+                #options = [0, int(args.pred_len), int(args.pred_len/2)]
+                #args.option = np.random.choice(options)
+                args.option = 0
 
                 # setting record of experiments
                 setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_op{}'.format(args.model, args.data,
