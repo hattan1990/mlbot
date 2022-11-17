@@ -148,7 +148,7 @@ def run_various_periods():
         for i in range(len(date_range1)):
             for j in range(3):
                 choice = np.random.randint(2)
-                model_lens = [[240, 120, 60], [360, 180, 90], [480, 240, 120]]
+                model_lens = [[480, 240, 120], [240, 120, 60], [360, 180, 90]]
                 model_len = model_lens[choice]
 
                 args.seq_len = model_len[0]
@@ -167,18 +167,15 @@ def run_various_periods():
                 args.option = 0
 
                 # setting record of experiments
-                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_op{}'.format(args.model, args.data,
+                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_hid{}_s{}_op{}_nh{}'.format(args.model, args.data,
                                                                                                       args.features,
                                                                                                       args.seq_len,
                                                                                                       args.label_len,
                                                                                                       args.pred_len,
-                                                                                                      args.lr,
-                                                                                                      args.batch_size,
                                                                                                       args.hidden_size,
                                                                                                       args.stacks,
-                                                                                                      args.levels,
-                                                                                                      args.dropout,
-                                                                                                      args.option)
+                                                                                                      args.option,
+                                                                                                      args.n_heads)
 
                 args.date_period1 = date_range1[0]
                 args.date_period2 = date_range2[i]
@@ -226,7 +223,7 @@ def run_various_periods2():
         args.option = np.random.choice(options)
 
         # setting record of experiments
-        setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_dp{}_op{}'.format(args.model, args.data,
+        setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_hid{}_s{}_l{}_op{}'.format(args.model, args.data,
                                                                                        args.features,
                                                                                        args.seq_len,
                                                                                        args.label_len,
@@ -236,7 +233,6 @@ def run_various_periods2():
                                                                                        args.hidden_size,
                                                                                        args.stacks,
                                                                                        args.levels,
-                                                                                       args.dropout,
                                                                                        args.option)
 
         args.date_period1 = date_range1[0]
