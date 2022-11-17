@@ -212,14 +212,11 @@ class Estimation:
                 end = i + num - 1
 
             tmp_data = trade_data.loc[start:end]
-            #pred_spread_min = int(tmp_data['pred'].min())
-            #pred_spread_max = int(tmp_data['pred'].max())
 
             preds = tmp_data['pred'].values
             pred_spread_min = int(np.percentile(preds, 20))
             pred_spread_max = int(np.percentile(preds, 80))
 
-            spread_mergin = (pred_spread_max - pred_spread_min)
             threshold = rate
 
             buy = False
@@ -230,7 +227,7 @@ class Estimation:
                 buy_stocks = drop_off_buy_stocks(buy_stocks, hi)
                 sell_stocks = drop_off_sell_stocks(sell_stocks, lo)
 
-                if (stocks_count < threshold):
+                if (stocks_count < threshold)&(self.trade_range_from < pred_spread_min)&(pred_spread_max < self.trade_range_to):
                     trade = True
                     if hi > pred_spread_max:
                         sell = True
@@ -354,7 +351,9 @@ class Estimation:
         return output, (total, profit_win, profit_loss, acc_rate, win_rate)
 
 
-    def run(self, epoch):
+    def run(self, epoch, target_time_range_from, target_time_range_to):
+        self.target_time_range_from = target_time_range_from
+        self.target_time_range_to = target_time_range_to
         acc1 = np.average(self.total_acc1)
         acc2 = np.average(self.total_acc2)
         acc3 = np.average(self.total_acc3)

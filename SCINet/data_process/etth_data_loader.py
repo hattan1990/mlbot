@@ -243,6 +243,12 @@ class Dataset_BTC2(Dataset):
         df_raw['date'] = df_raw['date'].apply(lambda x: int(x[:4] + x[5:7] + x[8:10] + x[11:13] + x[14:16]))
         self.data_val = df_raw[['date', 'op', 'hi', 'lo', 'cl']].values[border1:border2]
 
+        target_time_range = 60 * 24 * 30 * 3
+        target_values = df_raw.loc[-target_time_range:, 'cl'].values
+        self.target_time_range_from = int(np.percentile(target_values, 20))
+        self.target_time_range_to = int(np.percentile(target_values, 80))
+
+
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.seq_len
