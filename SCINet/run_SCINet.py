@@ -138,8 +138,8 @@ def run():
 
 def run_various_periods():
     for ii in range(args.itr):
-        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00', '2021-06-01 00:00']
-        date_range2 = ['2022-06-01 00:00', '2022-07-01 00:00','2022-08-01 00:00',
+        date_range1 = ['2021-05-01 00:00', '2021-06-01 00:00']
+        date_range2 = ['2022-07-01 00:00','2022-08-01 00:00',
                        '2022-09-01 00:00', '2022-10-01 00:00', '2022-11-01 00:00']
 
         args.data = 'BTC2'
@@ -148,8 +148,9 @@ def run_various_periods():
         for i in range(len(date_range1)):
             for j in range(3):
                 choice = np.random.randint(2)
-                model_lens = [[480, 240, 120], [240, 120, 60], [360, 180, 90]]
-                model_len = model_lens[choice]
+                #model_lens = [[480, 240, 120], [240, 120, 60], [360, 180, 90]]
+                #model_len = model_lens[choice]
+                model_len = [480, 240, 120]
 
                 args.seq_len = model_len[0]
                 args.label_len = model_len[1]
