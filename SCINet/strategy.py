@@ -352,8 +352,8 @@ class Estimation:
 
 
     def run(self, epoch, target_time_range_from, target_time_range_to):
-        self.target_time_range_from = target_time_range_from
-        self.target_time_range_to = target_time_range_to
+        self.trade_range_from = target_time_range_from
+        self.trade_range_to = target_time_range_to
         acc1 = np.average(self.total_acc1)
         acc2 = np.average(self.total_acc2)
         acc3 = np.average(self.total_acc3)
