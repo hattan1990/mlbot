@@ -400,8 +400,9 @@ class Exp_ETTh(Exp_Basic):
             self.model.load_state_dict(torch.load(best_model_path))
 
         loss, estimation = self.valid(test_data, test_loader, criterion)
-
-        estimation.run(100)
+        target_time_range_from = 2000000
+        target_time_range_to = 6000000
+        estimation.run(100, target_time_range_from, target_time_range_to)
 
         return loss
 
