@@ -348,8 +348,8 @@ class Exp_ETTh(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
-            target_time_range_from = train_data.target_time_range_from
-            target_time_range_to = train_data.target_time_range_to
+            target_time_range_from = 2000000
+            target_time_range_to = 6000000
 
             print('--------start to validate from {} to {}-----------'.format(target_time_range_from, target_time_range_to))
             valid_loss, estimation = self.valid(valid_data, valid_loader, criterion)
