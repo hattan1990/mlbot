@@ -227,7 +227,7 @@ class Estimation:
                 buy_stocks = drop_off_buy_stocks(buy_stocks, hi)
                 sell_stocks = drop_off_sell_stocks(sell_stocks, lo)
 
-                if (stocks_count < threshold)&(self.trade_range_from < pred_spread_min)&(pred_spread_max < self.trade_range_to):
+                if (stocks_count < threshold):
                     trade = True
                     if hi > pred_spread_max:
                         sell = True
@@ -278,10 +278,32 @@ class Estimation:
 
         return output, (total, profit_win, stock_mean, max_stocks)
 
-    def back_test_spot_swing(self, trade_data, rate=0.003, num=12):
+
+    def fix_stocks(self, position, stock_count, price_list, price2):
+        if position == 'short':
+            for price1 in price_list:
+                if price1 >= price2:
+                    price_list.remove(price1)
+                    stock_count -= 1
+                else:
+                    pass
+        else:
+            for price1 in price_list:
+                if price1 <= price2:
+                    price_list.remove(price1)
+                    stock_count -= 1
+                else:
+                    pass
+
+        return stock_count
+
+    def back_test_spot_swing(self, trade_data, rate=0.002, num=12, max_stock=3):
         output = []
         total = 0
         trade_cnt = 0
+        stock_count = 0
+        long_prices = []
+        short_prices = []
         for i in range(0, trade_data.shape[0], num):
             if i == 0:
                 start = 0
@@ -301,7 +323,7 @@ class Estimation:
             buy = False
             sell = False
 
-            if (spread_to_max >= threshold) & (spread_to_max > spread_to_min):
+            if (spread_to_max <= threshold) & (spread_to_max > spread_to_min)&(stock_count <= max_stock):
                 trade_cnt += 1
                 buy = True
                 buy_price = base_price
@@ -310,7 +332,7 @@ class Estimation:
                         sell = True
                         sell_price = pred_spread_mean
 
-            elif (spread_to_min >= threshold) & (spread_to_max < spread_to_min):
+            elif (spread_to_min <= threshold) & (spread_to_max < spread_to_min)&(stock_count <= max_stock):
                 trade_cnt += 1
                 sell = True
                 sell_price = base_price
@@ -321,13 +343,28 @@ class Estimation:
 
             close_price = tmp_data['cl'].values[-1]
             close_date = tmp_data['date'].values[-1]
+            hi_price = tmp_data['hi'].values[-1]
+            lo_price = tmp_data['lo'].values[-1]
+
+            if len(long_prices) > 0:
+                stock_count = self.fix_stocks('long', stock_count, long_prices, hi_price)
+            elif len(short_prices) > 0:
+                stock_count = self.fix_stocks('short', stock_count, short_prices, lo_price)
+            else:
+                pass
 
             if (sell == True) & (buy == True):
                 profit = sell_price - buy_price
             elif (sell == True) & (buy == False):
-                profit = sell_price - close_price
+                #profit = sell_price - close_price
+                profit = 0
+                stock_count += 1
+                short_prices.append(sell_price)
             elif (sell == False) & (buy == True):
-                profit = close_price - buy_price
+                #profit = close_price - buy_price
+                profit = 0
+                stock_count += 1
+                long_prices.append(buy_price)
             else:
                 profit = 0
                 pass
@@ -347,6 +384,7 @@ class Estimation:
         profit_loss = np.round(profit_loss / 1000000, 2)
         acc_rate = np.round(sum(term) / (output.shape[0]+1), 2)
         win_rate = np.round(win / (output.shape[0]+1), 2)
+        print(stock_count)
 
         return output, (total, profit_win, profit_loss, acc_rate, win_rate)
 
@@ -372,6 +410,8 @@ class Estimation:
                 "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
                     epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
             input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [3, 5, 7]}
+
+            best_output11, values11 = self.back_test_spot_swing(strategy_data1, rate=0.002, num=self.args.pred_len, max_stock=3)
             #best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
             best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
 
@@ -383,7 +423,7 @@ class Estimation:
             #best_output21['month'] = best_output21['date'].apply(lambda x: str(x)[:6])
 
 
-            #cnt12 = best_output11.shape[0]
+            cnt11 = best_output11.shape[0]
             #cnt21 = best_output21.shape[0]
             cnt12 = best_output12.shape[0]
             #cnt22 = best_output22.shape[0]
@@ -393,17 +433,19 @@ class Estimation:
                 best_output12.to_csv(str(acc1)+'/best_output12.csv')
                 #best_output21.to_csv(str(acc1)+'/best_output21.csv')
                 strategy_data1.to_csv(str(acc1)+'/strategy_data1.csv')
-                strategy_data2.to_csv(str(acc1)+'/strategy_data2.csv')
+                #strategy_data2.to_csv(str(acc1)+'/strategy_data2.csv')
             else:
                 best_output12.to_csv('best_output12.csv')
                 #best_output21.to_csv('best_output21.csv')
                 strategy_data1.to_csv('strategy_data1.csv')
-                strategy_data2.to_csv('strategy_data2.csv')
+                #strategy_data2.to_csv('strategy_data2.csv')
 
             print("Test1 | MM - cnt: {0} best profit: {1} config: {2} ".format(
                 cnt12, values12, dict12))
-            #print("Test2 | Swing - cnt: {0} best profit: {1} config: {2} | MM - cnt: {3} best profit: {4} config: {5} ".format(
-            #    cnt21, values21, dict21, cnt22, values22, dict22))
+
+            print("Test2 | Spot Swing - cnt: {0} best profit: {1}".format(
+                cnt11, values11))
+
 
         else:
             cnt12 = values12 = dict12 = cnt21 = values21 = dict21 = None
@@ -550,7 +592,7 @@ def plot_output(file_name, args):
 if __name__ == '__main__':
     from run_SCINet import *
 
-    args.pred_len = 12
+    args.pred_len = 15
     est = Estimation(args)
     file_name = 'strategy_data1.csv'
     data = pd.read_csv(file_name)
@@ -558,8 +600,11 @@ if __name__ == '__main__':
     data['date'] = data.date.apply(lambda x: ps.parse(
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    #output = est.back_test_spot_swing(data, rate=0.002, num=args.pred_len)
+    output = est.back_test_spot_swing(data, rate=0.002, num=args.pred_len)
     output = est.back_test_mm(data, rate=2, num=args.pred_len)
+    output2 = est.back_test_spot_swing(data, rate=0.0005, num=15)
     print(output[0].shape[0], output[1])
+    print(output2[0].shape[0], output2[1])
     output[0].to_excel('output.xlsx')
+    output2[0].to_excel('output2.xlsx')
     #plot_mergin(file_name, args)
