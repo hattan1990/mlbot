@@ -47,7 +47,10 @@ class Exp_ETTh(Exp_Basic):
         elif self.args.features == 'M':
             in_dim = 7
         elif self.args.features == 'MS':
-            in_dim = 8
+            if self.args.add_data == 'Stock_data_06.csv':
+                in_dim = 33
+            else:
+                in_dim = 8
         else:
             print('Error!')
 
