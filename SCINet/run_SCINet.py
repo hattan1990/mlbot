@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(description='SCINet on ETT dataset')
 parser.add_argument('--model', type=str, required=False, default='SCINet', help='model of the experiment')
 ### -------  dataset settings --------------
 parser.add_argument('--data', type=str, required=False, default='BTC', choices=['BTC','ETTh1', 'ETTh2', 'ETTm1'], help='name of dataset')
+parser.add_argument('--add_data', type=str, required=False, default='Stock_data_06.csv')
 parser.add_argument('--root_path', type=str, default='../dataset/', help='root path of the data file')
 parser.add_argument('--data_path', type=str, default='GMO_BTC_JPY_ohclv.csv', help='location of the data file')
 parser.add_argument('--save_path', type=str, default='', help='location of the save file')
@@ -94,6 +95,9 @@ if args.data in data_parser.keys():
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.c_out = data_info[args.features]
 
+if args.add_data == "Stock_data_06.csv":
+    args.enc_in += 25
+
 args.detail_freq = args.freq
 args.freq = args.freq[-1:]
 
@@ -138,9 +142,9 @@ def run():
 
 def run_various_periods():
     for ii in range(args.itr):
-        date_range1 = ['2021-05-01 00:00', '2021-06-01 00:00']
-        date_range2 = ['2022-07-01 00:00','2022-08-01 00:00',
-                       '2022-09-01 00:00', '2022-10-01 00:00', '2022-11-01 00:00']
+        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00']
+        date_range2 = ['2022-11-01 00:00', '2022-12-01 00:00', '2023-01-01 00:00',
+                       '2023-02-01 00:00', '2023-03-01 00:00']
 
         args.data = 'BTC2'
 
@@ -148,7 +152,7 @@ def run_various_periods():
         for i in range(len(date_range1)):
             for j in range(3):
                 choice = np.random.randint(2)
-                model_lens = [[96, 48, 12], [96, 48, 15], [96, 48, 20]]
+                model_lens = [[96, 48, 60], [96, 48, 120]]
                 model_len = model_lens[choice]
 
                 args.seq_len = model_len[0]
@@ -200,8 +204,8 @@ def run_various_periods2():
     for ii in range(args.itr):
 
         date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00']
-        date_range2 = ['2022-07-01 00:00', '2022-08-01 00:00', '2022-09-01 00:00',
-                       '2022-10-01 00:00', '2022-11-01 00:00']
+        date_range2 = ['2022-11-01 00:00', '2022-12-01 00:00', '2023-01-01 00:00',
+                       '2023-02-01 00:00', '2023-03-01 00:00']
 
         args.data = 'BTC2'
 

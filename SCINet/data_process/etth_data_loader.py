@@ -138,7 +138,7 @@ class Dataset_BTC(Dataset):
 class Dataset_BTC2(Dataset):
     def __init__(self, root_path, flag='train', size=None, features='MS', data_path='ETTm1.csv',
                  use_decoder_tokens=False, date_period1=None, date_period2=None,date_period3=None,
-                 target='cl', scale=True, timeenc=0, freq='t', option=0):
+                 target='cl', scale=True, timeenc=0, freq='t', option=0, add_feature="Stock_data_06.csv"):
 
         # info
         self.seq_len = size[0]
@@ -163,6 +163,7 @@ class Dataset_BTC2(Dataset):
         self.date_period2 = date_period2
         self.date_period3 = date_period3
         self.option = option
+        self.add_feature = add_feature
         self.__read_data__()
 
     def __read_data__(self):
@@ -170,8 +171,15 @@ class Dataset_BTC2(Dataset):
         self.scaler_target = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
+
         if "Unnamed: 0" in df_raw.columns:
             df_raw = df_raw.drop(columns="Unnamed: 0")
+
+        if self.add_feature is not None:
+            stock_data = pd.read_csv(os.path.join(self.root_path,
+                                          self.add_feature))
+            df_raw = pd.merge(df_raw, stock_data, on='date', how='left')
+            df_raw = df_raw.fillna(method='ffill')
 
         range1 = 0
         range2 = len(df_raw)
