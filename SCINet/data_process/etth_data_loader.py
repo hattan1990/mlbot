@@ -175,7 +175,7 @@ class Dataset_BTC2(Dataset):
         if "Unnamed: 0" in df_raw.columns:
             df_raw = df_raw.drop(columns="Unnamed: 0")
 
-        if self.add_feature is not None:
+        if self.add_feature != '':
             stock_data = pd.read_csv(os.path.join(self.root_path,
                                           self.add_feature))
             df_raw = pd.merge(df_raw, stock_data, on='date', how='left')

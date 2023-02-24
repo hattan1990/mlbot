@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description='SCINet on ETT dataset')
 parser.add_argument('--model', type=str, required=False, default='SCINet', help='model of the experiment')
 ### -------  dataset settings --------------
 parser.add_argument('--data', type=str, required=False, default='BTC', choices=['BTC','ETTh1', 'ETTh2', 'ETTm1'], help='name of dataset')
-parser.add_argument('--add_data', type=str, required=False, default='.csv')
+parser.add_argument('--add_data', type=str, required=False, default='')
 parser.add_argument('--root_path', type=str, default='../dataset/', help='root path of the data file')
 parser.add_argument('--data_path', type=str, default='GMO_BTC_JPY_ohclv.csv', help='location of the data file')
 parser.add_argument('--save_path', type=str, default='', help='location of the save file')

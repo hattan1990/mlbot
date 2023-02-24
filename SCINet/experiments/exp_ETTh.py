@@ -139,7 +139,8 @@ class Exp_ETTh(Exp_Basic):
                 date_period1=args.date_period1,
                 date_period2=args.date_period2,
                 date_period3=args.date_period3,
-                option= args.option
+                option= args.option,
+                add_feature= args.add_data
             )
             print(flag, len(data_set))
             data_loader = DataLoader(
