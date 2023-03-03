@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description='SCINet on ETT dataset')
 parser.add_argument('--model', type=str, required=False, default='SCINet', help='model of the experiment')
 ### -------  dataset settings --------------
 parser.add_argument('--data', type=str, required=False, default='BTC', choices=['BTC','ETTh1', 'ETTh2', 'ETTm1'], help='name of dataset')
-parser.add_argument('--add_data', type=str, required=False, default='Stock_data_06.csv')
+parser.add_argument('--add_data', type=str, required=False, default='')
 parser.add_argument('--root_path', type=str, default='../dataset/', help='root path of the data file')
 parser.add_argument('--data_path', type=str, default='GMO_BTC_JPY_ohclv.csv', help='location of the data file')
 parser.add_argument('--save_path', type=str, default='', help='location of the save file')
@@ -46,7 +46,7 @@ parser.add_argument('--itr', type=int, default=100, help='experiments times')
 parser.add_argument('--train_epochs', type=int, default=20, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=320, help='batch size of train input data')
 parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
-parser.add_argument('--lr', type=float, default=0.0001, help='optimizer learning rate')
+parser.add_argument('--lr', type=float, default=0.001, help='optimizer learning rate')
 parser.add_argument('--loss', type=str, default='mae',help='loss function')
 parser.add_argument('--lradj', type=int, default=1,help='adjust learning rate')
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
@@ -150,7 +150,7 @@ def run_various_periods():
         for i in range(len(date_range1)):
             for j in range(3):
                 choice = np.random.randint(2)
-                model_lens = [[96, 48, 60], [96, 48, 120]]
+                model_lens = [[96, 36, 90], [96, 36, 120], [96, 48, 120]]
                 model_len = model_lens[choice]
 
                 args.seq_len = model_len[0]
