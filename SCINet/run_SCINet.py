@@ -14,7 +14,7 @@ parser.add_argument('--model', type=str, required=False, default='SCINet', help=
 parser.add_argument('--data', type=str, required=False, default='BTC', choices=['BTC','ETTh1', 'ETTh2', 'ETTm1'], help='name of dataset')
 parser.add_argument('--add_data', type=str, required=False, default='')
 parser.add_argument('--root_path', type=str, default='../dataset/', help='root path of the data file')
-parser.add_argument('--data_path', type=str, default='GMO_BTC_JPY_ohclv.csv', help='location of the data file')
+parser.add_argument('--data_path', type=str, default=' GMO_BTC_JPY_1min_ohclv.csv', help='location of the data file')
 parser.add_argument('--save_path', type=str, default='', help='location of the save file')
 parser.add_argument('--features', type=str, default='MS', choices=['S', 'M'], help='features S is univariate, M is multivariate')
 parser.add_argument('--target', type=str, default='cl', help='target feature')
@@ -140,9 +140,9 @@ def run():
 
 def run_various_periods():
     for ii in range(args.itr):
-        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00']
-        date_range2 = ['2022-10-01 00:00', '2022-11-01 00:00', '2022-12-01 00:00', '2023-01-01 00:00',
-                       '2023-02-01 00:00', '2023-03-01 00:00']
+        date_range1 = ['2022-01-01 00:00', '2022-02-01 00:00']
+        date_range2 = ['2022-12-01 00:00', '2023-01-01 00:00', '2023-02-01 00:00', '2023-03-01 00:00',
+                       '2023-04-01 00:00', '2023-05-01 00:00']
 
         args.data = 'BTC2'
 
@@ -201,9 +201,9 @@ def run_various_periods():
 def run_various_periods2():
     for ii in range(args.itr):
 
-        date_range1 = ['2021-04-01 00:00', '2021-05-01 00:00']
-        date_range2 = ['2022-11-01 00:00', '2022-12-01 00:00', '2023-01-01 00:00',
-                       '2023-02-01 00:00', '2023-03-01 00:00']
+        date_range1 = ['2022-01-01 00:00', '2022-02-01 00:00']
+        date_range2 = ['2023-01-01 00:00', '2023-02-01 00:00', '2023-03-01 00:00',
+                       '2023-04-01 00:00', '2023-05-01 00:00']
 
         args.data = 'BTC2'
 
