@@ -110,15 +110,14 @@ def main():
                 args.option = 0
 
                 # setting record of experiments
-                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_hid{}_s{}_op{}_nh{}'.format(args.model, args.data,
-                                                                                 args.features,
-                                                                                 args.seq_len,
-                                                                                 args.label_len,
-                                                                                 args.pred_len,
-                                                                                 args.hidden_size,
-                                                                                 args.stacks,
-                                                                                 args.option,
-                                                                                 args.n_heads)
+                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_ls{}_dp{}'.format(args.model, args.data,
+                                                                                       args.features,
+                                                                                       args.seq_len,
+                                                                                       args.label_len,
+                                                                                       args.pred_len, args.lr,
+                                                                                       args.batch_size,
+                                                                                       args.latent_size,
+                                                                                       args.dropout)
 
                 args.date_period1 = date_range1[0]
                 args.date_period2 = date_range2[i]
