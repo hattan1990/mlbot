@@ -60,7 +60,7 @@ class Dataset_BTC(Dataset):
             df_raw = df_raw.fillna(method='ffill')
 
         range1 = 0
-        range2 = 10000
+        range2 = len(df_raw)
 
         if self.set_type == 0:
             df_raw = df_raw[(df_raw['date'] >= self.date_period1)&(df_raw['date'] < self.date_period2)]

@@ -264,44 +264,21 @@ class Exp_LaST(Exp_Basic):
 
     def test(self, setting, evaluate=False):
         test_data, test_loader = self._get_data(flag='test')
+        criterion = self._select_criterion(self.args.loss)
 
         self.model.eval()
-
-        mse_i, mses_i = [], []
-        mae_i, maes_i = [], []
 
         if evaluate:
             path = os.path.join(self.args.checkpoints, setting)
             best_model_path = path + '/' + 'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
-            pred, pred_scale, true, true_scale, elbo, mlbo, mubo = self._process_one_batch_LaSTNet(
-                test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+        loss, estimation = self.valid(test_data, test_loader, criterion)
+        target_time_range_from = 2000000
+        target_time_range_to = 6000000
+        estimation.run(100, target_time_range_from, target_time_range_to)
 
-            pred = pred.detach().cpu().numpy()
-            true = true.detach().cpu().numpy()
-            preds = pred_scale.detach().cpu().numpy()
-            trues = true_scale.detach().cpu().numpy()
-
-            mae_i.append(MAE(pred, true))
-            maes_i.append(MAE(preds, trues))
-            mse_i.append(MSE(pred, true))
-            mses_i.append(MSE(preds, trues))
-
-        mse = np.average(mse_i)
-        mses = np.average(mses_i)
-        mae = np.average(mae_i)
-        maes = np.average(maes_i)
-        rmse, rmses = np.sqrt(mse), np.sqrt(mses)
-
-        print('normed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}'.format(mse, mae, rmse))
-        print('denormed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}'.format(mses, maes, rmses))
-
-        print('normed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}'.format(mse, mae, rmse))
-        print('TTTT denormed mse:{:.4f}, mae:{:.4f}, rmse:{:.4f}'.format(mses, maes, rmses))
-
-        return mae, maes, mse, mses
+        return loss
 
     def _process_one_batch_LaSTNet(self, dataset_object, batch_x, batch_y, batch_x_mark, batch_y_mark):
 
