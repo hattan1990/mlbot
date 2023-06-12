@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description='LaST for TSF')
 parser.add_argument('--data', type=str, default='BTC',
                     choices=['BTC', 'ETTh1', 'ETTh2', 'ETTm1', 'ETTm2', "Exchange_rate", "Electricity", "Weather"],
                     help='name of dataset')
-parser.add_argument('--root_path', type=str, default='./datasets/',
+parser.add_argument('--root_path', type=str, default='../dataset/',
                     choices=['./datasets/ETT-data/', './datasets/'], help='root path of the data file')
 parser.add_argument('--data_path', type=str, default=' GMO_BTC_JPY_1min_ohclv.csv', help='location of the data file')
 parser.add_argument('--features', type=str, default='MS',choices=['S', 'M', 'MS'],

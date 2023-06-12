@@ -108,16 +108,6 @@ class Estimation:
 
     def run_batch(self, index, pred, true, masks, val):
         eval_masks = index % self.args.pred_len == 0
-        if self.args.extra == True:
-            pred_ex = pred[masks]
-            true_ex = true[masks]
-            val_ex = val[masks]
-            if true_ex.shape[0] > 0:
-                acc1_ex, acc2_ex, acc3_ex, acc4_ex, _, _ = self.check_strategy(pred_ex, true_ex, val_ex, None, None)
-                self.total_acc1_ex.append(acc1_ex)
-                self.total_acc2_ex.append(acc2_ex)
-                self.total_acc3_ex.append(acc3_ex)
-                self.total_acc4_ex.append(acc4_ex)
 
         acc1, acc2, acc3, acc4, tmp_out1, tmp_out2 = self.check_strategy(pred, true, val, eval_masks, index)
         self.total_acc1.append(acc1)

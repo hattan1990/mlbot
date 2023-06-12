@@ -151,8 +151,8 @@ class Exp_LaST(Exp_Basic):
             preds = pred_scale.detach().cpu().numpy()
             trues = true_scale.detach().cpu().numpy()
 
-            masks = self._create_masks(preds, batch_eval)
-            estimation.run_batch(index, preds, trues, masks, batch_eval)
+            masks = self._create_masks(pred, batch_eval)
+            estimation.run_batch(index, pred, true, masks, batch_eval)
 
             mae_i.append(MAE(pred, true))
             maes_i.append(MAE(preds, trues))
