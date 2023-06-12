@@ -290,12 +290,14 @@ class Exp_LaST(Exp_Basic):
             batch_y = batch_y.double()
 
         outputs, elbo, mlbo, mubo = self.model(batch_x)
-
-        outputs_scaled = dataset_object.inverse_transform(outputs)
+        scaler = dataset_object.scaler_target
+        #outputs_scaled = dataset_object.inverse_transform(outputs)
+        outputs_scaled = self._inverse_transform_batch(outputs.detach().cpu().numpy(), scaler)
 
         f_dim = -1 if self.args.features == 'MS' else 0
         batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.model.device)
-        batch_y_scaled = dataset_object.inverse_transform(batch_y)
+        #batch_y_scaled = dataset_object.inverse_transform(batch_y)
+        batch_y_scaled = self._inverse_transform_batch(batch_y.detach().cpu().numpy(), scaler)
 
         return outputs, outputs_scaled, batch_y, batch_y_scaled, elbo, mlbo, mubo
 
@@ -313,3 +315,10 @@ class Exp_LaST(Exp_Basic):
                 masks.append(False)
 
         return torch.tensor(masks)
+
+    def _inverse_transform_batch(self, batch_values, scaler):
+        output = []
+        for values in batch_values:
+            out = scaler.inverse_transform(values)
+            output.append(out)
+        return np.array(output)

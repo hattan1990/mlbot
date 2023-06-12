@@ -98,75 +98,46 @@ def main():
 
     Exp = Exp_LaST
 
-    mae_ = []
-    maes_ = []
-    mse_ = []
-    mses_ = []
 
-    if args.evaluate:
-        setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_ls{}_dp{}_itr0'.format(args.model, args.data,
-                                                                                  args.features,
-                                                                                  args.seq_len,
-                                                                                  args.label_len,
-                                                                                  args.pred_len, args.lr,
-                                                                                  args.batch_size,
-                                                                                  args.latent_size,
-                                                                                  args.dropout)
-        exp = Exp(args)  # set experiments
-        print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        mae, maes, mse, mses = exp.test(setting, evaluate=True)
-        print('Final mean normed mse:{:.4f},mae:{:.4f},denormed mse:{:.4f},mae:{:.4f}'.format(mse, mae, mses, maes))
-    else:
-        if args.itr:
-            for ii in range(args.itr):
+    for ii in range(args.itr):
+        date_range1 = ['2022-01-01 00:00', '2022-02-01 00:00']
+        date_range2 = ['2022-12-01 00:00', '2023-01-01 00:00', '2023-02-01 00:00', '2023-03-01 00:00',
+                       '2023-04-01 00:00', '2023-05-01 00:00']
+
+        args.data = 'BTC2'
+
+        # Time Range × パラメータ変更（10回）の学習
+        for i in range(len(date_range1)):
+            for j in range(3):
+                args.option = 0
+
                 # setting record of experiments
-                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_ls{}_dp{}_itr{}'.format(args.model, args.data,
-                                                                                           args.features,
-                                                                                           args.seq_len,
-                                                                                           args.label_len,
-                                                                                           args.pred_len, args.lr,
-                                                                                           args.batch_size,
-                                                                                           args.latent_size,
-                                                                                           args.dropout, ii)
+                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_hid{}_s{}_op{}_nh{}'.format(args.model, args.data,
+                                                                                 args.features,
+                                                                                 args.seq_len,
+                                                                                 args.label_len,
+                                                                                 args.pred_len,
+                                                                                 args.hidden_size,
+                                                                                 args.stacks,
+                                                                                 args.option,
+                                                                                 args.n_heads)
+
+                args.date_period1 = date_range1[0]
+                args.date_period2 = date_range2[i]
+                args.date_period3 = date_range2[i + 3]
 
                 exp = Exp(args)  # set experiments
                 print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+                print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
                 exp.train(setting)
 
-                print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-                mae, maes, mse, mses = exp.test(setting)
-                mae_.append(mae)
-                mse_.append(mse)
-                maes_.append(maes)
-                mses_.append(mses)
+                if args.date_period3 != '2022-11-01 00:00':
+                    print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                    args.date_period2 = date_range2[i + 3]
+                    args.date_period3 = date_range2[i + 4]
+                    _ = exp.test(setting, evaluate=True)
+                    print('Try count :{}'.format(j + 1))
 
                 torch.cuda.empty_cache()
-            print('Final mean normed mse:{:.4f}, std mse:{:.4f}, mae:{:.4f}, std mae:{:.4f}'.format(np.mean(mse_),
-                                                                                                    np.std(mse_),
-                                                                                                    np.mean(mae_),
-                                                                                                    np.std(mae_)))
-            print('Final mean denormed mse:{:.4f}, std mse:{:.4f}, mae:{:.4f}, std mae:{:.4f}'.format(np.mean(mses_),
-                                                                                                      np.std(mses_),
-                                                                                                      np.mean(maes_),
-                                                                                                      np.std(maes_)))
-            print('Final min normed mse:{:.4f}, mae:{:.4f}'.format(min(mse_), min(mae_)))
-            print('Final min denormed mse:{:.4f}, mae:{:.4f}'.format(min(mses_), min(maes_)))
-        else:
-            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_ls{}_dp{}_itr0'.format(args.model, args.data,
-                                                                                      args.features,
-                                                                                      args.seq_len,
-                                                                                      args.label_len,
-                                                                                      args.pred_len, args.lr,
-                                                                                      args.batch_size,
-                                                                                      args.latent_size,
-                                                                                      args.dropout)
-            exp = Exp(args)  # set experiments
-            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-            exp.train(setting)
-
-            print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            mae, maes, mse, mses = exp.test(setting)
-            print('Final mean normed mse:{:.4f},mae:{:.4f},denormed mse:{:.4f},mae:{:.4f}'.format(mse, mae, mses, maes))
-
 if __name__ == '__main__':
     main()

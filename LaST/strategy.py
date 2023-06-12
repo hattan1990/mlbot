@@ -395,7 +395,7 @@ class Estimation:
 
 
 
-        if epoch + 1 >= 10:
+        if epoch + 1 >= 1:
             print(
                 "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
                     epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
