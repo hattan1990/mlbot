@@ -101,41 +101,39 @@ def main():
 
 
     for ii in range(args.itr):
-        date_range1 = ['2022-01-01 00:00', '2022-02-01 00:00']
+        date_range1 = ['2022-01-01 00:00', '2022-02-01 00:00', '2022-03-01 00:00']
         date_range2 = ['2022-12-01 00:00', '2023-01-01 00:00', '2023-02-01 00:00', '2023-03-01 00:00',
                        '2023-04-01 00:00', '2023-05-01 00:00']
 
         # Time Range × パラメータ変更（10回）の学習
         for i in range(len(date_range1)):
-            for j in range(3):
-                args.option = 0
+            args.option = 0
 
-                # setting record of experiments
-                setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_ls{}_dp{}'.format(args.model, args.data,
-                                                                                       args.features,
-                                                                                       args.seq_len,
-                                                                                       args.label_len,
-                                                                                       args.pred_len, args.lr,
-                                                                                       args.batch_size,
-                                                                                       args.latent_size,
-                                                                                       args.dropout)
+            # setting record of experiments
+            setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_lr{}_bs{}_ls{}_dp{}'.format(args.model, args.data,
+                                                                             args.features,
+                                                                             args.seq_len,
+                                                                             args.label_len,
+                                                                             args.pred_len, args.lr,
+                                                                             args.batch_size,
+                                                                             args.latent_size,
+                                                                             args.dropout)
 
-                args.date_period1 = date_range1[0]
-                args.date_period2 = date_range2[i]
+            args.date_period1 = date_range1[0]
+            args.date_period2 = date_range2[i]
+            args.date_period3 = date_range2[i + 2]
+
+            exp = Exp(args)  # set experiments
+            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+            print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
+            exp.train(setting)
+
+            if args.date_period3 != '2023-05-01 00:00':
+                print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+                args.date_period2 = date_range2[i + 2]
                 args.date_period3 = date_range2[i + 3]
+                _ = exp.test(setting, evaluate=True)
 
-                exp = Exp(args)  # set experiments
-                print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-                print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
-                exp.train(setting)
-
-                if args.date_period3 != '2022-11-01 00:00':
-                    print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-                    args.date_period2 = date_range2[i + 3]
-                    args.date_period3 = date_range2[i + 4]
-                    _ = exp.test(setting, evaluate=True)
-                    print('Try count :{}'.format(j + 1))
-
-                torch.cuda.empty_cache()
+            torch.cuda.empty_cache()
 if __name__ == '__main__':
     main()
