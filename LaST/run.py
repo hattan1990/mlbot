@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(description='LaST for TSF')
 parser.add_argument('--data', type=str, default='BTC',
                     choices=['BTC', 'ETTh1', 'ETTh2', 'ETTm1', 'ETTm2', "Exchange_rate", "Electricity", "Weather"],
                     help='name of dataset')
+parser.add_argument('--add_data', type=str, required=False, default='')
 parser.add_argument('--root_path', type=str, default='../dataset/',
                     choices=['./datasets/ETT-data/', './datasets/'], help='root path of the data file')
 parser.add_argument('--data_path', type=str, default=' GMO_BTC_JPY_1min_ohclv.csv', help='location of the data file')
@@ -31,8 +32,8 @@ parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple g
 parser.add_argument('--devices', type=str, default='0', help='device ids of multile gpus')
 
 # -------  input/output length settings --------------
-parser.add_argument('--seq_len', type=int, default=201, help='input sequence length of encoder, look back window')
-parser.add_argument('--label_len', type=int, default=0, help='start token length of Informer decoder')
+parser.add_argument('--seq_len', type=int, default=96, help='input sequence length of encoder, look back window')
+parser.add_argument('--label_len', type=int, default=48, help='start token length of Informer decoder')
 parser.add_argument('--pred_len', type=int, default=120, help='prediction sequence length, horizon')
 
 # -------  model settings --------------
@@ -42,9 +43,9 @@ parser.add_argument('--dropout', type=float, default=0.2, help='dropout')
 
 # -------  training settings --------------
 parser.add_argument('--cols', type=str, nargs='+', help='file list')
-parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
+parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
 parser.add_argument('--itr', type=int, default=1, help='experiments times')
-parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
+parser.add_argument('--train_epochs', type=int, default=15, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=320, help='batch size of train input data')
 parser.add_argument('--patience', type=int, default=10, help='early stopping patience')
 parser.add_argument('--lr', type=float, default=1e-3, help='optimizer learning rate')
