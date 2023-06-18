@@ -128,7 +128,7 @@ def main():
             print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
             exp.train(setting)
 
-            if args.date_period3 != '2023-05-01 00:00':
+            if args.date_period3 != '2023-06-01 00:00':
                 print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
                 args.date_period2 = date_range2[i + 2]
                 args.date_period3 = date_range2[i + 3]
