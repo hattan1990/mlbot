@@ -141,8 +141,8 @@ def run():
 def run_various_periods():
     for ii in range(args.itr):
         date_range1 = ['2022-01-01 00:00', '2022-02-01 00:00']
-        date_range2 = ['2022-12-01 00:00', '2023-01-01 00:00', '2023-02-01 00:00', '2023-03-01 00:00',
-                       '2023-04-01 00:00', '2023-05-01 00:00']
+        date_range2 = ['2023-01-01 00:00', '2023-02-01 00:00', '2023-03-01 00:00',
+                       '2023-04-01 00:00', '2023-05-01 00:00', '2023-06-01 00:00']
 
         args.data = 'BTC2'
 
@@ -182,17 +182,17 @@ def run_various_periods():
 
                 args.date_period1 = date_range1[0]
                 args.date_period2 = date_range2[i]
-                args.date_period3 = date_range2[i+3]
+                args.date_period3 = date_range2[i+2]
 
                 exp = Exp(args)  # set experiments
                 print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
                 print('Time Range from:{} to:{}'.format(args.date_period1, args.date_period3))
                 exp.train(setting)
 
-                if args.date_period3 != '2022-11-01 00:00':
+                if args.date_period3 != '2023-06-01 00:00':
                     print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-                    args.date_period2 = date_range2[i + 3]
-                    args.date_period3 = date_range2[i + 4]
+                    args.date_period2 = date_range2[i + 2]
+                    args.date_period3 = date_range2[i + 3]
                     _ = exp.test(setting, evaluate=True)
                     print('Try count :{}'.format(j+1))
 
