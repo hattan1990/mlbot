@@ -423,7 +423,7 @@ class Estimation:
                     if hi > pred_spread_max:
                         sell = True
                         sell_price = pred_spread_max
-                    elif lo > pred_spread_min:
+                    elif lo < pred_spread_min:
                         close_price = pred_spread_min
                     else:
                         pass
@@ -436,7 +436,7 @@ class Estimation:
                     if lo < pred_spread_min:
                         buy = True
                         buy_price = pred_spread_min
-                    elif hi < pred_spread_max:
+                    elif hi > pred_spread_max:
                         close_price = pred_spread_max
                     else:
                         pass
