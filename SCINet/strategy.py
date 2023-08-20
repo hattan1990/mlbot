@@ -389,6 +389,88 @@ class Estimation:
         return output, (total, profit_win, profit_loss, acc_rate, win_rate)
 
 
+    def back_test_spot_doten(self, trade_data, rate=0.002, num=12):
+        output = []
+        total = 0
+        trade_cnt = 0
+        long_prices = []
+        short_prices = []
+        for i in range(0, trade_data.shape[0], num):
+            if i == 0:
+                start = 0
+                end = num - 1
+            else:
+                end = i + num - 1
+
+            tmp_data = trade_data.loc[start:end]
+            base_price = tmp_data['op'].values[0]
+            preds = tmp_data['pred'].values
+            pred_spread_min = int(np.percentile(preds, 20))
+            pred_spread_max = int(np.percentile(preds, 80))
+
+            threshold = int(tmp_data['pred'].mean()) * rate
+            buy = False
+            sell = False
+            close_price = tmp_data['cl'].values[-1]
+            close_date = tmp_data['date'].values[-1]
+
+            if (pred_spread_max >= threshold) & (pred_spread_max > pred_spread_min):
+                trade_cnt += 1
+                buy = True
+                buy_price = base_price
+                for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
+                    if hi > pred_spread_max:
+                        sell = True
+                        sell_price = pred_spread_max
+                    elif lo < pred_spread_min:
+                        close_price = pred_spread_min
+                    else:
+                        pass
+
+            elif (pred_spread_min <= threshold) & (pred_spread_max < pred_spread_min):
+                trade_cnt += 1
+                sell = True
+                sell_price = base_price
+                for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
+                    if lo < pred_spread_min:
+                        buy = True
+                        buy_price = pred_spread_min
+                    elif hi > pred_spread_max:
+                        close_price = pred_spread_max
+                    else:
+                        pass
+
+            if (sell == True) & (buy == True):
+                profit = sell_price - buy_price
+            elif (sell == True) & (buy == False):
+                profit = sell_price - close_price
+                short_prices.append(sell_price)
+            elif (sell == False) & (buy == True):
+                profit = close_price - buy_price
+                long_prices.append(buy_price)
+            else:
+                profit = 0
+                pass
+            total += profit
+            output.append([close_date, total, profit, buy, sell])
+            start = end + 1
+
+        output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
+        output = output[output['profit'] != 0]
+        term = (output['buy'] == True) & (output['sell'] == True)
+        profit_win = output.loc[term, 'profit'].sum()
+        profit_loss = output.loc[~term, 'profit'].sum()
+        win = output[output['profit'] > 0].shape[0]
+
+        total = np.round(total / 1000000, 2)
+        profit_win = np.round(profit_win / 1000000, 2)
+        profit_loss = np.round(profit_loss / 1000000, 2)
+        acc_rate = np.round(sum(term) / (output.shape[0]+1), 2)
+        win_rate = np.round(win / (output.shape[0]+1), 2)
+
+        return output, (total, profit_win, profit_loss, acc_rate, win_rate)
+
+
     def run(self, epoch, target_time_range_from, target_time_range_to):
         self.trade_range_from = target_time_range_from
         self.trade_range_to = target_time_range_to
@@ -411,46 +493,38 @@ class Estimation:
                     epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
             input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [3, 5, 7]}
 
-            best_output11, values11 = self.back_test_spot_swing(strategy_data1, rate=0.002, num=self.args.pred_len, max_stock=3)
-            #best_output11, values11, dict11 = self.execute_back_test(self.back_test_spot_swing, input_dict1)
-            best_output12, values12, dict12 = self.execute_back_test(self.back_test_mm, input_dict1)
+            best_output11, values11, dict11 = self.execute_back_test(self.back_test_mm, input_dict1)
+            best_output12, values12 = self.back_test_spot_swing(strategy_data1, rate=0.002, num=self.args.pred_len, max_stock=3)
+            best_output13, values13 = self.back_test_spot_doten(strategy_data1, rate=0.002, num=self.args.pred_len)
 
-            #input_dict2 = {'trade_data': strategy_data2, 'num': int(self.args.pred_len/2), 'thresh_list': [3, 5, 7]}
-            #best_output21, values21, dict21 = self.execute_back_test(self.back_test_spot_swing, input_dict2)
-            #best_output22, values22, dict22 = self.execute_back_test(self.back_test_mm, input_dict2)
-
-            best_output12['month'] = best_output12['date'].apply(lambda x: str(x)[:6])
-            #best_output21['month'] = best_output21['date'].apply(lambda x: str(x)[:6])
-
+            best_output11['month'] = best_output11['date'].apply(lambda x: str(x)[:6])
 
             cnt11 = best_output11.shape[0]
-            #cnt21 = best_output21.shape[0]
             cnt12 = best_output12.shape[0]
-            #cnt22 = best_output22.shape[0]
+            cnt13 = best_output13.shape[0]
 
             if self.args.data_path == 'GMO_BTC_JPY_ohclv_eval.csv':
                 os.mkdir(str(acc1))
-                best_output12.to_csv(str(acc1)+'/best_output12.csv')
-                #best_output21.to_csv(str(acc1)+'/best_output21.csv')
+                best_output11.to_csv(str(acc1)+'/best_output11.csv')
                 strategy_data1.to_csv(str(acc1)+'/strategy_data1.csv')
-                #strategy_data2.to_csv(str(acc1)+'/strategy_data2.csv')
             else:
-                best_output12.to_csv('best_output12.csv')
-                #best_output21.to_csv('best_output21.csv')
+                best_output11.to_csv('best_output11.csv')
                 strategy_data1.to_csv('strategy_data1.csv')
-                #strategy_data2.to_csv('strategy_data2.csv')
 
             print("Test1 | MM - cnt: {0} best profit: {1} config: {2} ".format(
-                cnt12, values12, dict12))
+                cnt11, values11, dict11))
 
             print("Test2 | Spot Swing - cnt: {0} best profit: {1}".format(
-                cnt11, values11))
+                cnt12, values12))
+
+            print("Test3 | Spot Doten - cnt: {0} best profit: {1}".format(
+                cnt13, values13))
 
 
         else:
-            cnt12 = values12 = dict12 = cnt21 = values21 = dict21 = None
+            cnt11 = values11 = dict11 = None
 
-        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12, strategy_data1
+        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, strategy_data1
 
 def calc_mergin_pred(df, args):
     output = pd.DataFrame()
