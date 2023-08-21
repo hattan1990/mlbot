@@ -319,11 +319,11 @@ class Estimation:
             spread_to_max = (pred_spread_mean - base_price)
             spread_to_min = (base_price - pred_spread_mean)
 
-            threshold = int(tmp_data['pred'].mean()) * rate
+            threshold = int(tmp_data['pred'].mean())
             buy = False
             sell = False
 
-            if (spread_to_max <= threshold) & (spread_to_max > spread_to_min)&(stock_count <= max_stock):
+            if (spread_to_max <= threshold) & (spread_to_max > spread_to_min)&(stock_count < max_stock):
                 trade_cnt += 1
                 buy = True
                 buy_price = base_price
@@ -332,7 +332,7 @@ class Estimation:
                         sell = True
                         sell_price = pred_spread_mean
 
-            elif (spread_to_min <= threshold) & (spread_to_max < spread_to_min)&(stock_count <= max_stock):
+            elif (spread_to_min <= threshold) & (spread_to_max < spread_to_min)&(stock_count < max_stock):
                 trade_cnt += 1
                 sell = True
                 sell_price = base_price
@@ -407,6 +407,10 @@ class Estimation:
             spread_to_max = (pred_spread_max - base_price)
             spread_to_min = (base_price - pred_spread_min)
 
+            term_mergin = (spread_to_max > 0)&(spread_to_min > 0)
+
+            loss_cut = 100000
+
             buy = False
             sell = False
             info = ''
@@ -415,41 +419,45 @@ class Estimation:
             sell_price = 0
             buy_price = 0
 
-            if (spread_to_max > spread_to_min):
+            if (spread_to_max > spread_to_min)&(spread_to_max > 5000):
                 trade_cnt += 1
                 buy = True
                 buy_price = base_price
+                look = True
                 for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
-                    if hi > pred_spread_max:
-                        sell = True
-                        sell_price = pred_spread_max
-                        info = 'Success-LONG'
-                    elif lo < pred_spread_min:
-                        close_price = pred_spread_min
-                        if sell == False:
+                    if look == True:
+                        if hi > pred_spread_max:
+                            sell = True
+                            sell_price = pred_spread_max
+                            info = 'Success-LONG'
+                            look = False
+                        elif buy_price - lo > loss_cut:
+                            close_price = lo
                             info = 'Miss-LONG-LossCut'
-                    else:
-                        if sell == False:
+                            look = False
+                        else:
                             info = 'Miss-LONG'
-                        pass
+                            pass
 
-            elif (spread_to_max < spread_to_min):
+            elif (spread_to_max < spread_to_min)&(spread_to_min > 5000):
                 trade_cnt += 1
                 sell = True
                 sell_price = base_price
+                look = True
                 for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
-                    if lo < pred_spread_min:
-                        buy = True
-                        buy_price = pred_spread_min
-                        info = 'Success-SHORT'
-                    elif hi > pred_spread_max:
-                        close_price = pred_spread_max
-                        if buy == False:
+                    if look == True:
+                        if lo < pred_spread_min:
+                            buy = True
+                            buy_price = pred_spread_min
+                            info = 'Success-SHORT'
+                            look = False
+                        elif hi - buy_price > loss_cut:
+                            close_price = hi
                             info = 'Miss-SHORT-LossCut'
-                    else:
-                        if buy == False:
+                            look = False
+                        else:
                             info = 'Miss-SHORT'
-                        pass
+                            pass
 
             if (sell == True) & (buy == True):
                 profit = sell_price - buy_price
@@ -675,7 +683,7 @@ def plot_output(file_name, args):
 if __name__ == '__main__':
     from run_SCINet import *
 
-    args.pred_len = 15
+    args.pred_len = 120
     est = Estimation(args)
     file_name = 'strategy_data1.csv'
     data = pd.read_csv(file_name)
@@ -683,11 +691,10 @@ if __name__ == '__main__':
     data['date'] = data.date.apply(lambda x: ps.parse(
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
-    output = est.back_test_spot_swing(data, rate=0.002, num=args.pred_len)
-    output = est.back_test_mm(data, rate=2, num=args.pred_len)
-    output2 = est.back_test_spot_swing(data, rate=0.0005, num=15)
+    output = est.back_test_spot_doten(data, rate=0.002, num=args.pred_len)
+    output2 = est.back_test_spot_swing(data, rate=0.002, num=args.pred_len, max_stock=1)
+    #output = est.back_test_mm(data, rate=2, num=args.pred_len)
     print(output[0].shape[0], output[1])
     print(output2[0].shape[0], output2[1])
     output[0].to_excel('output.xlsx')
-    output2[0].to_excel('output2.xlsx')
     #plot_mergin(file_name, args)
