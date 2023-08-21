@@ -384,7 +384,6 @@ class Estimation:
         profit_loss = np.round(profit_loss / 1000000, 2)
         acc_rate = np.round(sum(term) / (output.shape[0]+1), 2)
         win_rate = np.round(win / (output.shape[0]+1), 2)
-        print(stock_count)
 
         return output, (total, profit_win, profit_loss, acc_rate, win_rate)
 
@@ -478,20 +477,12 @@ class Estimation:
         acc1 = np.average(self.total_acc1)
         acc2 = np.average(self.total_acc2)
         acc3 = np.average(self.total_acc3)
-        acc1_ex = np.average(self.total_acc1_ex)
-        acc2_ex = np.average(self.total_acc2_ex)
-        acc3_ex = np.average(self.total_acc3_ex)
-        acc4_ex = np.average(self.total_acc4_ex)
         strategy_data1 = self.strategy_data1.sort_values(by='date').reset_index(drop=True)
-        strategy_data2 = self.strategy_data2.groupby('date').mean().reset_index()
-        strategy_data2 = strategy_data2.sort_values(by='date').reset_index(drop=True)
-
-
 
         if epoch + 1 >= 10:
             print(
-                "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f}  ACC1Ex: {4:.5f} ACC2Ex: {5:.5f} ACC3Ex: {6:.5f} ACC4Ex: {7:.5f}".format(
-                    epoch + 1, acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex))
+                "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f} ".format(
+                    epoch + 1, acc1, acc2, acc3))
             input_dict1 = {'trade_data': strategy_data1, 'num': self.args.pred_len, 'thresh_list': [3, 5, 7]}
 
             best_output11, values11, dict11 = self.execute_back_test(self.back_test_mm, input_dict1)
@@ -506,10 +497,14 @@ class Estimation:
 
             if self.args.data_path == 'GMO_BTC_JPY_ohclv_eval.csv':
                 os.mkdir(str(acc1))
-                best_output11.to_csv(str(acc1)+'/best_output11.csv')
-                strategy_data1.to_csv(str(acc1)+'/strategy_data1.csv')
+                best_output11.to_csv(str(acc1) + '/best_output11.csv')
+                best_output12.to_csv(str(acc1) + '/best_output12.csv')
+                best_output13.to_csv(str(acc1) + '/best_output13.csv')
+                strategy_data1.to_csv(str(acc1) + '/strategy_data1.csv')
             else:
-                best_output11.to_csv('best_output11.csv')
+                best_output11.to_csv(str(acc1) + '/best_output11.csv')
+                best_output12.to_csv(str(acc1) + '/best_output12.csv')
+                best_output13.to_csv(str(acc1) + '/best_output13.csv')
                 strategy_data1.to_csv('strategy_data1.csv')
 
             print("Test1 | MM - cnt: {0} best profit: {1} config: {2} ".format(
@@ -525,7 +520,7 @@ class Estimation:
         else:
             cnt11 = values11 = dict11 = None
 
-        return acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt11, values11, dict11, strategy_data1
+        return acc1, acc2, acc3, cnt11, values11, dict11, strategy_data1
 
 def calc_mergin_pred(df, args):
     output = pd.DataFrame()

@@ -357,7 +357,7 @@ class Exp_ETTh(Exp_Basic):
 
             print('--------start to validate from {} to {}-----------'.format(target_time_range_from, target_time_range_to))
             valid_loss, estimation = self.valid(valid_data, valid_loader, criterion)
-            acc1, acc2, acc3, acc1_ex, acc2_ex, acc3_ex, acc4_ex, cnt12, values12, dict12, strategy_data = estimation.run(epoch, target_time_range_from, target_time_range_to)
+            acc1, acc2, acc3, cnt12, values12, dict12, strategy_data = estimation.run(epoch, target_time_range_from, target_time_range_to)
 
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
