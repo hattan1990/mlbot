@@ -412,6 +412,8 @@ class Estimation:
             info = ''
             close_price = tmp_data['cl'].values[-1]
             close_date = tmp_data['date'].values[-1]
+            sell_price = 0
+            buy_price = 0
 
             if (spread_to_max > spread_to_min):
                 trade_cnt += 1
@@ -424,9 +426,11 @@ class Estimation:
                         info = 'Success-LONG'
                     elif lo < pred_spread_min:
                         close_price = pred_spread_min
-                        info = 'Miss-LONG-LossCut'
+                        if sell == False:
+                            info = 'Miss-LONG-LossCut'
                     else:
-                        info = 'Miss-LONG'
+                        if sell == False:
+                            info = 'Miss-LONG'
                         pass
 
             elif (spread_to_max < spread_to_min):
@@ -440,9 +444,11 @@ class Estimation:
                         info = 'Success-SHORT'
                     elif hi > pred_spread_max:
                         close_price = pred_spread_max
-                        info = 'Miss-SHORT-LossCut'
+                        if buy == False:
+                            info = 'Miss-SHORT-LossCut'
                     else:
-                        info = 'Miss-SHORT'
+                        if buy == False:
+                            info = 'Miss-SHORT'
                         pass
 
             if (sell == True) & (buy == True):
@@ -459,10 +465,10 @@ class Estimation:
                 str_val = ''
                 pass
             total += profit
-            output.append([close_date, info, total, profit, str_val, buy, sell])
+            output.append([close_date, info, total, profit, str_val, buy, sell, close_price, sell_price, buy_price])
             start = end + 1
 
-        output = pd.DataFrame(output, columns=['date', 'info', 'total', 'profit', 'sell&buy_price', 'buy', 'sell'])
+        output = pd.DataFrame(output, columns=['date', 'info', 'total', 'profit', 'sell&buy_price', 'buy', 'sell', 'close_p', 'sell_p', 'buy_p'])
         output = output[output['profit'] != 0]
         term = (output['buy'] == True) & (output['sell'] == True)
         profit_win = output.loc[term, 'profit'].sum()
