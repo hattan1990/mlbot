@@ -392,8 +392,6 @@ class Estimation:
         output = []
         total = 0
         trade_cnt = 0
-        long_prices = []
-        short_prices = []
         for i in range(0, trade_data.shape[0], num):
             if i == 0:
                 start = 0
@@ -411,6 +409,7 @@ class Estimation:
 
             buy = False
             sell = False
+            info = ''
             close_price = tmp_data['cl'].values[-1]
             close_date = tmp_data['date'].values[-1]
 
@@ -422,9 +421,12 @@ class Estimation:
                     if hi > pred_spread_max:
                         sell = True
                         sell_price = pred_spread_max
+                        info = 'Success-LONG'
                     elif lo < pred_spread_min:
                         close_price = pred_spread_min
+                        info = 'Miss-LONG-LossCut'
                     else:
+                        info = 'Miss-LONG'
                         pass
 
             elif (spread_to_max < spread_to_min):
@@ -435,27 +437,32 @@ class Estimation:
                     if lo < pred_spread_min:
                         buy = True
                         buy_price = pred_spread_min
+                        info = 'Success-SHORT'
                     elif hi > pred_spread_max:
                         close_price = pred_spread_max
+                        info = 'Miss-SHORT-LossCut'
                     else:
+                        info = 'Miss-SHORT'
                         pass
 
             if (sell == True) & (buy == True):
                 profit = sell_price - buy_price
+                str_val = str(sell_price) + '|' + str(buy_price)
             elif (sell == True) & (buy == False):
                 profit = sell_price - close_price
-                short_prices.append(sell_price)
+                str_val = str(sell_price) + '|' + str(close_price)
             elif (sell == False) & (buy == True):
                 profit = close_price - buy_price
-                long_prices.append(buy_price)
+                str_val = str(close_price) + '|' + str(buy_price)
             else:
                 profit = 0
+                str_val = ''
                 pass
             total += profit
-            output.append([close_date, total, profit, buy, sell])
+            output.append([close_date, info, total, profit, str_val, buy, sell])
             start = end + 1
 
-        output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
+        output = pd.DataFrame(output, columns=['date', 'info', 'total', 'profit', 'sell&buy_price', 'buy', 'sell'])
         output = output[output['profit'] != 0]
         term = (output['buy'] == True) & (output['sell'] == True)
         profit_win = output.loc[term, 'profit'].sum()
@@ -479,7 +486,7 @@ class Estimation:
         acc3 = np.average(self.total_acc3)
         strategy_data1 = self.strategy_data1.sort_values(by='date').reset_index(drop=True)
 
-        if epoch + 1 >= 10:
+        if epoch + 1 >= 5:
             print(
                 "Epoch: {0} ACC1: {1:.5f} ACC2: {2:.5f} ACC3: {3:.5f} ".format(
                     epoch + 1, acc1, acc2, acc3))
