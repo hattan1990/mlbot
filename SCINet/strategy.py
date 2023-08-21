@@ -502,9 +502,9 @@ class Estimation:
                 best_output13.to_csv(str(acc1) + '/best_output13.csv')
                 strategy_data1.to_csv(str(acc1) + '/strategy_data1.csv')
             else:
-                best_output11.to_csv(str(acc1) + '/best_output11.csv')
-                best_output12.to_csv(str(acc1) + '/best_output12.csv')
-                best_output13.to_csv(str(acc1) + '/best_output13.csv')
+                best_output11.to_csv('best_output11.csv')
+                best_output12.to_csv('best_output12.csv')
+                best_output13.to_csv('best_output13.csv')
                 strategy_data1.to_csv('strategy_data1.csv')
 
             print("Test1 | MM - cnt: {0} best profit: {1} config: {2} ".format(
