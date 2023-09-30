@@ -141,9 +141,10 @@ def run():
 def run_various_periods():
     for ii in range(args.itr):
         date_range1 = ['2022-01-01 00:00', '2022-02-01 00:00']
-        date_range2 = ['2023-04-01 00:00', '2023-05-01 00:00',
+        date_range2 = ['2023-05-01 00:00',
                        '2023-06-01 00:00', '2023-07-01 00:00',
-                       '2023-08-01 00:00']
+                       '2023-08-01 00:00', '2023-09-01 00:00',
+                       '2023-10-01 00:00']
 
         args.data = 'BTC2'
 
@@ -191,7 +192,7 @@ def run_various_periods():
                 print('Val Time Range from:{} to:{}'.format(args.date_period2, args.date_period3))
                 exp.train(setting)
 
-                if args.date_period3 != '2023-08-01 00:00':
+                if args.date_period3 != '2023-10-01 00:00':
                     print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
                     args.date_period2 = date_range2[i + 2]
                     args.date_period3 = date_range2[i + 3]

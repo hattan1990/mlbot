@@ -313,11 +313,12 @@ class Estimation:
 
             tmp_data = trade_data.loc[start:end]
             base_price = tmp_data['op'].values[0]
-            #pred_spread_min = int(tmp_data['pred'].min())
-            #pred_spread_max = int(tmp_data['pred'].max())
-            pred_spread_mean = int(tmp_data['pred'].mean())
-            spread_to_max = (pred_spread_mean - base_price)
-            spread_to_min = (base_price - pred_spread_mean)
+
+            preds = tmp_data['pred'].values
+            pred_spread_min = int(np.percentile(preds, 20))
+            pred_spread_max = int(np.percentile(preds, 80))
+            spread_to_max = (pred_spread_max - base_price)
+            spread_to_min = (base_price - pred_spread_min)
 
             threshold = int(tmp_data['pred'].mean())
             buy = False
@@ -328,18 +329,18 @@ class Estimation:
                 buy = True
                 buy_price = base_price
                 for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
-                    if hi > pred_spread_mean:
+                    if hi > pred_spread_max:
                         sell = True
-                        sell_price = pred_spread_mean
+                        sell_price = pred_spread_max
 
             elif (spread_to_min <= threshold) & (spread_to_max < spread_to_min)&(stock_count < max_stock):
                 trade_cnt += 1
                 sell = True
                 sell_price = base_price
                 for date, hi, lo in tmp_data[['date', 'hi', 'lo']].values:
-                    if lo < pred_spread_mean:
+                    if lo < pred_spread_min:
                         buy = True
-                        buy_price = pred_spread_mean
+                        buy_price = pred_spread_min
 
             close_price = tmp_data['cl'].values[-1]
             close_date = tmp_data['date'].values[-1]
@@ -371,6 +372,7 @@ class Estimation:
             total += profit
             output.append([close_date, total, profit, buy, sell])
             start = end + 1
+            #print("stock_count:", stock_count, "total", total, "profit", profit)
 
         output = pd.DataFrame(output, columns=['date', 'total', 'profit', 'buy', 'sell'])
         output = output[output['profit'] != 0]
@@ -692,7 +694,7 @@ if __name__ == '__main__':
         str(x)[:4] + '-' + str(x)[4:6] + '-' + str(x)[6:8] + ' ' + str(x)[8:10] + ':' + str(x)[10:12]))
     data = data.sort_values(by='date').reset_index(drop=True)
     output = est.back_test_spot_doten(data, rate=0.002, num=args.pred_len)
-    output2 = est.back_test_spot_swing(data, rate=0.002, num=args.pred_len, max_stock=1)
+    output2 = est.back_test_spot_swing(data, rate=0.002, num=args.pred_len, max_stock=3)
     #output = est.back_test_mm(data, rate=2, num=args.pred_len)
     print(output[0].shape[0], output[1])
     print(output2[0].shape[0], output2[1])
