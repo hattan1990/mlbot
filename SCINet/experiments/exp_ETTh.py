@@ -361,7 +361,8 @@ class Exp_ETTh(Exp_Basic):
 
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
-            early_stopping(valid_loss, self.model, path)
+            #　valid_loss　→　values12[0]
+            early_stopping(-values12[0], self.model, path)
 
             if epoch > 10:
                 #score = values11[4] + values21[4]
