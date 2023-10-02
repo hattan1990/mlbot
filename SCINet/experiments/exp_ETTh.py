@@ -362,11 +362,11 @@ class Exp_ETTh(Exp_Basic):
             writer.add_scalar('train_loss', train_loss, global_step=epoch)
             writer.add_scalar('valid_loss', valid_loss, global_step=epoch)
             #　valid_loss　→　values12[0]
-            early_stopping(-values12[0], self.model, path)
 
             if epoch > 10:
                 #score = values11[4] + values21[4]
                 score = values12[0]
+                early_stopping(-score, self.model, path)
                 best_model_path = '/'+setting+'_'+str(score)+'_'+str(epoch+1)+'_best/'
                 if (score > 0.8):
                     if not os.path.exists(best_model_path):
@@ -380,7 +380,7 @@ class Exp_ETTh(Exp_Basic):
                         print(new_path)
 
             else:
-                pass
+                early_stopping(valid_loss, self.model, path)
             self.model.to(self.device)
             if early_stopping.early_stop:
                 print("Early stopping")
