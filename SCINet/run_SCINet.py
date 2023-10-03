@@ -151,7 +151,7 @@ def run_various_periods():
         for i in range(len(date_range1)):
             for j in range(3):
                 choice = np.random.randint(2)
-                model_lens = [[96, 36, 30], [96, 36, 40], [96, 48, 60]]
+                model_lens = [[96, 48, 120], [96, 36, 90], [96, 48, 150]]
                 model_len = model_lens[choice]
 
                 args.seq_len = model_len[0]
