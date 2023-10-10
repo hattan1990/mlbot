@@ -366,7 +366,7 @@ class Exp_ETTh(Exp_Basic):
             if epoch > 10:
                 #score = values11[4] + values21[4]
                 score = values12[0]
-                early_stopping(-score, self.model, path)
+                early_stopping(valid_loss, self.model, path)
                 best_model_path = '/'+setting+'_'+str(score)+'_'+str(epoch+1)+'_best/'
                 if (score > 0.8):
                     if not os.path.exists(best_model_path):
