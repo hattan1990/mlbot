@@ -150,13 +150,25 @@ def run_various_periods():
         # Time Range × パラメータ変更（10回）の学習
         for i in range(len(date_range1)):
             for j in range(3):
+                data_path = args.data_path
+                if '1min' in data_path:
+                    adjust_val = 1
+                elif '5min' in data_path:
+                    adjust_val = 5
+                elif '15min' in data_path:
+                    adjust_val = 15
+                elif '30min' in data_path:
+                    adjust_val = 30
+                else:
+                    adjust_val = 1
+
                 choice = np.random.randint(2)
                 model_lens = [[96, 48, 120], [96, 36, 90], [96, 48, 150]]
                 model_len = model_lens[choice]
 
                 args.seq_len = model_len[0]
                 args.label_len = model_len[1]
-                args.pred_len = model_len[2]
+                args.pred_len = int(model_len[2] / adjust_val)
 
                 #n_heads = [8, 16]
                 #args.n_heads = np.random.choice(n_heads)
