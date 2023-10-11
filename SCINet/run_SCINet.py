@@ -151,7 +151,7 @@ def run_various_periods():
 
         # Time Range × パラメータ変更（10回）の学習
         for i in range(len(date_range1)):
-            for j in range(3):
+            for j in range(1):
                 data_path = args.data_path
                 if '1min' in data_path:
                     adjust_val = 1
